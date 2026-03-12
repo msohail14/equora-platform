@@ -1,4 +1,5 @@
 import express from 'express';
+import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import { uploadHorseProfileImage } from '../middleware/upload.middleware.js';
 import {
@@ -11,6 +12,9 @@ import {
 } from '../controllers/horse.controller.js';
 
 const router = express.Router();
+
+router.get('/public', getAllHorsesGlobalController);
+router.get('/public/:id', getHorseByIdController);
 
 router.post('/', adminAuthMiddleware, uploadHorseProfileImage, createHorseController);
 router.get('/', adminAuthMiddleware, getAllHorsesController);

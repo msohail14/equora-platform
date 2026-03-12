@@ -19,6 +19,11 @@ import {
 
 const router = express.Router();
 
+router.get('/public', getAllCoachesController);
+router.get('/public/:id', getCoachByIdController);
+router.get('/public/:id/summary', getCoachSummaryController);
+router.get('/public/:id/courses', getCoachCoursesController);
+
 router.get('/:id/upcoming-availability', authMiddleware, getCoachUpcomingAvailabilityController);
 router.post('/', adminAuthMiddleware, createCoachController);
 router.get('/', adminAuthMiddleware, getAllCoachesController);

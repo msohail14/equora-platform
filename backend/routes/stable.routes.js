@@ -1,4 +1,5 @@
 import express from 'express';
+import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import { uploadStableLogo } from '../middleware/upload.middleware.js';
 import {
@@ -10,6 +11,9 @@ import {
 } from '../controllers/stable.controller.js';
 
 const router = express.Router();
+
+router.get('/public', getAllStablesController);
+router.get('/public/:id', getStableByIdController);
 
 router.post('/', adminAuthMiddleware, uploadStableLogo, createStableController);
 router.get('/', adminAuthMiddleware, getAllStablesController);

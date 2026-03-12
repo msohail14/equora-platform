@@ -1,12 +1,15 @@
 import Admin from './admin.model.js';
 import Arena from './arena.model.js';
+import CoachPayout from './coachPayout.model.js';
 import CoachReview from './coachReview.model.js';
 import Course from './course.model.js';
 import CourseEnrollment from './courseEnrollment.model.js';
 import CourseSession from './courseSession.model.js';
 import Discipline from './discipline.model.js';
 import Horse from './horse.model.js';
+import Payment from './payment.model.js';
 import Stable from './stable.model.js';
+import Subscription from './subscription.model.js';
 import User from './user.model.js';
 
 Admin.hasMany(Stable, { foreignKey: 'admin_id', as: 'stables' });
@@ -66,4 +69,22 @@ CoachReview.belongsTo(User, { foreignKey: 'reviewer_user_id', as: 'reviewer_user
 Admin.hasMany(CoachReview, { foreignKey: 'reviewer_admin_id', as: 'submitted_coach_reviews' });
 CoachReview.belongsTo(Admin, { foreignKey: 'reviewer_admin_id', as: 'reviewer_admin' });
 
-export { Admin, Arena, CoachReview, Course, CourseEnrollment, CourseSession, Discipline, Horse, Stable, User };
+User.hasMany(Payment, { foreignKey: 'user_id', as: 'payments' });
+Payment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(Subscription, { foreignKey: 'user_id', as: 'subscriptions' });
+Subscription.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Payment.hasOne(Subscription, { foreignKey: 'payment_id', as: 'subscription' });
+Subscription.belongsTo(Payment, { foreignKey: 'payment_id', as: 'payment' });
+
+User.hasMany(CoachPayout, { foreignKey: 'coach_id', as: 'payouts' });
+CoachPayout.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
+
+CourseSession.hasMany(CoachPayout, { foreignKey: 'session_id', as: 'payouts' });
+CoachPayout.belongsTo(CourseSession, { foreignKey: 'session_id', as: 'session' });
+
+export {
+  Admin, Arena, CoachPayout, CoachReview, Course, CourseEnrollment,
+  CourseSession, Discipline, Horse, Payment, Stable, Subscription, User,
+};

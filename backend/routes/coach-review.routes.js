@@ -10,6 +10,8 @@ import {
 
 const router = express.Router();
 
+router.get('/public/coach/:coachId', getCoachReviewsController);
+
 router.post('/', authMiddleware, createCoachReviewController);
 router.get('/coach/:coachId', adminAuthMiddleware, getCoachReviewsController);
 router.put('/:id', authMiddleware, updateCoachReviewController);

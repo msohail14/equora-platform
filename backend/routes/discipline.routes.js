@@ -1,4 +1,5 @@
 import express from 'express';
+import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import { uploadDisciplineIcon } from '../middleware/upload.middleware.js';
 import {
@@ -10,6 +11,9 @@ import {
 } from '../controllers/discipline.controller.js';
 
 const router = express.Router();
+
+router.get('/public', getAllDisciplinesController);
+router.get('/public/:id', getDisciplineByIdController);
 
 router.post('/', adminAuthMiddleware, uploadDisciplineIcon, createDisciplineController);
 router.get('/', adminAuthMiddleware, getAllDisciplinesController);

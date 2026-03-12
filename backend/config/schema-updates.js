@@ -320,6 +320,70 @@ const ensureCoachReviewsTable = async () => {
   `);
 };
 
+const ensurePaymentsTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`payments\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`transaction_id\` VARCHAR(255) UNIQUE NOT NULL,
+      \`user_id\` INT NOT NULL,
+      \`amount\` DECIMAL(10, 2) NOT NULL,
+      \`currency\` VARCHAR(10) NOT NULL DEFAULT 'SAR',
+      \`status\` ENUM('pending','completed','failed','refunded') NOT NULL DEFAULT 'pending',
+      \`provider\` ENUM('tappay','hyperpay','manual') NOT NULL,
+      \`provider_reference\` VARCHAR(255) NULL,
+      \`payment_type\` ENUM('subscription','session','course','tip') NOT NULL,
+      \`related_id\` INT NULL,
+      \`metadata\` JSON NULL,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT \`fk_payments_user\` FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE,
+      INDEX \`idx_payments_user\` (\`user_id\`, \`status\`),
+      INDEX \`idx_payments_transaction\` (\`transaction_id\`)
+    )
+  `);
+};
+
+const ensureSubscriptionsTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`subscriptions\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`user_id\` INT NOT NULL,
+      \`plan_type\` ENUM('basic','premium','pro') NOT NULL,
+      \`status\` ENUM('active','cancelled','expired','past_due') NOT NULL DEFAULT 'active',
+      \`start_date\` DATE NOT NULL,
+      \`end_date\` DATE NOT NULL,
+      \`auto_renew\` BOOLEAN NOT NULL DEFAULT TRUE,
+      \`payment_id\` INT NULL,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT \`fk_subscriptions_user\` FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE,
+      CONSTRAINT \`fk_subscriptions_payment\` FOREIGN KEY (\`payment_id\`) REFERENCES \`payments\`(\`id\`) ON DELETE SET NULL,
+      INDEX \`idx_subscriptions_user\` (\`user_id\`, \`status\`),
+      INDEX \`idx_subscriptions_expiry\` (\`end_date\`, \`status\`)
+    )
+  `);
+};
+
+const ensureCoachPayoutsTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`coach_payouts\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`coach_id\` INT NOT NULL,
+      \`session_id\` INT NULL,
+      \`amount\` DECIMAL(10, 2) NOT NULL,
+      \`currency\` VARCHAR(10) NOT NULL DEFAULT 'SAR',
+      \`status\` ENUM('pending','processing','paid','failed') NOT NULL DEFAULT 'pending',
+      \`payout_date\` DATE NULL,
+      \`reference\` VARCHAR(255) NULL,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT \`fk_coach_payouts_coach\` FOREIGN KEY (\`coach_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE,
+      CONSTRAINT \`fk_coach_payouts_session\` FOREIGN KEY (\`session_id\`) REFERENCES \`course_sessions\`(\`id\`) ON DELETE SET NULL,
+      INDEX \`idx_coach_payouts_coach\` (\`coach_id\`, \`status\`)
+    )
+  `);
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -332,4 +396,7 @@ export const applySchemaUpdates = async () => {
   await ensureHorseAndArenaDescriptionColumns();
   await ensureCourseSessionCancelReasonColumn();
   await ensureCourseSessionCancelledByColumn();
+  await ensurePaymentsTable();
+  await ensureSubscriptionsTable();
+  await ensureCoachPayoutsTable();
 };
