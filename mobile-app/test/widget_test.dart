@@ -1,14 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:horse_riding_app_design/main.dart';
+import 'package:equestrian_app/main.dart';
 
 void main() {
-  testWidgets('App starts and shows Home Screen', (WidgetTester tester) async {
+  testWidgets('App starts and shows landing screen', (WidgetTester tester) async {
     await tester.pumpWidget(const EquestrianApp());
-    await tester.pumpAndSettle();
-    
-    // Verify basic elements
-    expect(find.text('Equestrian'), findsNothing); // Title is in MaterialApp, not visible text
-    expect(find.text('Welcome back,'), findsOneWidget);
-    expect(find.text('Jumping Training'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Equestrian'), findsOneWidget);
+    expect(find.text('Premium Equestrian Management'), findsOneWidget);
   });
 }
