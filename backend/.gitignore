@@ -1,0 +1,20 @@
+/node_modules
+/dist
+/logs
+*.log
+.DS_Store
+
+# Environment - NEVER commit real credentials
+.env
+.env.local
+.env.production
+.env.staging
+
+# Uploads (user content)
+/upload/*
+!/upload/.gitkeep
+
+# SSL certs
+*.pem
+*.key
+*.cert
