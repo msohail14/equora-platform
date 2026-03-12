@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/responsive.dart';
-import '../../rider_home/screens/rider_home_screen.dart';
-import '../../coach_home/screens/coach_home_screen.dart';
+import '../../auth/screens/login_screen.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/role_selection_card.dart';
 
@@ -68,7 +67,7 @@ class LandingScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   SizedBox(
                     width: screenWidth * 0.85,
-                    child: Text(
+                    child: const Text(
                       'Manage your stable, bookings, and training with elegance and ease.',
                       style: TextStyle(
                         fontFamily: 'PlusJakartaSans',
@@ -81,27 +80,27 @@ class LandingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   RoleSelectionCard(
-                    title: 'I am a Rider',
-                    subtitle: 'Book sessions & manage horses',
-                    icon: Icons.person_outline,
+                    title: 'Sign In',
+                    subtitle: 'Already have an account',
+                    icon: Icons.login,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const RiderHomeScreen(),
+                          builder: (context) => const LoginScreen(),
                         ),
                       );
                     },
                   ),
                   RoleSelectionCard(
-                    title: 'I am a Coach',
-                    subtitle: 'Manage courses & schedule',
-                    icon: Icons.verified_user_outlined,
+                    title: 'Create Account',
+                    subtitle: 'Join as a Rider or Coach',
+                    icon: Icons.person_add_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CoachHomeScreen(),
+                          builder: (context) => const LoginScreen(),
                         ),
                       );
                     },
