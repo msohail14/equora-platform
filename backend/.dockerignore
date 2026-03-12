@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.*
+upload/*
+!upload/.gitkeep
+tests
+jest.config.js
+*.log
+.DS_Store
