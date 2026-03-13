@@ -24,6 +24,14 @@ import coachAvailabilityRoutes from './routes/coach-availability.routes.js';
 import riderRoutes from './routes/rider.routes.js';
 import coachReviewRoutes from './routes/coach-review.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
+import horseAvailabilityRoutes from './routes/horse-availability.routes.js';
+import courseTemplateRoutes from './routes/course-template.routes.js';
+import sessionFeedbackRoutes from './routes/session-feedback.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import lessonPackageRoutes from './routes/lesson-package.routes.js';
+import stableDashboardRoutes from './routes/stable-dashboard.routes.js';
+import coachDashboardRoutes from './routes/coach-dashboard.routes.js';
 
 dotenv.config();
 
@@ -31,11 +39,13 @@ const app = express();
 const PORT = Number(process.env.PORT || 6060);
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const HOST = IS_PRODUCTION ? (process.env.HOST || '0.0.0.0') : '0.0.0.0';
-const USE_HTTPS = IS_PRODUCTION;
+const HOST = process.env.HOST || '0.0.0.0';
 
+// Only use HTTPS when explicitly enabled and cert files exist (self-hosted VPS).
+// Platforms like Railway handle SSL termination at the proxy level.
 const CERT_PATH = process.env.SSL_CERT_PATH || '/etc/letsencrypt/live/horse.atlasits.cloud/fullchain.pem';
 const KEY_PATH = process.env.SSL_KEY_PATH || '/etc/letsencrypt/live/horse.atlasits.cloud/privkey.pem';
+const USE_HTTPS = process.env.USE_HTTPS === 'true' && fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH);
 
 const FRONTEND_URL = IS_PRODUCTION
   ? (process.env.FRONTEND_URL_PROD || 'https://horse.atlasits.cloud')
@@ -80,6 +90,14 @@ app.use('/api/v1/riders', riderRoutes);
 app.use('/api/v1/coach-reviews', coachReviewRoutes);
 app.use('/api/v1/mail', mailRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/horse-availability', horseAvailabilityRoutes);
+app.use('/api/v1/course-templates', courseTemplateRoutes);
+app.use('/api/v1/session-feedback', sessionFeedbackRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/packages', lessonPackageRoutes);
+app.use('/api/v1/stable-dashboard', stableDashboardRoutes);
+app.use('/api/v1/coach-dashboard', coachDashboardRoutes);
 
 app.get('/', (req, res) => {
   res.send('Equestrian Backend API is running.');
