@@ -37,7 +37,7 @@ export const getStableDashboardOverview = async ({ adminId }) => {
 
   const stables = await Stable.findAll({
     where: { id: { [Op.in]: stableIds } },
-    attributes: ['id', 'name', 'location', 'image_url'],
+    attributes: ['id', 'name', 'location_address', 'logo_url'],
   });
 
   const [totalHorses, totalArenas, totalBookings, totalCourses] = await Promise.all([
@@ -75,8 +75,8 @@ export const getStableDashboardOverview = async ({ adminId }) => {
       return {
         id: stable.id,
         name: stable.name,
-        location: stable.location,
-        image_url: stable.image_url,
+        location_address: stable.location_address,
+        logo_url: stable.logo_url,
         horses,
         arenas,
         bookings,

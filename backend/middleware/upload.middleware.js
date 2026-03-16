@@ -8,6 +8,7 @@ const stableLogoDir = path.join(process.cwd(), 'upload', 'stable-logos');
 const horseProfileImageDir = path.join(process.cwd(), 'upload', 'profile-images', 'horses');
 const arenaImageDir = path.join(process.cwd(), 'upload', 'arena-images');
 const courseThumbnailDir = path.join(process.cwd(), 'upload', 'course-thumbnails');
+const courseLayoutDir = path.join(process.cwd(), 'upload', 'course-layouts');
 
 const ensureDirectory = (directoryPath) => {
   if (!fs.existsSync(directoryPath)) {
@@ -73,4 +74,8 @@ export const uploadArenaImage = createImageUpload(arenaImageDir, 'image', {
 export const uploadCourseThumbnail = createImageUpload(courseThumbnailDir, 'thumbnail_image', {
   fileSize: 3 * 1024 * 1024,
   typeErrorMessage: 'Course thumbnail must be PNG, JPG, or JPEG only.',
+});
+export const uploadCourseLayout = createImageUpload(courseLayoutDir, 'layout_image', {
+  fileSize: 5 * 1024 * 1024,
+  typeErrorMessage: 'Course layout image must be PNG, JPG, or JPEG only.',
 });

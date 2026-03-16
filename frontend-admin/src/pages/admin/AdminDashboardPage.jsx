@@ -22,7 +22,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { getAdminDashboardApi } from '../../features/operations/operationsApi';
+import { getAdminDashboardApi, getAdminBookingsApi } from '../../features/operations/operationsApi';
 import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const emptyDashboard = {
@@ -46,6 +46,7 @@ const emptyDashboard = {
     total_enrollments: 0,
     active_enrollments: 0,
     total_revenue: 0,
+    revenue_mtd: 0,
   },
   enrollment_trends: {
     daily: [],
@@ -96,7 +97,7 @@ const kpiCards = (stats) => [
   },
   {
     label: 'Active Coaches',
-    value: stats.active_coaches,
+    value: stats.active_coaches ?? stats.total_coaches ?? 0,
     icon: GraduationCap,
     iconColor: 'text-equestrian-gold-600',
     iconBg: 'bg-equestrian-gold-50 dark:bg-equestrian-gold-900/20',
@@ -110,7 +111,7 @@ const kpiCards = (stats) => [
   },
   {
     label: 'Revenue (MTD)',
-    value: stats.total_revenue,
+    value: stats.revenue_mtd ?? stats.total_revenue ?? 0,
     isCurrency: true,
     icon: null,
     iconColor: 'text-red-500',
@@ -218,12 +219,29 @@ const EnrollmentAreaChart = ({ data = [], mode = 'daily' }) => {
 };
 
 // --- Main page ---
+const getTodayDateString = () => new Date().toISOString().slice(0, 10);
+
+const statusBadgeClass = (status) => {
+  const map = {
+    pending_horse_approval: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    pending_payment: 'bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-300',
+    confirmed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  };
+  return map[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+};
+
 const AdminDashboardPage = () => {
   const { admin } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(emptyDashboard);
   const [trendMode, setTrendMode] = useState('daily');
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [todaysBookings, setTodaysBookings] = useState([]);
+  const [todaysBookingsLoading, setTodaysBookingsLoading] = useState(true);
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [recentBookingsLoading, setRecentBookingsLoading] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -245,9 +263,46 @@ const AdminDashboardPage = () => {
     }
   }, []);
 
+  const fetchTodaysBookings = useCallback(async () => {
+    setTodaysBookingsLoading(true);
+    try {
+      const res = await getAdminBookingsApi({
+        date: getTodayDateString(),
+        limit: 10,
+      });
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setTodaysBookings(list);
+    } catch {
+      setTodaysBookings([]);
+    } finally {
+      setTodaysBookingsLoading(false);
+    }
+  }, []);
+
+  const fetchRecentBookings = useCallback(async () => {
+    setRecentBookingsLoading(true);
+    try {
+      const res = await getAdminBookingsApi({ limit: 5 });
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setRecentBookings(list);
+    } catch {
+      setRecentBookings([]);
+    } finally {
+      setRecentBookingsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  useEffect(() => {
+    fetchTodaysBookings();
+  }, [fetchTodaysBookings]);
+
+  useEffect(() => {
+    fetchRecentBookings();
+  }, [fetchRecentBookings]);
 
   const greeting = getGreeting();
 
@@ -291,7 +346,11 @@ const AdminDashboardPage = () => {
             )}
             <button
               type="button"
-              onClick={fetchDashboard}
+              onClick={() => {
+                fetchDashboard();
+                fetchTodaysBookings();
+                fetchRecentBookings();
+              }}
               disabled={loading}
               className="inline-flex items-center gap-1.5 rounded-lg border border-equestrian-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-equestrian-stone-600 shadow-sm transition hover:bg-equestrian-stone-50 disabled:opacity-50 dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900 dark:text-equestrian-stone-300 dark:hover:bg-equestrian-stone-800"
             >
@@ -336,7 +395,9 @@ const AdminDashboardPage = () => {
                       <SaudiRiyalIcon className="h-8 w-8 text-equestrian-green-950 dark:text-white" />
                     )}
                     <p className="text-3xl font-bold text-equestrian-green-950 dark:text-white">
-                      {card.value?.toLocaleString() ?? 0}
+                      {card.isCurrency
+                        ? (Number(card.value) ?? 0).toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : (card.value?.toLocaleString() ?? 0)}
                     </p>
                     <p className="mt-1 text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
                       {card.label}
@@ -365,16 +426,59 @@ const AdminDashboardPage = () => {
                             View Schedule ↗
                         </Link>
                     </div>
-                    
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <CalendarCheck size={40} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
-                        <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
-                            No bookings data available yet
-                        </p>
-                        <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
-                            Bookings will appear here once the booking system is active.
-                        </p>
-                    </div>
+
+                    {todaysBookingsLoading ? (
+                        <div className="flex h-32 items-center justify-center text-sm text-equestrian-stone-400">
+                            Loading...
+                        </div>
+                    ) : todaysBookings.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead className="border-b border-equestrian-stone-200 text-left text-xs uppercase tracking-wide text-equestrian-stone-500 dark:border-equestrian-stone-700 dark:text-equestrian-stone-400">
+                                    <tr>
+                                        <th className="pb-3 pr-4">Rider</th>
+                                        <th className="pb-3 pr-4">Horse</th>
+                                        <th className="pb-3 pr-4">Time</th>
+                                        <th className="pb-3 pr-4">Type</th>
+                                        <th className="pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-equestrian-stone-100 dark:divide-equestrian-stone-800">
+                                    {todaysBookings.map((b) => (
+                                        <tr key={b.id}>
+                                            <td className="py-3 pr-4 font-medium text-equestrian-green-950 dark:text-white">
+                                                {`${b.rider?.first_name || ''} ${b.rider?.last_name || ''}`.trim() || '-'}
+                                            </td>
+                                            <td className="py-3 pr-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">
+                                                {b.horse?.name || '-'}
+                                            </td>
+                                            <td className="py-3 pr-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">
+                                                {b.start_time ? String(b.start_time).slice(0, 5) : '-'}
+                                            </td>
+                                            <td className="py-3 pr-4 text-equestrian-stone-600 dark:text-equestrian-stone-300 capitalize">
+                                                {b.lesson_type || '-'}
+                                            </td>
+                                            <td className="py-3">
+                                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(b.status)}`}>
+                                                    {(b.status || '-').replace(/_/g, ' ')}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <CalendarCheck size={40} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
+                            <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                                No bookings for today
+                            </p>
+                            <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
+                                Bookings will appear here when scheduled.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Enrollment Chart */}
@@ -416,20 +520,52 @@ const AdminDashboardPage = () => {
 
             {/* ── Right Column (Activity & Stats) ── */}
             <div className="space-y-8">
-                {/* Activity Feed */}
+                {/* Recent Bookings */}
                 <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
-                    <h2 className="mb-4 text-lg font-bold text-equestrian-green-950 dark:text-white">
-                        Activity
-                    </h2>
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <Clock size={32} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
-                        <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
-                            Activity feed coming soon
-                        </p>
-                        <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
-                            Recent actions and events will be displayed here.
-                        </p>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-equestrian-green-950 dark:text-white">
+                            Recent Bookings
+                        </h2>
+                        <Link to="/admin/bookings" className="text-xs font-semibold text-equestrian-gold-600 hover:text-equestrian-gold-700">
+                            View all
+                        </Link>
                     </div>
+                    {recentBookingsLoading ? (
+                        <div className="flex h-24 items-center justify-center text-sm text-equestrian-stone-400">
+                            Loading...
+                        </div>
+                    ) : recentBookings.length > 0 ? (
+                        <div className="space-y-3">
+                            {recentBookings.map((b) => (
+                                <div
+                                    key={b.id}
+                                    className="flex items-center justify-between rounded-lg border border-equestrian-stone-100 p-3 dark:border-equestrian-stone-800"
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-equestrian-green-950 dark:text-white">
+                                            {`${b.rider?.first_name || ''} ${b.rider?.last_name || ''}`.trim() || '-'}
+                                        </p>
+                                        <p className="truncate text-xs text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                                            {b.booking_date} · {b.start_time ? String(b.start_time).slice(0, 5) : '-'} · {b.lesson_type || '-'}
+                                        </p>
+                                    </div>
+                                    <span className={`ml-2 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(b.status)}`}>
+                                        {(b.status || '-').replace(/_/g, ' ')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <Clock size={32} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
+                            <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                                No recent bookings
+                            </p>
+                            <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
+                                Recent bookings will appear here.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Entity Stats */}

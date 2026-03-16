@@ -19,6 +19,10 @@ const publicUserFields = [
   'pincode',
   'date_of_birth',
   'gender',
+  'fei_number',
+  'riding_level',
+  'specialties',
+  'bio',
   'profile_picture_url',
   'is_email_verified',
   'is_active',
@@ -53,6 +57,15 @@ const getJwtToken = (user) =>
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 
+const normalizeRidingLevel = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const normalized = String(value).trim().toLowerCase();
+  if (!['beginner', 'intermediate', 'advanced'].includes(normalized)) {
+    return null;
+  }
+  return normalized;
+};
+
 export const signupUser = async ({
   email,
   password,
@@ -67,6 +80,10 @@ export const signupUser = async ({
   pincode,
   date_of_birth,
   gender,
+  fei_number,
+  riding_level,
+  specialties,
+  bio,
 }) => {
   if (!email || !password || !role) {
     throw new Error('Email, password, and role are required.');
@@ -79,6 +96,7 @@ export const signupUser = async ({
   const existingUser = await User.findOne({ where: { email } });
   const hashedPassword = await bcrypt.hash(password, 10);
   const normalizedGender = normalizeGender(gender);
+  const normalizedRidingLevel = normalizeRidingLevel(riding_level);
   const verificationOtp = generateOtp();
   const verificationExpiry = getOtpExpiryDate();
   const expiryMinutes = Number(process.env.EMAIL_OTP_EXPIRES_MINUTES || 10);
@@ -101,6 +119,10 @@ export const signupUser = async ({
     existingUser.pincode = pincode || null;
     existingUser.date_of_birth = date_of_birth || null;
     existingUser.gender = normalizedGender;
+    existingUser.fei_number = fei_number ?? existingUser.fei_number;
+    existingUser.riding_level = normalizedRidingLevel ?? existingUser.riding_level;
+    existingUser.specialties = specialties ?? existingUser.specialties;
+    existingUser.bio = bio ?? existingUser.bio;
     existingUser.profile_picture_url = profile_picture_url ?? existingUser.profile_picture_url;
     existingUser.is_email_verified = true;
     existingUser.email_verification_otp = null;
@@ -137,6 +159,10 @@ export const signupUser = async ({
     pincode: pincode || null,
     date_of_birth: date_of_birth || null,
     gender: normalizedGender,
+    fei_number: fei_number || null,
+    riding_level: normalizedRidingLevel || null,
+    specialties: specialties ?? null,
+    bio: bio || null,
     profile_picture_url: profile_picture_url || null,
     is_email_verified: true,
   });

@@ -5,6 +5,7 @@ import {
   updateTemplate,
   deleteTemplate,
 } from '../services/course-template.service.js';
+import { deleteFileIfExists } from '../utils/file.util.js';
 
 const handleError = (res, error) => {
   const isValidationError =
@@ -17,6 +18,21 @@ const handleError = (res, error) => {
   return res.status(isValidationError ? 400 : 500).json({
     message: error.message || 'Internal server error.',
   });
+};
+
+export const uploadLayoutController = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Layout image is required.' });
+    }
+    const layoutUrl = `/upload/course-layouts/${req.file.filename}`;
+    return res.status(200).json({ layout_url: layoutUrl });
+  } catch (error) {
+    if (req.file) {
+      await deleteFileIfExists(req.file.path);
+    }
+    return handleError(res, error);
+  }
 };
 
 export const createTemplateController = async (req, res) => {

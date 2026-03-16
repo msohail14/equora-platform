@@ -374,15 +374,21 @@ export const getAdminDashboardData = async (user) => {
     return getStableOwnerDashboardData(user.id);
   }
 
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
   const [
     totalStables,
     activeStables,
+    pendingStables,
     totalArenas,
     activeArenas,
     totalHorses,
     totalDisciplines,
     activeDisciplines,
     totalCoaches,
+    activeCoaches,
+    unverifiedCoaches,
     totalRiders,
     activeRiders,
     totalCourses,
@@ -393,9 +399,12 @@ export const getAdminDashboardData = async (user) => {
     dailyEnrollments,
     weeklyEnrollments,
     monthlyEnrollments,
+    totalRevenueRows,
+    revenueMtdRows,
   ] = await Promise.all([
     Stable.count(),
     Stable.count({ where: { is_active: true } }),
+    Stable.count({ where: { is_approved: false } }),
     Arena.count(),
     Arena.count({
       include: [
@@ -412,6 +421,8 @@ export const getAdminDashboardData = async (user) => {
     Discipline.count(),
     Discipline.count({ where: { is_active: true } }),
     User.count({ where: { role: 'coach' } }),
+    User.count({ where: { role: 'coach', is_verified: true } }),
+    User.count({ where: { role: 'coach', is_verified: false } }),
     User.count({ where: { role: 'rider' } }),
     User.count({ where: { role: 'rider', is_active: true } }),
     Course.count(),
@@ -422,12 +433,24 @@ export const getAdminDashboardData = async (user) => {
     getDailyBuckets(),
     getWeeklyBuckets(),
     getMonthlyBuckets(),
+    sequelize.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'completed'`,
+      { type: QueryTypes.SELECT }
+    ),
+    sequelize.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'completed' AND created_at >= :monthStart`,
+      { type: QueryTypes.SELECT, replacements: { monthStart } }
+    ),
   ]);
+
+  const totalRevenue = Number(totalRevenueRows[0]?.total || 0);
+  const revenue_mtd = Number(revenueMtdRows[0]?.total || 0);
 
   return {
     stats: {
       total_stables: totalStables,
       active_stables: activeStables,
+      pending_stables: pendingStables,
       total_arenas: totalArenas,
       active_arenas: activeArenas,
       total_horses: totalHorses,
@@ -435,12 +458,16 @@ export const getAdminDashboardData = async (user) => {
       total_disciplines: totalDisciplines,
       active_disciplines: activeDisciplines,
       total_coaches: totalCoaches,
+      active_coaches: activeCoaches,
+      unverified_coaches: unverifiedCoaches,
       total_riders: totalRiders,
       active_riders: activeRiders,
       total_courses: totalCourses,
       active_courses: activeCourses,
       total_enrollments: totalEnrollments,
       active_enrollments: activeEnrollments,
+      total_revenue: totalRevenue,
+      revenue_mtd: revenue_mtd,
     },
     enrollment_trends: {
       daily: dailyEnrollments,
@@ -631,10 +658,11 @@ export const inviteStableOwner = async ({ stableId, email, firstName, lastName }
   return { admin: safeAdmin, stable_id: stable.id, temp_password: tempPassword };
 };
 
-export const getAdminBookings = async ({ status, page, limit }) => {
+export const getAdminBookings = async ({ status, page, limit, date }) => {
   const { page: p, limit: l, offset } = normalizePagination({ page, limit });
   const where = {};
   if (status) where.status = status;
+  if (date) where.booking_date = date;
 
   const { count, rows } = await LessonBooking.findAndCountAll({
     where,

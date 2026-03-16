@@ -169,9 +169,10 @@ export const getAdminAnalyticsApi = ({ startDate, endDate } = {}) => {
   if (endDate) query.set('endDate', endDate);
   return axiosInstance.get(`/admin/analytics?${query.toString()}`);
 };
-export const getAdminBookingsApi = ({ status, page = 1, limit = 10 } = {}) => {
+export const getAdminBookingsApi = ({ status, page = 1, limit = 10, date } = {}) => {
   const query = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (status) query.set('status', status);
+  if (date) query.set('date', date);
   return axiosInstance.get(`/admin/bookings?${query.toString()}`);
 };
 export const getAdminPaymentsApi = ({ status, provider, page = 1, limit = 10 } = {}) => {
