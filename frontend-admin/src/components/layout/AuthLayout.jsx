@@ -6,15 +6,15 @@ import { HorseIcon } from '../ui/HorseIcon';
 const AuthLayout = ({ title, subtitle, children, footerLinks }) => (
   <main className="min-h-screen flex bg-equestrian-stone-50 dark:bg-equestrian-stone-950 transition-colors duration-300">
     
-    {/* ── Left Image Panel: HQ horse and rider (Hidden on mobile) ── */}
+    {/* ── Left Branding Panel (Hidden on mobile) ── */}
     <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-equestrian-green-950">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 hover:scale-105"
+      <div
+        className="absolute inset-0"
         style={{
-          backgroundImage: "url('https://www.justhorseriders.co.uk/cdn/shop/articles/top_10_riders.png?v=1687771294&width=1080')",
+          background: 'linear-gradient(135deg, #052e16 0%, #14532d 35%, #166534 55%, #a16207 85%, #ca8a04 100%)',
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-equestrian-green-950/92 via-equestrian-green-950/50 to-equestrian-green-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-equestrian-green-950/60 via-transparent to-equestrian-green-950/30" />
       
       <div className="relative z-10 flex flex-col justify-between w-full p-12 text-white">
         <div className="flex items-center gap-3">

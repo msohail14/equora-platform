@@ -72,76 +72,81 @@ const navSections = [
   },
   ];
 
-const SidebarContent = ({ onNavigate }) => (
-  <div className="flex h-full flex-col bg-equestrian-green-950 text-white">
-    <div className="flex items-center gap-3 px-6 pb-8 pt-6">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-equestrian-gold-500 shadow-lg shadow-equestrian-gold-900/20">
-        <HorseIcon size={20} className="text-white" />
-      </div>
-      <div>
-        <h2 className="text-lg font-bold leading-tight text-white">
-          Equora
-        </h2>
-      </div>
-    </div>
+const SidebarContent = ({ onNavigate, admin }) => {
+  const sidebarInitials = `${admin?.first_name?.[0] || 'A'}${admin?.last_name?.[0] || ''}`.toUpperCase();
+  const sidebarName = [admin?.first_name, admin?.last_name].filter(Boolean).join(' ') || 'Admin';
 
-    <nav className="flex-1 space-y-6 overflow-y-auto px-4">
-      {navSections.map((section) => (
-        <div key={section.label}>
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-equestrian-green-300/60">
-            {section.label}
-          </p>
-          <div className="space-y-1">
-            {section.items.map(({ label, to, icon: NavIcon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-equestrian-gold-500 text-white shadow-md shadow-equestrian-gold-900/20'
-                      : 'text-equestrian-green-100/70 hover:bg-equestrian-green-900 hover:text-white'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center transition-colors duration-200 ${
-                        isActive ? 'text-white' : 'text-equestrian-green-300/70 group-hover:text-white'
-                      }`}
-                    >
-                      <NavIcon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                    </span>
-                    <span className="flex-1">{label}</span>
-                    {isActive && (
-                      <ChevronRight size={14} strokeWidth={3} className="text-white/80" />
-                    )}
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
+  return (
+    <div className="flex h-full flex-col bg-equestrian-green-950 text-white">
+      <div className="flex items-center gap-3 px-6 pb-8 pt-6">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-equestrian-gold-500 shadow-lg shadow-equestrian-gold-900/20">
+          <HorseIcon size={20} className="text-white" />
         </div>
-      ))}
-    </nav>
-    
-    <div className="p-4">
-        <div className="rounded-xl bg-equestrian-green-900/50 p-4 border border-equestrian-green-800">
-            <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-equestrian-green-800 flex items-center justify-center text-xs font-bold text-equestrian-green-100">
-                    JD
-                </div>
-                <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-white truncate">John Doe</p>
-                    <p className="text-xs text-equestrian-green-300 truncate">Club Director</p>
-                </div>
+        <div>
+          <h2 className="text-lg font-bold leading-tight text-white">
+            Equora
+          </h2>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-6 overflow-y-auto px-4">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-equestrian-green-300/60">
+              {section.label}
+            </p>
+            <div className="space-y-1">
+              {section.items.map(({ label, to, icon: NavIcon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-equestrian-gold-500 text-white shadow-md shadow-equestrian-gold-900/20'
+                        : 'text-equestrian-green-100/70 hover:bg-equestrian-green-900 hover:text-white'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center transition-colors duration-200 ${
+                          isActive ? 'text-white' : 'text-equestrian-green-300/70 group-hover:text-white'
+                        }`}
+                      >
+                        <NavIcon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                      </span>
+                      <span className="flex-1">{label}</span>
+                      {isActive && (
+                        <ChevronRight size={14} strokeWidth={3} className="text-white/80" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              ))}
             </div>
-        </div>
+          </div>
+        ))}
+      </nav>
+      
+      <div className="p-4">
+          <div className="rounded-xl bg-equestrian-green-900/50 p-4 border border-equestrian-green-800">
+              <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-equestrian-green-800 flex items-center justify-center text-xs font-bold text-equestrian-green-100">
+                      {sidebarInitials}
+                  </div>
+                  <div className="overflow-hidden">
+                      <p className="text-sm font-medium text-white truncate">{sidebarName}</p>
+                      <p className="text-xs text-equestrian-green-300 truncate">Administrator</p>
+                  </div>
+              </div>
+          </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AdminAppLayout = () => {
   const dispatch = useDispatch();
@@ -172,7 +177,7 @@ const AdminAppLayout = () => {
     <div className="h-screen overflow-hidden bg-equestrian-stone-50 dark:bg-equestrian-stone-950 lg:grid lg:grid-cols-[280px_1fr]">
 
       <aside className="hidden h-full overflow-hidden border-r border-equestrian-stone-200 bg-equestrian-green-950 dark:border-equestrian-stone-800 lg:block">
-        <SidebarContent />
+        <SidebarContent admin={admin} />
       </aside>
 
       <AnimatePresence>
@@ -201,7 +206,7 @@ const AdminAppLayout = () => {
               >
                 <X size={18} />
               </button>
-              <SidebarContent onNavigate={() => setMobileMenuOpen(false)} />
+              <SidebarContent onNavigate={() => setMobileMenuOpen(false)} admin={admin} />
             </motion.aside>
           </>
         )}
@@ -235,7 +240,6 @@ const AdminAppLayout = () => {
 
             <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-equestrian-stone-500 shadow-sm ring-1 ring-equestrian-stone-200 hover:text-equestrian-stone-700 dark:bg-equestrian-stone-800 dark:text-equestrian-stone-400 dark:ring-equestrian-stone-700">
                 <Bell size={20} />
-                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-equestrian-stone-800"></span>
             </button>
 
             <div className="relative pl-2" ref={profileRef}>

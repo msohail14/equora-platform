@@ -3,21 +3,11 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
-  BookOpen,
-  Building2,
   CalendarCheck,
-  ClipboardList,
   Clock,
   GraduationCap,
-  LayoutGrid,
   RefreshCw,
-  ShieldCheck,
-  Trophy,
-  TrendingUp,
   Users,
-  ArrowUpRight,
-  AlertCircle,
-  MoreHorizontal,
 } from 'lucide-react';
 import { HorseIcon } from '../../components/ui/HorseIcon';
 import {
@@ -31,8 +21,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  BarChart,
-  Bar,
 } from 'recharts';
 import { getAdminDashboardApi } from '../../features/operations/operationsApi';
 import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
@@ -102,23 +90,20 @@ const kpiCards = (stats) => [
   {
     label: 'Total Riders',
     value: stats.total_riders,
-    trend: '+12%', // Mock trend
     icon: Users,
     iconColor: 'text-equestrian-green-600',
     iconBg: 'bg-equestrian-green-50 dark:bg-equestrian-green-900/20',
   },
   {
-    label: "Today's Bookings",
-    value: 24, // Mock data
-    trend: '+8%',
-    icon: CalendarCheck,
+    label: 'Active Coaches',
+    value: stats.active_coaches,
+    icon: GraduationCap,
     iconColor: 'text-equestrian-gold-600',
     iconBg: 'bg-equestrian-gold-50 dark:bg-equestrian-gold-900/20',
   },
   {
     label: 'Active Horses',
     value: stats.active_horses,
-    trend: '+2',
     icon: HorseIcon,
     iconColor: 'text-equestrian-stone-600',
     iconBg: 'bg-equestrian-stone-100 dark:bg-equestrian-stone-800',
@@ -126,10 +111,9 @@ const kpiCards = (stats) => [
   {
     label: 'Revenue (MTD)',
     value: stats.total_revenue,
-    trend: '+5%',
     isCurrency: true,
-    icon: null, // Custom icon handling
-    iconColor: 'text-red-500', // Example accent
+    icon: null,
+    iconColor: 'text-red-500',
     iconBg: 'bg-red-50 dark:bg-red-900/20',
   },
 ];
@@ -283,22 +267,6 @@ const AdminDashboardPage = () => {
   const unverifiedCoaches = dashboard.stats.unverified_coaches ?? 0;
   const hasPendingActions = pendingStables > 0 || unverifiedCoaches > 0;
 
-  // Mock recent activity for the design
-  const recentActivity = [
-    { title: 'New booking created', desc: 'Sarah Mitchell - Thunderbolt', time: '5 min ago', type: 'booking' },
-    { title: 'Horse health check completed', desc: 'Silver Star - Vet cleared', time: '1 hour ago', type: 'health' },
-    { 
-        title: 'Payment received', 
-        desc: (
-            <span className="flex items-center gap-1">
-                <SaudiRiyalIcon className="h-3.5 w-3.5" /> 450.00 - James Carter
-            </span>
-        ), 
-        time: '2 hours ago', 
-        type: 'payment' 
-    },
-    { title: 'Schedule updated', desc: 'Thursday training moved to 10 AM', time: '3 hours ago', type: 'schedule' },
-  ];
 
   return (
     <div className="min-h-full">
@@ -348,7 +316,7 @@ const AdminDashboardPage = () => {
         {/* ── KPI row ── */}
         {!loading && (
           <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {kpiCards(dashboard.stats).map((card, idx) => (
+            {kpiCards(dashboard.stats).map((card) => (
               <div
                 key={card.label}
                 className="group relative overflow-hidden rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900"
@@ -361,10 +329,6 @@ const AdminDashboardPage = () => {
                         <card.icon size={22} />
                     )}
                   </div>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${card.trend.startsWith('+') ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-50 text-red-700'}`}>
-                    {card.trend.startsWith('+') ? <TrendingUp size={12} /> : null}
-                    {card.trend}
-                  </span>
                 </div>
 
                   <div className="mt-4 flex items-center gap-2">
@@ -386,7 +350,7 @@ const AdminDashboardPage = () => {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* ── Chart Section (Left 2/3) ── */}
             <div className="lg:col-span-2 space-y-8">
-                {/* Today's Bookings Table Mock */}
+                {/* Today's Bookings */}
                 <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
                     <div className="mb-6 flex items-center justify-between">
                         <div>
@@ -394,7 +358,7 @@ const AdminDashboardPage = () => {
                                 Today's Bookings
                             </h2>
                             <p className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
-                                March 16, 2026
+                                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                             </p>
                         </div>
                         <Link to="/admin/bookings" className="text-sm font-semibold text-equestrian-gold-600 hover:text-equestrian-gold-700">
@@ -402,49 +366,14 @@ const AdminDashboardPage = () => {
                         </Link>
                     </div>
                     
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead>
-                                <tr className="border-b border-equestrian-stone-100 text-xs font-semibold uppercase tracking-wider text-equestrian-stone-400 dark:border-equestrian-stone-800">
-                                    <th className="pb-3 pl-2">Rider</th>
-                                    <th className="pb-3">Horse</th>
-                                    <th className="pb-3">Time</th>
-                                    <th className="pb-3">Type</th>
-                                    <th className="pb-3 text-right pr-2">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-equestrian-stone-50 dark:divide-equestrian-stone-800">
-                                {[
-                                    { rider: 'Sarah Mitchell', horse: 'Thunderbolt', time: '9:00 AM', type: 'Training', status: 'Confirmed' },
-                                    { rider: 'James Carter', horse: 'Silver Star', time: '10:30 AM', type: 'Lesson', status: 'Pending' },
-                                    { rider: 'Emma Wilson', horse: 'Dark Knight', time: '12:00 PM', type: 'Trail Ride', status: 'Confirmed' },
-                                    { rider: 'Michael Brown', horse: 'Golden Flash', time: '2:00 PM', type: 'Competition', status: 'Confirmed' },
-                                ].map((row, i) => (
-                                    <tr key={i} className="group hover:bg-equestrian-stone-50 dark:hover:bg-equestrian-stone-800/50">
-                                        <td className="py-4 pl-2 font-medium text-equestrian-green-950 dark:text-white">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-equestrian-stone-100 flex items-center justify-center text-xs font-bold text-equestrian-stone-600 dark:bg-equestrian-stone-800 dark:text-equestrian-stone-300">
-                                                    {row.rider.split(' ').map(n => n[0]).join('')}
-                                                </div>
-                                                {row.rider}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">{row.horse}</td>
-                                        <td className="py-4 font-medium text-equestrian-green-900 dark:text-equestrian-green-100">{row.time}</td>
-                                        <td className="py-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">{row.type}</td>
-                                        <td className="py-4 text-right pr-2">
-                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                row.status === 'Confirmed' 
-                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' 
-                                                : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                                            }`}>
-                                                {row.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <CalendarCheck size={40} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
+                        <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                            No bookings data available yet
+                        </p>
+                        <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
+                            Bookings will appear here once the booking system is active.
+                        </p>
                     </div>
                 </div>
 
@@ -489,34 +418,17 @@ const AdminDashboardPage = () => {
             <div className="space-y-8">
                 {/* Activity Feed */}
                 <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
-                    <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-equestrian-green-950 dark:text-white">
-                            Activity
-                        </h2>
-                        <button className="text-equestrian-stone-400 hover:text-equestrian-stone-600 dark:hover:text-equestrian-stone-200">
-                            <MoreHorizontal size={20} />
-                        </button>
-                    </div>
-                    
-                    <div className="relative border-l border-equestrian-stone-200 ml-3 space-y-8 dark:border-equestrian-stone-800">
-                        {recentActivity.map((item, i) => (
-                            <div key={i} className="relative pl-6">
-                                <span className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-equestrian-stone-900 ${
-                                    item.type === 'booking' ? 'bg-equestrian-gold-500' :
-                                    item.type === 'payment' ? 'bg-emerald-500' :
-                                    'bg-equestrian-stone-400'
-                                }`}></span>
-                                <p className="text-sm font-medium text-equestrian-green-950 dark:text-white">
-                                    {item.title}
-                                </p>
-                                <p className="text-xs text-equestrian-stone-500 mt-0.5 dark:text-equestrian-stone-400">
-                                    {item.desc}
-                                </p>
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-equestrian-stone-400 mt-2">
-                                    {item.time}
-                                </p>
-                            </div>
-                        ))}
+                    <h2 className="mb-4 text-lg font-bold text-equestrian-green-950 dark:text-white">
+                        Activity
+                    </h2>
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <Clock size={32} className="mb-3 text-equestrian-stone-300 dark:text-equestrian-stone-600" />
+                        <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                            Activity feed coming soon
+                        </p>
+                        <p className="mt-1 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
+                            Recent actions and events will be displayed here.
+                        </p>
                     </div>
                 </div>
 

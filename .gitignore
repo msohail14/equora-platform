@@ -1,9 +1,10 @@
 # Environment files
 .env
 .env.local
-.env.production
 .env.staging
-*.env
+backend/.env
+backend/.env.production
+frontend-admin/.env
 
 # OS files
 .DS_Store
