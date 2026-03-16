@@ -94,16 +94,20 @@ export const createHorse = async ({ adminId, payload }) => {
 export const getAllHorses = async ({ adminId, stableId, search, page, limit }) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
-  const stableIds = await getAdminStableIds(adminId);
-  if (stableIds.length === 0) {
-    return {
-      data: [],
-      pagination: buildPaginationMeta({
-        currentPage: pagination.page,
-        limit: pagination.limit,
-        totalRecords: 0,
-      }),
-    };
+
+  let stableIds = null;
+  if (adminId) {
+    stableIds = await getAdminStableIds(adminId);
+    if (stableIds.length === 0) {
+      return {
+        data: [],
+        pagination: buildPaginationMeta({
+          currentPage: pagination.page,
+          limit: pagination.limit,
+          totalRecords: 0,
+        }),
+      };
+    }
   }
 
   const where = {};
@@ -124,11 +128,11 @@ export const getAllHorses = async ({ adminId, stableId, search, page, limit }) =
     if (Number.isNaN(parsedStableId)) {
       throw new Error('stable_id must be a valid number.');
     }
-    if (!stableIds.includes(parsedStableId)) {
+    if (stableIds && !stableIds.includes(parsedStableId)) {
       throw new Error('Stable not found or access denied.');
     }
     where.stable_id = parsedStableId;
-  } else {
+  } else if (stableIds) {
     where.stable_id = { [Op.in]: stableIds };
   }
 
@@ -153,12 +157,14 @@ export const getAllHorses = async ({ adminId, stableId, search, page, limit }) =
 };
 
 export const getHorseById = async ({ adminId, horseId }) => {
-  const horse = await Horse.findByPk(horseId);
+  const horse = await Horse.findByPk(horseId, { include: horseInclude });
   if (!horse) {
     throw new Error('Horse not found.');
   }
 
-  await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  if (adminId) {
+    await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  }
   return horse;
 };
 

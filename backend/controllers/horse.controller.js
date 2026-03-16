@@ -56,7 +56,7 @@ export const getAllHorsesController = async (req, res) => {
 export const getAllHorsesGlobalController = async (req, res) => {
   try {
     const data = await getAllHorses({
-      adminId: req.user.id,
+      adminId: req.user?.id ?? null,
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
@@ -70,7 +70,7 @@ export const getAllHorsesGlobalController = async (req, res) => {
 export const getHorseByIdController = async (req, res) => {
   try {
     const data = await getHorseById({
-      adminId: req.user.id,
+      adminId: req.user?.id ?? null,
       horseId: req.params.id,
     });
     return res.status(200).json(data);
