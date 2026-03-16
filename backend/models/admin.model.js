@@ -37,6 +37,11 @@ const Admin = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    role: {
+      type: DataTypes.ENUM('super_admin', 'stable_owner'),
+      defaultValue: 'super_admin',
+      allowNull: false,
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

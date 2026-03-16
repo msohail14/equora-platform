@@ -7,7 +7,7 @@ import sequelize from '../config/database.js';
 import { Arena, CoachPayout, Course, CourseEnrollment, CourseSession, Discipline, Horse, LessonBooking, Payment, PlatformSetting, Stable, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
 
-const publicAdminFields = ['id', 'email', 'first_name', 'last_name', 'created_at'];
+const publicAdminFields = ['id', 'email', 'first_name', 'last_name', 'role', 'created_at'];
 
 const normalizePagination = ({ page, limit } = {}) => {
   const p = Math.max(1, parseInt(page, 10) || 1);
@@ -28,6 +28,7 @@ const getAdminJwtToken = (admin) =>
       id: admin.id,
       email: admin.email,
       type: 'admin',
+      role: admin.role,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -79,8 +80,14 @@ export const loginAdmin = async ({ email, password }) => {
 
   const token = getAdminJwtToken(admin);
   const safeAdmin = await Admin.findByPk(admin.id, { attributes: publicAdminFields });
+  const adminData = safeAdmin.toJSON();
 
-  return { admin: safeAdmin, token };
+  if (adminData.role === 'stable_owner') {
+    const stable = await Stable.findOne({ where: { admin_id: adminData.id }, attributes: ['id'] });
+    if (stable) adminData.stable_id = stable.id;
+  }
+
+  return { admin: adminData, token };
 };
 
 export const forgotAdminPassword = async ({ email }) => {
@@ -317,7 +324,56 @@ const getMonthlyBuckets = async () => {
   return result;
 };
 
-export const getAdminDashboardData = async () => {
+const getStableOwnerDashboardData = async (adminId) => {
+  const stable = await Stable.findOne({ where: { admin_id: adminId } });
+  if (!stable) {
+    throw new Error('No stable linked to this account.');
+  }
+
+  const stableId = stable.id;
+
+  const [
+    totalArenas,
+    totalHorses,
+    activeHorses,
+    totalCourses,
+    activeCourses,
+    totalEnrollments,
+    activeEnrollments,
+  ] = await Promise.all([
+    Arena.count({ where: { stable_id: stableId } }),
+    Horse.count({ where: { stable_id: stableId } }),
+    Horse.count({ where: { stable_id: stableId, status: 'available' } }),
+    Course.count({ where: { stable_id: stableId } }),
+    Course.count({ where: { stable_id: stableId, is_active: true } }),
+    CourseEnrollment.count({
+      include: [{ model: Course, as: 'course', attributes: [], required: true, where: { stable_id: stableId } }],
+    }),
+    CourseEnrollment.count({
+      where: { status: 'active' },
+      include: [{ model: Course, as: 'course', attributes: [], required: true, where: { stable_id: stableId } }],
+    }),
+  ]);
+
+  return {
+    stable: { id: stable.id, name: stable.name },
+    stats: {
+      total_arenas: totalArenas,
+      total_horses: totalHorses,
+      active_horses: activeHorses,
+      total_courses: totalCourses,
+      active_courses: activeCourses,
+      total_enrollments: totalEnrollments,
+      active_enrollments: activeEnrollments,
+    },
+  };
+};
+
+export const getAdminDashboardData = async (user) => {
+  if (user?.role === 'stable_owner') {
+    return getStableOwnerDashboardData(user.id);
+  }
+
   const [
     totalStables,
     activeStables,
@@ -539,6 +595,40 @@ export const updateAdminSettings = async ({ settings }) => {
   }
 
   return getAdminSettings();
+};
+
+export const inviteStableOwner = async ({ stableId, email, firstName, lastName }, invitedByAdminId) => {
+  const invitingAdmin = await Admin.findByPk(invitedByAdminId);
+  if (!invitingAdmin || invitingAdmin.role !== 'super_admin') {
+    throw new Error('Only super admins can invite stable owners.');
+  }
+
+  const stable = await Stable.findByPk(stableId);
+  if (!stable) {
+    throw new Error('Stable not found.');
+  }
+
+  const existingAdmin = await Admin.findOne({ where: { email } });
+  if (existingAdmin) {
+    throw new Error('Email already exists.');
+  }
+
+  const tempPassword = crypto.randomBytes(16).toString('hex');
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+  const newAdmin = await Admin.create({
+    email,
+    password_hash: hashedPassword,
+    first_name: firstName || null,
+    last_name: lastName || null,
+    role: 'stable_owner',
+  });
+
+  stable.admin_id = newAdmin.id;
+  await stable.save();
+
+  const safeAdmin = await Admin.findByPk(newAdmin.id, { attributes: publicAdminFields });
+  return { admin: safeAdmin, stable_id: stable.id, temp_password: tempPassword };
 };
 
 export const getAdminBookings = async ({ status, page, limit }) => {

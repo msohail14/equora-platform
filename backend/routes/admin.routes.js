@@ -1,5 +1,6 @@
 import express from 'express';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
+import superAdminOnly from '../middleware/super-admin.middleware.js';
 import { authRateLimiter } from '../middleware/rate-limit.middleware.js';
 import {
   approveStableController,
@@ -12,6 +13,7 @@ import {
   getAdminPaymentsController,
   getAdminPayoutsController,
   getAdminSettingsController,
+  inviteStableOwnerController,
   loginAdminController,
   processAdminPayoutController,
   resetAdminPasswordController,
@@ -30,14 +32,15 @@ router.post('/reset-password', authRateLimiter, resetAdminPasswordController);
 router.post('/change-password', adminAuthMiddleware, changeAdminPasswordController);
 router.put('/change-profile', adminAuthMiddleware, changeAdminProfileController);
 router.get('/dashboard', adminAuthMiddleware, getAdminDashboardController);
-router.get('/analytics', adminAuthMiddleware, getAdminAnalyticsController);
+router.get('/analytics', superAdminOnly, getAdminAnalyticsController);
 router.get('/payments', adminAuthMiddleware, getAdminPaymentsController);
-router.get('/payouts', adminAuthMiddleware, getAdminPayoutsController);
-router.post('/payouts/:id/process', adminAuthMiddleware, processAdminPayoutController);
-router.patch('/stables/:id/approve', adminAuthMiddleware, approveStableController);
-router.patch('/coaches/:id/verify', adminAuthMiddleware, verifyCoachController);
-router.get('/settings', adminAuthMiddleware, getAdminSettingsController);
-router.put('/settings', adminAuthMiddleware, updateAdminSettingsController);
+router.get('/payouts', superAdminOnly, getAdminPayoutsController);
+router.post('/payouts/:id/process', superAdminOnly, processAdminPayoutController);
+router.patch('/stables/:id/approve', superAdminOnly, approveStableController);
+router.patch('/coaches/:id/verify', superAdminOnly, verifyCoachController);
+router.get('/settings', superAdminOnly, getAdminSettingsController);
+router.put('/settings', superAdminOnly, updateAdminSettingsController);
 router.get('/bookings', adminAuthMiddleware, getAdminBookingsController);
+router.post('/stables/:id/invite-owner', superAdminOnly, inviteStableOwnerController);
 
 export default router;

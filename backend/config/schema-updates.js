@@ -603,6 +603,23 @@ const ensurePlatformSettingsTable = async () => {
   `);
 };
 
+const ensureAdminRoleColumn = async () => {
+  const [results] = await sequelize.query(`
+    SELECT COUNT(*) AS count
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'admin'
+      AND COLUMN_NAME = 'role'
+  `);
+  const hasColumn = Number(results?.[0]?.count || 0) > 0;
+  if (!hasColumn) {
+    await sequelize.query(`
+      ALTER TABLE \`admin\`
+      ADD COLUMN \`role\` ENUM('super_admin', 'stable_owner') NOT NULL DEFAULT 'super_admin' AFTER \`last_name\`
+    `);
+  }
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -632,4 +649,5 @@ export const applySchemaUpdates = async () => {
   await ensureSessionFeedbackTable();
   await ensurePlatformSettingsTable();
   await ensureCourseSessionNewColumns();
+  await ensureAdminRoleColumn();
 };

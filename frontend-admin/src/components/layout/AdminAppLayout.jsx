@@ -25,56 +25,88 @@ import ThemeToggle from '../theme/ThemeToggle';
 import { HorseIcon } from '../ui/HorseIcon';
 import { logoutAdmin } from '../../features/auth/authSlice';
 
+const ALL_ROLES = ['super_admin', 'stable_owner'];
+
 const navSections = [
   {
     label: 'Main',
     items: [
-      { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
-      { label: 'Bookings', to: '/admin/bookings', icon: CalendarCheck },
+      { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
+      { label: 'Bookings', to: '/admin/bookings', icon: CalendarCheck, roles: ALL_ROLES },
     ],
   },
   {
     label: 'Management',
     items: [
-      { label: 'Stables', to: '/admin/stables', icon: Building2 },
-      { label: 'Arenas', to: '/admin/arenas', icon: LayoutGrid },
-      { label: 'Horses', to: '/admin/horses', icon: HorseIcon },
-      { label: 'Disciplines', to: '/admin/disciplines', icon: Medal },
+      { label: 'Stables', to: '/admin/stables', icon: Building2, roles: ALL_ROLES },
+      { label: 'Arenas', to: '/admin/arenas', icon: LayoutGrid, roles: ALL_ROLES },
+      { label: 'Horses', to: '/admin/horses', icon: HorseIcon, roles: ALL_ROLES },
+      { label: 'Disciplines', to: '/admin/disciplines', icon: Medal, roles: ['super_admin'] },
     ],
   },
   {
     label: 'People',
     items: [
-      { label: 'Coaches', to: '/admin/coaches', icon: GraduationCap },
-      { label: 'Riders', to: '/admin/riders', icon: Users },
+      { label: 'Coaches', to: '/admin/coaches', icon: GraduationCap, roles: ALL_ROLES },
+      { label: 'Riders', to: '/admin/riders', icon: Users, roles: ['super_admin'] },
     ],
   },
   {
     label: 'Learning',
     items: [
-      { label: 'Courses', to: '/admin/courses', icon: BookOpen },
+      { label: 'Courses', to: '/admin/courses', icon: BookOpen, roles: ['super_admin'] },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { label: 'Payments', to: '/admin/payments', icon: CreditCard },
-      { label: 'Payouts', to: '/admin/payouts', icon: Wallet },
+      { label: 'Payments', to: '/admin/payments', icon: CreditCard, roles: ALL_ROLES },
+      { label: 'Payouts', to: '/admin/payouts', icon: Wallet, roles: ['super_admin'] },
     ],
   },
   {
     label: 'System',
     items: [
-      { label: 'Analytics', to: '/admin/analytics', icon: BarChart3 },
-      { label: 'Settings', to: '/admin/settings', icon: Settings },
-      { label: 'Notifications', to: '/admin/notifications', icon: Bell },
+      { label: 'Analytics', to: '/admin/analytics', icon: BarChart3, roles: ['super_admin'] },
+      { label: 'Settings', to: '/admin/settings', icon: Settings, roles: ['super_admin'] },
+      { label: 'Notifications', to: '/admin/notifications', icon: Bell, roles: ALL_ROLES },
     ],
   },
-  ];
+];
+
+const ROLE_DISPLAY_LABELS = {
+  super_admin: 'Super Admin',
+  stable_owner: 'Stable Manager',
+};
+
+const getFilteredNavSections = (admin) => {
+  const role = admin?.role || 'super_admin';
+
+  return navSections
+    .map((section) => {
+      const filteredItems = section.items
+        .filter((item) => item.roles.includes(role))
+        .map((item) => {
+          if (item.label === 'Stables' && role === 'stable_owner') {
+            return {
+              ...item,
+              label: 'My Stable',
+              to: admin?.stable_id ? `/admin/stables/${admin.stable_id}` : '/admin/stables',
+            };
+          }
+          return item;
+        });
+
+      return { ...section, items: filteredItems };
+    })
+    .filter((section) => section.items.length > 0);
+};
 
 const SidebarContent = ({ onNavigate, admin }) => {
   const sidebarInitials = `${admin?.first_name?.[0] || 'A'}${admin?.last_name?.[0] || ''}`.toUpperCase();
   const sidebarName = [admin?.first_name, admin?.last_name].filter(Boolean).join(' ') || 'Admin';
+  const roleLabel = ROLE_DISPLAY_LABELS[admin?.role] || ROLE_DISPLAY_LABELS.super_admin;
+  const filteredSections = getFilteredNavSections(admin);
 
   return (
     <div className="flex h-full flex-col bg-equestrian-green-950 text-white">
@@ -90,7 +122,7 @@ const SidebarContent = ({ onNavigate, admin }) => {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-4">
-        {navSections.map((section) => (
+        {filteredSections.map((section) => (
           <div key={section.label}>
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-equestrian-green-300/60">
               {section.label}
@@ -139,7 +171,7 @@ const SidebarContent = ({ onNavigate, admin }) => {
                   </div>
                   <div className="overflow-hidden">
                       <p className="text-sm font-medium text-white truncate">{sidebarName}</p>
-                      <p className="text-xs text-equestrian-green-300 truncate">Administrator</p>
+                      <p className="text-xs text-equestrian-green-300 truncate">{roleLabel}</p>
                   </div>
               </div>
           </div>

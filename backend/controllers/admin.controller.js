@@ -9,6 +9,7 @@ import {
   getAdminPayments,
   getAdminPayouts,
   getAdminSettings,
+  inviteStableOwner,
   loginAdmin,
   processAdminPayout,
   resetAdminPassword,
@@ -89,9 +90,9 @@ export const changeAdminProfileController = async (req, res) => {
   }
 };
 
-export const getAdminDashboardController = async (_req, res) => {
+export const getAdminDashboardController = async (req, res) => {
   try {
-    const data = await getAdminDashboardData();
+    const data = await getAdminDashboardData(req.user);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
@@ -174,6 +175,18 @@ export const getAdminBookingsController = async (req, res) => {
   try {
     const data = await getAdminBookings(req.query);
     return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const inviteStableOwnerController = async (req, res) => {
+  try {
+    const data = await inviteStableOwner(
+      { stableId: req.params.id, ...req.body },
+      req.user.id
+    );
+    return res.status(201).json(data);
   } catch (error) {
     return handleError(res, error);
   }
