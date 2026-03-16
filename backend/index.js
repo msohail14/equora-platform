@@ -52,13 +52,13 @@ const FRONTEND_URL = IS_PRODUCTION
   ? (process.env.FRONTEND_URL_PROD || 'https://horse.atlasits.cloud')
   : (process.env.FRONTEND_URL_DEV || 'http://localhost:5173');
 
-const allowedOrigins = IS_PRODUCTION
-  ? [FRONTEND_URL, process.env.FRONTEND_URL_PROD].filter(Boolean)
-  : [
-      FRONTEND_URL,
-      'http://localhost:5173',
-      'http://localhost:5174',
-    ];
+const allowedOrigins = [
+  FRONTEND_URL,
+  process.env.FRONTEND_URL_PROD,
+  'http://localhost:5173',
+  'http://localhost:5174',
+].filter(Boolean);
+const uniqueOrigins = [...new Set(allowedOrigins)];
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -66,7 +66,7 @@ app.use(helmet({
 app.use(generalRateLimiter);
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: uniqueOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
