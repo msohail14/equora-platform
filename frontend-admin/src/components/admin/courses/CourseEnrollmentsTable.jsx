@@ -14,8 +14,8 @@ const CourseEnrollmentsTable = ({ enrollments = [], onCreateForRider, isOneToOne
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-800 dark:bg-gray-800/50">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-            <Users size={15} className="text-amber-600" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+            <Users size={15} className="text-emerald-600" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Enrolled Riders</h2>
@@ -50,13 +50,13 @@ const CourseEnrollmentsTable = ({ enrollments = [], onCreateForRider, isOneToOne
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                           {name.charAt(0) || '?'}
                         </div>
                         {riderId ? (
                           <Link
                             to={`/admin/rider/${riderId}`}
-                            className="cursor-pointer font-semibold text-gray-800 transition hover:text-amber-600 hover:underline dark:text-gray-100 dark:hover:text-amber-400"
+                            className="cursor-pointer font-semibold text-gray-800 transition hover:text-emerald-600 hover:underline dark:text-gray-100 dark:hover:text-emerald-400"
                           >
                             {name}
                           </Link>
@@ -85,7 +85,7 @@ const CourseEnrollmentsTable = ({ enrollments = [], onCreateForRider, isOneToOne
                         <button
                           type="button"
                           onClick={() => onCreateForRider?.(item)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
                         >
                           <Plus size={12} />
                           Add Session
@@ -120,14 +120,14 @@ const CourseEnrollmentsTable = ({ enrollments = [], onCreateForRider, isOneToOne
             return (
               <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-800">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
                     {name.charAt(0) || '?'}
                   </div>
                   <div className="min-w-0">
                     {riderId ? (
                       <Link
                         to={`/admin/rider/${riderId}`}
-                        className="block cursor-pointer truncate text-sm font-semibold text-gray-800 transition hover:text-amber-600 hover:underline dark:text-gray-100 dark:hover:text-amber-400"
+                        className="block cursor-pointer truncate text-sm font-semibold text-gray-800 transition hover:text-emerald-600 hover:underline dark:text-gray-100 dark:hover:text-emerald-400"
                       >
                         {name}
                       </Link>
@@ -146,7 +146,7 @@ const CourseEnrollmentsTable = ({ enrollments = [], onCreateForRider, isOneToOne
                     <button
                       type="button"
                       onClick={() => onCreateForRider?.(item)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
                     >
                       <Plus size={11} /> Add
                     </button>

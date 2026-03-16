@@ -21,7 +21,7 @@ const COLORS = [
   { id: '#dc2626', label: 'Red' },
   { id: '#2563eb', label: 'Blue' },
   { id: '#16a34a', label: 'Green' },
-  { id: '#f59e0b', label: 'Amber' },
+  { id: '#10b981', label: 'Amber' },
 ];
 
 const WIDTHS = [1, 2, 4, 6, 8];
@@ -330,7 +330,7 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 border-b-2 px-5 py-2.5 text-sm font-semibold transition ${
                   isActive
-                    ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
@@ -357,7 +357,7 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
                     onClick={() => setActiveTool(tool.id)}
                     className={`rounded-md p-2 transition ${
                       isActive
-                        ? 'bg-amber-500 text-white shadow-sm'
+                        ? 'bg-emerald-500 text-white shadow-sm'
                         : 'text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -378,7 +378,7 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
                   onClick={() => setActiveColor(c.id)}
                   className={`h-7 w-7 rounded-full border-2 transition ${
                     activeColor === c.id
-                      ? 'border-amber-500 ring-2 ring-amber-300 dark:ring-amber-600'
+                      ? 'border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-600'
                       : 'border-gray-300 dark:border-gray-600'
                   }`}
                   style={{ backgroundColor: c.id }}
@@ -397,7 +397,7 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
                   onClick={() => setActiveWidth(w)}
                   className={`flex h-8 w-8 items-center justify-center rounded-md transition ${
                     activeWidth === w
-                      ? 'bg-amber-500 text-white shadow-sm'
+                      ? 'bg-emerald-500 text-white shadow-sm'
                       : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
                   }`}
                 >
@@ -471,7 +471,7 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
                   onKeyDown={(e) => { if (e.key === 'Enter') handleTextSubmit(); if (e.key === 'Escape') { setTextPosition(null); setTextInput(''); } }}
                   onBlur={handleTextSubmit}
                   autoFocus
-                  className="min-w-[120px] rounded border border-amber-400 bg-white px-2 py-1 text-sm shadow-lg outline-none focus:ring-2 focus:ring-amber-400 dark:bg-gray-800 dark:text-gray-100"
+                  className="min-w-[120px] rounded border border-emerald-400 bg-white px-2 py-1 text-sm shadow-lg outline-none focus:ring-2 focus:ring-emerald-400 dark:bg-gray-800 dark:text-gray-100"
                   placeholder="Type text..."
                 />
               </div>
@@ -487,10 +487,10 @@ const CourseLayoutEditor = ({ courseId, existingLayoutUrl, existingDrawingData, 
               onDrop={handleFileDrop}
               onDragOver={handleDragOver}
               onClick={() => fileInputRef.current?.click()}
-              className="flex h-[480px] cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition hover:border-amber-400 hover:bg-amber-50/30 dark:border-gray-600 dark:bg-gray-800/50 dark:hover:border-amber-500 dark:hover:bg-amber-900/10"
+              className="flex h-[480px] cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition hover:border-emerald-400 hover:bg-emerald-50/30 dark:border-gray-600 dark:bg-gray-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900/30">
-                <ImageIcon size={24} className="text-amber-600 dark:text-amber-400" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/30">
+                <ImageIcon size={24} className="text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">

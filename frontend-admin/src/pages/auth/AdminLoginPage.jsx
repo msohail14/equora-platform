@@ -62,7 +62,7 @@ const AdminLoginPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              className="text-xs font-semibold text-equestrian-green-600 hover:text-equestrian-green-700 dark:text-equestrian-green-400"
             >
               {showPassword ? 'Hide' : 'Show'}
             </button>
@@ -71,7 +71,7 @@ const AdminLoginPage = () => {
         />
 
         <div className="flex justify-end">
-          <Link to="/admin/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+          <Link to="/admin/forgot-password" className="text-xs text-equestrian-green-600 hover:text-equestrian-green-700 dark:text-equestrian-green-400">
             Forgot password?
           </Link>
         </div>

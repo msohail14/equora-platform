@@ -297,7 +297,7 @@ const AdminCoachDetailsPage = () => {
       {/* ── Loading ── */}
       {loading && (
         <section className="flex items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white p-12 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <Loader2 size={20} className="animate-spin text-amber-500" />
+          <Loader2 size={20} className="animate-spin text-emerald-500" />
           <span className="text-sm text-gray-500 dark:text-gray-400">Loading coach details…</span>
         </section>
       )}
@@ -309,8 +309,8 @@ const AdminCoachDetailsPage = () => {
           {/* Coach profile card */}
           <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
 
-            {/* Gradient header — same amber/orange as CourseOverviewCard */}
-            <div className="relative bg-gradient-to-r from-amber-500 to-orange-400 px-6 pt-5 pb-10">
+            {/* Gradient header — same emerald/stone as CourseOverviewCard */}
+            <div className="relative bg-gradient-to-r from-emerald-500 to-stone-400 px-6 pt-5 pb-10">
               <div
                 className="pointer-events-none absolute inset-0 opacity-10"
                 style={{
@@ -344,7 +344,7 @@ const AdminCoachDetailsPage = () => {
             {/* Floating stat strip — identical pattern to CourseOverviewCard */}
             <div className="relative z-10 mx-5 -mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md sm:grid-cols-4 dark:border-gray-800 dark:bg-gray-900">
               {[
-                { icon: GraduationCap, label: 'Courses',    value: summary?.total_courses             ?? 0, color: 'text-amber-500'   },
+                { icon: GraduationCap, label: 'Courses',    value: summary?.total_courses             ?? 0, color: 'text-emerald-500'   },
                 { icon: Clock3,        label: 'Upcoming sessions',   value: summary?.upcoming_sessions          ?? 0, color: 'text-sky-500'     },
                 { icon: CheckCircle2,  label: 'Active courses',     value: summary?.active_courses             ?? 0, color: 'text-emerald-500' },
                 { icon: Star,       label: 'Rating',  value: `${Number(summary?.average_rating || 0).toFixed(1)} (${summary?.total_reviews || 0})`, color: 'text-violet-500'  },
@@ -368,7 +368,7 @@ const AdminCoachDetailsPage = () => {
             fallback={
               <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Loader2 size={16} className="animate-spin text-amber-500" />
+                  <Loader2 size={16} className="animate-spin text-emerald-500" />
                   Loading weekly schedule...
                 </div>
               </section>
@@ -403,7 +403,7 @@ const AdminCoachDetailsPage = () => {
                           {review.reviewer?.type === 'rider' && review.reviewer?.id ? (
                             <Link
                               to={`/admin/rider/${review.reviewer.id}`}
-                              className="cursor-pointer transition hover:text-amber-600 hover:underline dark:hover:text-amber-400"
+                              className="cursor-pointer transition hover:text-emerald-600 hover:underline dark:hover:text-emerald-400"
                             >
                               {[review.reviewer?.first_name, review.reviewer?.last_name].filter(Boolean).join(' ') || review.reviewer?.email || 'Unknown'}
                             </Link>
@@ -416,7 +416,7 @@ const AdminCoachDetailsPage = () => {
                           {review.course?.id ? (
                             <Link
                               to={`/admin/courses/${review.course.id}`}
-                              className="cursor-pointer transition hover:text-amber-600 hover:underline dark:hover:text-amber-400"
+                              className="cursor-pointer transition hover:text-emerald-600 hover:underline dark:hover:text-emerald-400"
                             >
                               {review.course?.title || '-'}
                             </Link>
@@ -427,7 +427,7 @@ const AdminCoachDetailsPage = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
                           <Star size={12} className="fill-current" />
                           {review.stars}
                         </span>
@@ -463,7 +463,7 @@ const AdminCoachDetailsPage = () => {
             fallback={
               <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Loader2 size={16} className="animate-spin text-amber-500" />
+                  <Loader2 size={16} className="animate-spin text-emerald-500" />
                   Loading sessions table...
                 </div>
               </section>
@@ -549,7 +549,7 @@ const AdminCoachDetailsPage = () => {
             </span>
             <textarea
               rows={3}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Add reason for cancellation…"
@@ -583,7 +583,7 @@ const AdminCoachDetailsPage = () => {
           <label className="grid gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Course</span>
             <select
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               value={reviewForm.course_id}
               onChange={(e) => setReviewForm((prev) => ({ ...prev, course_id: e.target.value }))}
               required
@@ -600,7 +600,7 @@ const AdminCoachDetailsPage = () => {
           <label className="grid gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Stars</span>
             <select
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               value={reviewForm.stars}
               onChange={(e) => setReviewForm((prev) => ({ ...prev, stars: e.target.value }))}
               required
@@ -618,7 +618,7 @@ const AdminCoachDetailsPage = () => {
             <textarea
               rows={4}
               maxLength={500}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               value={reviewForm.comment}
               onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
               placeholder="Share review details..."

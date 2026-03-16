@@ -151,7 +151,7 @@ const AdminCoachesPage = () => {
       {/* <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
 
         
-        <div className="relative bg-gradient-to-r from-amber-500 to-orange-400 px-6 py-5">
+        <div className="relative bg-gradient-to-r from-emerald-500 to-stone-400 px-6 py-5">
           <div
             className="pointer-events-none absolute inset-0 opacity-10"
             style={{
@@ -168,7 +168,7 @@ const AdminCoachesPage = () => {
         
         <div className="mx-5 -mt-5 grid grid-cols-3 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md dark:border-gray-800 dark:bg-gray-900">
           {[
-            { icon: Users,        label: 'Total',    value: coaches.length, color: 'text-amber-500'   },
+            { icon: Users,        label: 'Total',    value: coaches.length, color: 'text-emerald-500'   },
             { icon: CheckCircle2, label: 'Active',   value: activeCount,    color: 'text-emerald-500' },
             { icon: XCircle,      label: 'Inactive', value: inactiveCount,  color: 'text-rose-500'    },
           ].map(({ icon: Icon, label, value, color }, i, arr) => (
@@ -191,8 +191,8 @@ const AdminCoachesPage = () => {
 
         {/* section header */}
         {/* <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-800 dark:bg-gray-800/50">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-            <Users size={15} className="text-amber-600" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+            <Users size={15} className="text-emerald-600" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Coach List</h2>
@@ -205,7 +205,7 @@ const AdminCoachesPage = () => {
         {/* loading */}
         {loading && (
           <div className="flex items-center justify-center gap-2.5 py-14">
-            <Loader2 size={18} className="animate-spin text-amber-500" />
+            <Loader2 size={18} className="animate-spin text-emerald-500" />
             <span className="text-sm text-gray-400">Loading coaches…</span>
           </div>
         )}
@@ -213,14 +213,14 @@ const AdminCoachesPage = () => {
         {/* empty */}
         {!loading && coaches.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-14">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-900/20">
-              <Users size={24} className="text-amber-400" />
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/20">
+              <Users size={24} className="text-emerald-400" />
             </div>
             <p className="text-sm text-gray-400">No coaches found.</p>
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:underline"
             >
               <UserPlus size={12} /> Create your first coach
             </button>
@@ -264,7 +264,7 @@ const AdminCoachesPage = () => {
                       {/* name */}
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                             {initial}
                           </div>
                           <span className="font-semibold text-gray-800 dark:text-gray-100">{name}</span>
@@ -313,7 +313,7 @@ const AdminCoachesPage = () => {
                           <button
                             type="button"
                             onClick={() => onEditCoach(coach)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
                           >
                             <Pencil size={12} /> Edit
                           </button>
@@ -385,7 +385,7 @@ const AdminCoachesPage = () => {
             <label className="grid gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Gender</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={createForm.gender}
                 onChange={(e) => setCreateForm((p) => ({ ...p, gender: e.target.value }))}
               >
@@ -452,7 +452,7 @@ const AdminCoachesPage = () => {
             <label className="grid gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Gender</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={editForm.gender}
                 onChange={(e) => setEditForm((p) => ({ ...p, gender: e.target.value }))}
               >
@@ -475,7 +475,7 @@ const AdminCoachesPage = () => {
           <label className="grid gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Status</span>
             <select
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               value={editForm.is_active ? 'true' : 'false'}
               onChange={(e) => setEditForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}
             >

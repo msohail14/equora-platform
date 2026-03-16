@@ -9,7 +9,7 @@ const STATUS_OPTIONS = ['all', 'pending_horse_approval', 'pending_payment', 'con
 const statusBadge = (status) => {
   const map = {
     pending_horse_approval: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    pending_payment: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    pending_payment: 'bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-300',
     confirmed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
     cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -53,13 +53,13 @@ const AdminBookingsPage = () => {
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-2">
-          <CalendarDays size={20} className="text-amber-500" />
+          <CalendarDays size={20} className="text-emerald-500" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Bookings</h2>
         </div>
         <label className="grid gap-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
           <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >

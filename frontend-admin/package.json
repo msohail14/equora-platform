@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-table": "^8.21.3",
+    "@lucide/lab": "^0.1.2",
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.0",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.5",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.575.0",

@@ -17,7 +17,7 @@ const STATUS_STYLES = {
   active:    'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25 dark:text-emerald-400',
   published: 'bg-emerald-500/80 text-white text-emerald-600 ring-1 ring-emerald-500/25 dark:text-emerald-400',
   inactive:  'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25 dark:text-rose-400',
-  draft:     'bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/25 dark:text-amber-400',
+  draft:     'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-400',
   archived:  'bg-gray-500/15 text-gray-500 ring-1 ring-gray-400/25',
 };
 
@@ -71,7 +71,7 @@ const CourseOverviewCard = ({ course }) => {
             </div>
           </>
         ) : (
-          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-400 to-rose-400 px-6 py-6">
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-stone-400 to-rose-400 px-6 py-6">
             <div
               className="pointer-events-none absolute inset-0 opacity-10"
               style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }}
@@ -108,8 +108,8 @@ const CourseOverviewCard = ({ course }) => {
             label: 'Session',
             value: course.max_session_duration ?? '—',
             unit: course.max_session_duration ? 'min' : '',
-            color: 'text-amber-500',
-            bg: 'bg-amber-50 dark:bg-amber-900/20',
+            color: 'text-emerald-500',
+            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
           },
           {
             icon: Users,
@@ -148,15 +148,15 @@ const CourseOverviewCard = ({ course }) => {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
           <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/60">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30">
-              <UserRound size={15} className="text-amber-600 dark:text-amber-400" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
+              <UserRound size={15} className="text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Coach</p>
               {course.coach?.id && coachName ? (
                 <Link
                   to={`/admin/coaches/${course.coach.id}`}
-                  className="mt-0.5 block truncate text-sm font-bold text-gray-900 hover:text-amber-600 hover:underline dark:text-gray-100 dark:hover:text-amber-400 transition-colors"
+                  className="mt-0.5 block truncate text-sm font-bold text-gray-900 hover:text-emerald-600 hover:underline dark:text-gray-100 dark:hover:text-emerald-400 transition-colors"
                 >
                   {coachName}
                 </Link>
@@ -167,12 +167,12 @@ const CourseOverviewCard = ({ course }) => {
           </div>
 
           <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/60">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/30">
-              <Tag size={15} className="text-orange-600 dark:text-orange-400" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-stone-100 dark:bg-stone-900/30">
+              <Tag size={15} className="text-stone-600 dark:text-stone-400" />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Discipline</p>
-              <Link to={course.discipline?.id ? `/admin/disciplines` : '#'} className={`mt-0.5 block truncate text-sm font-bold text-gray-900 hover:underline dark:text-gray-100 ${course.discipline?.id ? 'hover:text-orange-600 dark:hover:text-orange-400' : 'cursor-not-allowed text-gray-500 dark:text-gray-600'}`}>
+              <Link to={course.discipline?.id ? `/admin/disciplines` : '#'} className={`mt-0.5 block truncate text-sm font-bold text-gray-900 hover:underline dark:text-gray-100 ${course.discipline?.id ? 'hover:text-stone-600 dark:hover:text-stone-400' : 'cursor-not-allowed text-gray-500 dark:text-gray-600'}`}>
                 {course.discipline?.name || '—'}
               </Link>
             </div>

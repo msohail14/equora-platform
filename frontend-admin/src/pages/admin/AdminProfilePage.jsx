@@ -52,7 +52,7 @@ const AdminProfilePage = () => {
     <div className="space-y-6">
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center gap-2">
-          <UserCircle size={20} className="text-amber-500" />
+          <UserCircle size={20} className="text-emerald-500" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Profile</h2>
         </div>
 
@@ -86,7 +86,7 @@ const AdminProfilePage = () => {
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center gap-2">
-          <Lock size={20} className="text-amber-500" />
+          <Lock size={20} className="text-emerald-500" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Change Password</h2>
         </div>
 

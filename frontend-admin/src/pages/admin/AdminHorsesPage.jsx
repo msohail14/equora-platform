@@ -36,7 +36,7 @@ const toImageSrc = (value) => {
 const statusColor = (status) => {
   if (status === 'available') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
   if (status === 'busy') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-  if (status === 'resting') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+  if (status === 'resting') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
   if (status === 'injured') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
   return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 };
@@ -283,7 +283,7 @@ const AdminHorsesPage = () => {
               </span>
               <textarea
                 rows={3}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Optional horse description"
@@ -292,7 +292,7 @@ const AdminHorsesPage = () => {
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Stable</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.stable_id}
                 onChange={(e) => setForm((prev) => ({ ...prev, stable_id: e.target.value }))}
                 required
@@ -308,7 +308,7 @@ const AdminHorsesPage = () => {
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Discipline</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.discipline_id}
                 onChange={(e) => setForm((prev) => ({ ...prev, discipline_id: e.target.value }))}
                 required
@@ -324,7 +324,7 @@ const AdminHorsesPage = () => {
             <label className="grid gap-1.5 sm:col-span-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.status}
                 onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
               >

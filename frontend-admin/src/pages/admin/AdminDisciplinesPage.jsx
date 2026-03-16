@@ -49,7 +49,7 @@ const difficultyConfig = {
   },
   intermediate: {
     label: "Intermediate",
-    cls: "bg-amber-50   dark:bg-amber-500/10   text-amber-700   dark:text-amber-400   border-amber-200   dark:border-amber-500/30",
+    cls: "bg-emerald-50   dark:bg-emerald-500/10   text-emerald-700   dark:text-emerald-400   border-emerald-200   dark:border-emerald-500/30",
   },
   advanced: {
     label: "Advanced",
@@ -67,7 +67,7 @@ const fieldLabel =
 const fieldInput =
   "w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 " +
   "text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 " +
-  "rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 " +
+  "rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 " +
   "focus:border-transparent transition-all hover:border-gray-300 dark:hover:border-gray-600";
 
 // ── Small helper components ──────────────────────────────────────────────────
@@ -178,8 +178,8 @@ const DisciplineFormFields = ({
           {isEdit ? " · leave empty to keep current" : ""})
         </span>
       </label>
-      <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500 bg-gray-50 dark:bg-gray-800/40 px-4 py-3 transition-colors group">
-        <UploadCloud className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors shrink-0" />
+      <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500 bg-gray-50 dark:bg-gray-800/40 px-4 py-3 transition-colors group">
+        <UploadCloud className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors shrink-0" />
         <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors truncate">
           {iconFile ? iconFile.name : "Click to upload icon"}
         </span>
@@ -372,14 +372,14 @@ const AdminDisciplinesPage = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search disciplines"
-                className="min-w-[240px] rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="min-w-[240px] rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               />
             </div>
           </label>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-amber-500/25 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
             Add Discipline
@@ -436,7 +436,7 @@ const AdminDisciplinesPage = () => {
                       <button
                         type="button"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-xs font-medium hover:text-amber-500 transition-colors mt-1"
+                        className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-medium hover:text-emerald-500 transition-colors mt-1"
                       >
                         Add discipline <ChevronRight className="w-3.5 h-3.5" />
                       </button>
@@ -506,7 +506,7 @@ const AdminDisciplinesPage = () => {
                         <button
                           type="button"
                           onClick={() => onEditDiscipline(d)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 dark:border-amber-900/40 px-2.5 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:border-amber-300 dark:hover:border-amber-500/50 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 px-2.5 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                           Edit
@@ -557,7 +557,7 @@ const AdminDisciplinesPage = () => {
           <div className="flex items-center gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-emerald-500/20 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
             >
               <Plus className="w-4 h-4" strokeWidth={2.5} />
               Create Discipline
@@ -590,7 +590,7 @@ const AdminDisciplinesPage = () => {
           <div className="flex items-center gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-white transition-all shadow-md shadow-emerald-500/20 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
             >
               <Pencil className="w-4 h-4" />
               Update Discipline

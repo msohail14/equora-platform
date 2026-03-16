@@ -3,17 +3,18 @@ import { toast } from 'react-hot-toast';
 import { CreditCard } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import { getAdminPaymentsApi } from '../../features/operations/operationsApi';
+import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const STATUS_OPTIONS = ['all', 'pending', 'completed', 'failed', 'refunded'];
 
 const statusBadge = (status) => {
   const map = {
-    pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    pending: 'bg-equestrian-gold-100 text-equestrian-gold-700 dark:bg-equestrian-gold-900/30 dark:text-equestrian-gold-300',
+    completed: 'bg-equestrian-green-100 text-equestrian-green-700 dark:bg-equestrian-green-900/30 dark:text-equestrian-green-300',
     failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     refunded: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   };
-  return map[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+  return map[status] || 'bg-equestrian-stone-100 text-equestrian-stone-600 dark:bg-equestrian-stone-800 dark:text-equestrian-stone-400';
 };
 
 const AdminPaymentsPage = () => {
@@ -50,20 +51,26 @@ const AdminPaymentsPage = () => {
 
   const formatAmount = (amount) => {
     const num = Number(amount);
-    return Number.isNaN(num) ? '-' : `$${num.toFixed(2)}`;
+    if (Number.isNaN(num)) return '-';
+    return (
+        <span className="flex items-center gap-1 font-medium">
+            <SaudiRiyalIcon className="h-4 w-4 text-equestrian-stone-600 dark:text-equestrian-stone-300" />
+            {num.toFixed(2)}
+        </span>
+    );
   };
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <section className="rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-2">
-          <CreditCard size={20} className="text-amber-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Payments</h2>
+          <CreditCard size={20} className="text-equestrian-green-500" />
+          <h2 className="text-xl font-semibold text-equestrian-green-950 dark:text-white">Payments</h2>
         </div>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-equestrian-stone-500 dark:text-equestrian-stone-400">Status</span>
           <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="w-full rounded-lg border border-equestrian-stone-200 bg-white px-3 py-2 text-sm text-equestrian-stone-800 shadow-sm transition focus:border-equestrian-green-500 focus:outline-none focus:ring-2 focus:ring-equestrian-green-500/30 dark:border-equestrian-stone-700 dark:bg-equestrian-stone-800 dark:text-equestrian-stone-100"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -74,12 +81,12 @@ const AdminPaymentsPage = () => {
         </label>
       </div>
 
-      {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading payments...</p>}
+      {loading && <p className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">Loading payments...</p>}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="overflow-x-auto rounded-xl border border-equestrian-stone-200 dark:border-equestrian-stone-800">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-800/60">
-            <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <thead className="bg-equestrian-stone-50 dark:bg-equestrian-stone-800/60">
+            <tr className="text-left text-xs uppercase tracking-wide text-equestrian-stone-500 dark:text-equestrian-stone-400">
               <th className="px-3 py-2">User</th>
               <th className="px-3 py-2">Amount</th>
               <th className="px-3 py-2">Status</th>
@@ -89,25 +96,25 @@ const AdminPaymentsPage = () => {
           </thead>
           <tbody>
             {payments.map((p) => (
-              <tr key={p.id} className="border-t border-gray-200 dark:border-gray-800">
-                <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
+              <tr key={p.id} className="border-t border-equestrian-stone-200 dark:border-equestrian-stone-800">
+                <td className="px-3 py-2 font-medium text-equestrian-green-950 dark:text-white">
                   {`${p.user_first_name || p.user?.first_name || ''} ${p.user_last_name || p.user?.last_name || ''}`.trim() || p.user_email || p.user?.email || '-'}
                 </td>
-                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{formatAmount(p.amount)}</td>
+                <td className="px-3 py-2 text-equestrian-stone-600 dark:text-equestrian-stone-300">{formatAmount(p.amount)}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(p.status)}`}>
                     {p.status || '-'}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{p.provider || p.payment_provider || '-'}</td>
-                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
+                <td className="px-3 py-2 text-equestrian-stone-600 dark:text-equestrian-stone-300">{p.provider || p.payment_provider || '-'}</td>
+                <td className="px-3 py-2 text-equestrian-stone-600 dark:text-equestrian-stone-300">
                   {p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}
                 </td>
               </tr>
             ))}
             {!loading && !payments.length && (
-              <tr className="border-t border-gray-200 dark:border-gray-800">
-                <td colSpan={5} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <tr className="border-t border-equestrian-stone-200 dark:border-equestrian-stone-800">
+                <td colSpan={5} className="px-3 py-4 text-center text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
                   No payments found.
                 </td>
               </tr>
@@ -117,7 +124,7 @@ const AdminPaymentsPage = () => {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
           Total {pagination?.totalRecords ?? payments.length}
         </span>
         <div className="flex items-center gap-2">
@@ -130,7 +137,7 @@ const AdminPaymentsPage = () => {
           >
             Prev
           </AppButton>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
             Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}
           </span>
           <AppButton

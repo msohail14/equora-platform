@@ -8,10 +8,8 @@ import {
   CalendarCheck,
   ClipboardList,
   Clock,
-  DollarSign,
   GraduationCap,
   LayoutGrid,
-  PawPrint,
   RefreshCw,
   ShieldCheck,
   Trophy,
@@ -19,7 +17,9 @@ import {
   Users,
   ArrowUpRight,
   AlertCircle,
+  MoreHorizontal,
 } from 'lucide-react';
+import { HorseIcon } from '../../components/ui/HorseIcon';
 import {
   Area,
   AreaChart,
@@ -31,8 +31,11 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { getAdminDashboardApi } from '../../features/operations/operationsApi';
+import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const emptyDashboard = {
   stats: {
@@ -54,6 +57,7 @@ const emptyDashboard = {
     active_courses: 0,
     total_enrollments: 0,
     active_enrollments: 0,
+    total_revenue: 0,
   },
   enrollment_trends: {
     daily: [],
@@ -96,45 +100,42 @@ const formatRelativeTime = (date) => {
 // --- KPI card data ---
 const kpiCards = (stats) => [
   {
-    label: 'Total Revenue',
-    value: stats.total_enrollments,
-    subtitle: 'From enrollments',
-    icon: DollarSign,
-    gradient: 'from-amber-500 to-orange-500',
-    bgLight: 'bg-amber-50',
-    bgDark: 'dark:bg-amber-950/30',
-  },
-  {
-    label: 'Active Bookings',
-    value: 0,
-    subtitle: 'Coming soon',
-    icon: CalendarCheck,
-    gradient: 'from-blue-500 to-indigo-500',
-    bgLight: 'bg-blue-50',
-    bgDark: 'dark:bg-blue-950/30',
-  },
-  {
     label: 'Total Riders',
     value: stats.total_riders,
-    subtitle: `${stats.active_riders ?? 0} active`,
+    trend: '+12%', // Mock trend
     icon: Users,
-    gradient: 'from-emerald-500 to-teal-500',
-    bgLight: 'bg-emerald-50',
-    bgDark: 'dark:bg-emerald-950/30',
+    iconColor: 'text-equestrian-green-600',
+    iconBg: 'bg-equestrian-green-50 dark:bg-equestrian-green-900/20',
   },
   {
-    label: 'Total Coaches',
-    value: stats.total_coaches ?? 0,
-    subtitle: `${stats.active_coaches ?? 0} active`,
-    icon: GraduationCap,
-    gradient: 'from-violet-500 to-purple-500',
-    bgLight: 'bg-violet-50',
-    bgDark: 'dark:bg-violet-950/30',
+    label: "Today's Bookings",
+    value: 24, // Mock data
+    trend: '+8%',
+    icon: CalendarCheck,
+    iconColor: 'text-equestrian-gold-600',
+    iconBg: 'bg-equestrian-gold-50 dark:bg-equestrian-gold-900/20',
+  },
+  {
+    label: 'Active Horses',
+    value: stats.active_horses,
+    trend: '+2',
+    icon: HorseIcon,
+    iconColor: 'text-equestrian-stone-600',
+    iconBg: 'bg-equestrian-stone-100 dark:bg-equestrian-stone-800',
+  },
+  {
+    label: 'Revenue (MTD)',
+    value: stats.total_revenue,
+    trend: '+5%',
+    isCurrency: true,
+    icon: null, // Custom icon handling
+    iconColor: 'text-red-500', // Example accent
+    iconBg: 'bg-red-50 dark:bg-red-900/20',
   },
 ];
 
 // --- Entity distribution pie data ---
-const DISTRIBUTION_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
+const DISTRIBUTION_COLORS = ['#166534', '#d97706', '#57534e', '#15803d'];
 
 const buildDistributionData = (stats) => [
   { name: 'Stables', value: Number(stats.total_stables || 0) },
@@ -146,21 +147,21 @@ const buildDistributionData = (stats) => [
 // --- Reusable mini donut ---
 const TotalActiveMiniChart = ({ total, active }) => {
   const data = [
-    { name: 'Active', value: Number(active || 0), fill: '#10b981' },
-    { name: 'Inactive', value: Math.max(0, Number(total || 0) - Number(active || 0)), fill: '#e5e7eb' },
+    { name: 'Active', value: Number(active || 0), fill: '#16a34a' },
+    { name: 'Inactive', value: Math.max(0, Number(total || 0) - Number(active || 0)), fill: '#e7e5e4' },
   ];
 
   return (
-    <div className="h-20 w-20 flex-shrink-0">
+    <div className="h-16 w-16 flex-shrink-0">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
             dataKey="value"
             nameKey="name"
-            innerRadius={24}
-            outerRadius={36}
-            paddingAngle={3}
+            innerRadius={20}
+            outerRadius={30}
+            paddingAngle={2}
             strokeWidth={0}
           >
             {data.map((entry) => (
@@ -184,34 +185,47 @@ const EnrollmentAreaChart = ({ data = [], mode = 'daily' }) => {
   }, [data, mode]);
 
   return (
-    <div className="h-[320px] w-full">
+    <div className="h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={prepared}>
+        <AreaChart data={prepared} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="enrollGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#d97706" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
-          <XAxis dataKey="displayLabel" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
-          <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
+          <XAxis 
+            dataKey="displayLabel" 
+            tick={{ fontSize: 12, fill: '#78716c' }} 
+            axisLine={false}
+            tickLine={false}
+            dy={10}
+          />
+          <YAxis 
+            allowDecimals={false} 
+            tick={{ fontSize: 12, fill: '#78716c' }} 
+            axisLine={false}
+            tickLine={false}
+          />
           <Tooltip
             contentStyle={{
-              borderRadius: '0.75rem',
+              borderRadius: '0.5rem',
               border: 'none',
-              boxShadow: '0 4px 24px rgba(0,0,0,.1)',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               fontSize: '0.875rem',
+              backgroundColor: '#fff',
+              color: '#1c1917'
             }}
           />
           <Area
             type="monotone"
             dataKey="count"
-            stroke="#f59e0b"
-            strokeWidth={2.5}
+            stroke="#d97706"
+            strokeWidth={2}
             fill="url(#enrollGradient)"
-            dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
-            activeDot={{ r: 5, strokeWidth: 0 }}
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0, fill: '#d97706' }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -253,13 +267,6 @@ const AdminDashboardPage = () => {
 
   const greeting = getGreeting();
 
-  const dateString = new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
   const chartData = useMemo(
     () =>
       trendMode === 'daily'
@@ -276,35 +283,40 @@ const AdminDashboardPage = () => {
   const unverifiedCoaches = dashboard.stats.unverified_coaches ?? 0;
   const hasPendingActions = pendingStables > 0 || unverifiedCoaches > 0;
 
-  const recentActivity = useMemo(
-    () => [
-      { label: 'Stables', total: dashboard.stats.total_stables, active: dashboard.stats.active_stables, icon: Building2 },
-      { label: 'Arenas', total: dashboard.stats.total_arenas, active: dashboard.stats.active_arenas, icon: LayoutGrid },
-      { label: 'Horses', total: dashboard.stats.total_horses, active: dashboard.stats.active_horses, icon: PawPrint },
-      { label: 'Disciplines', total: dashboard.stats.total_disciplines, active: dashboard.stats.active_disciplines, icon: Trophy },
-      { label: 'Riders', total: dashboard.stats.total_riders, active: dashboard.stats.active_riders, icon: Users },
-    ],
-    [dashboard.stats],
-  );
+  // Mock recent activity for the design
+  const recentActivity = [
+    { title: 'New booking created', desc: 'Sarah Mitchell - Thunderbolt', time: '5 min ago', type: 'booking' },
+    { title: 'Horse health check completed', desc: 'Silver Star - Vet cleared', time: '1 hour ago', type: 'health' },
+    { 
+        title: 'Payment received', 
+        desc: (
+            <span className="flex items-center gap-1">
+                <SaudiRiyalIcon className="h-3.5 w-3.5" /> 450.00 - James Carter
+            </span>
+        ), 
+        time: '2 hours ago', 
+        type: 'payment' 
+    },
+    { title: 'Schedule updated', desc: 'Thursday training moved to 10 AM', time: '3 hours ago', type: 'schedule' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-full">
+      <div className="mx-auto max-w-7xl">
         {/* ── Welcome header ── */}
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 dark:text-amber-400">
+            <h1 className="text-2xl font-bold text-equestrian-green-950 dark:text-white sm:text-3xl">
               Dashboard
-            </p>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-              {greeting}, {admin?.first_name || 'Admin'} {admin?.last_name || ''}
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{dateString}</p>
+            <p className="mt-1 text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
+              Welcome back, {admin?.first_name || 'Admin'}. Here's what's happening today.
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             {lastRefreshed && (
-              <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+              <span className="flex items-center gap-1.5 text-xs text-equestrian-stone-400 dark:text-equestrian-stone-500">
                 <Clock size={13} />
                 {formatRelativeTime(lastRefreshed)}
               </span>
@@ -313,7 +325,7 @@ const AdminDashboardPage = () => {
               type="button"
               onClick={fetchDashboard}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-equestrian-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-equestrian-stone-600 shadow-sm transition hover:bg-equestrian-stone-50 disabled:opacity-50 dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900 dark:text-equestrian-stone-300 dark:hover:bg-equestrian-stone-800"
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               Refresh
@@ -323,11 +335,11 @@ const AdminDashboardPage = () => {
 
         {/* ── Loading skeleton ── */}
         {loading && (
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+                className="h-32 animate-pulse rounded-xl border border-equestrian-stone-200 bg-white dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900"
               />
             ))}
           </div>
@@ -335,302 +347,214 @@ const AdminDashboardPage = () => {
 
         {/* ── KPI row ── */}
         {!loading && (
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {kpiCards(dashboard.stats).map((card) => (
+          <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {kpiCards(dashboard.stats).map((card, idx) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+                className="group relative overflow-hidden rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900"
               >
-                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.gradient}`} />
-
-                <div className="mb-3 flex items-center justify-between">
-                  <span
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-sm`}
-                  >
-                    <card.icon size={20} />
+                <div className="flex items-start justify-between">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${card.isCurrency ? 'bg-red-50 text-red-500 dark:bg-red-900/20' : card.iconBg} ${card.isCurrency ? '' : card.iconColor}`}>
+                    {card.isCurrency ? (
+                        <SaudiRiyalIcon className="h-7 w-7" />
+                    ) : (
+                        <card.icon size={22} />
+                    )}
+                  </div>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${card.trend.startsWith('+') ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-50 text-red-700'}`}>
+                    {card.trend.startsWith('+') ? <TrendingUp size={12} /> : null}
+                    {card.trend}
                   </span>
-                  <TrendingUp size={16} className="text-gray-300 dark:text-gray-600" />
                 </div>
 
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {card.value?.toLocaleString() ?? 0}
-                </p>
-                <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {card.label}
-                </p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{card.subtitle}</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    {card.isCurrency && (
+                      <SaudiRiyalIcon className="h-8 w-8 text-equestrian-green-950 dark:text-white" />
+                    )}
+                    <p className="text-3xl font-bold text-equestrian-green-950 dark:text-white">
+                      {card.value?.toLocaleString() ?? 0}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                      {card.label}
+                    </p>
+                  </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* ── Chart + Pending Actions ── */}
-        {!loading && (
-          <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {/* Chart – left 2 cols */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:col-span-2">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {/* ── Chart Section (Left 2/3) ── */}
+            <div className="lg:col-span-2 space-y-8">
+                {/* Today's Bookings Table Mock */}
+                <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
+                    <div className="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold text-equestrian-green-950 dark:text-white">
+                                Today's Bookings
+                            </h2>
+                            <p className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                                March 16, 2026
+                            </p>
+                        </div>
+                        <Link to="/admin/bookings" className="text-sm font-semibold text-equestrian-gold-600 hover:text-equestrian-gold-700">
+                            View Schedule ↗
+                        </Link>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead>
+                                <tr className="border-b border-equestrian-stone-100 text-xs font-semibold uppercase tracking-wider text-equestrian-stone-400 dark:border-equestrian-stone-800">
+                                    <th className="pb-3 pl-2">Rider</th>
+                                    <th className="pb-3">Horse</th>
+                                    <th className="pb-3">Time</th>
+                                    <th className="pb-3">Type</th>
+                                    <th className="pb-3 text-right pr-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-equestrian-stone-50 dark:divide-equestrian-stone-800">
+                                {[
+                                    { rider: 'Sarah Mitchell', horse: 'Thunderbolt', time: '9:00 AM', type: 'Training', status: 'Confirmed' },
+                                    { rider: 'James Carter', horse: 'Silver Star', time: '10:30 AM', type: 'Lesson', status: 'Pending' },
+                                    { rider: 'Emma Wilson', horse: 'Dark Knight', time: '12:00 PM', type: 'Trail Ride', status: 'Confirmed' },
+                                    { rider: 'Michael Brown', horse: 'Golden Flash', time: '2:00 PM', type: 'Competition', status: 'Confirmed' },
+                                ].map((row, i) => (
+                                    <tr key={i} className="group hover:bg-equestrian-stone-50 dark:hover:bg-equestrian-stone-800/50">
+                                        <td className="py-4 pl-2 font-medium text-equestrian-green-950 dark:text-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-equestrian-stone-100 flex items-center justify-center text-xs font-bold text-equestrian-stone-600 dark:bg-equestrian-stone-800 dark:text-equestrian-stone-300">
+                                                    {row.rider.split(' ').map(n => n[0]).join('')}
+                                                </div>
+                                                {row.rider}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">{row.horse}</td>
+                                        <td className="py-4 font-medium text-equestrian-green-900 dark:text-equestrian-green-100">{row.time}</td>
+                                        <td className="py-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">{row.type}</td>
+                                        <td className="py-4 text-right pr-2">
+                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                row.status === 'Confirmed' 
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' 
+                                                : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+                                            }`}>
+                                                {row.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Enrollment Trends
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Daily, weekly &amp; monthly enrollment data
-                  </p>
+                {/* Enrollment Chart */}
+                <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-equestrian-green-950 dark:text-white">
+                                Enrollment Trends
+                            </h2>
+                            <p className="text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                                Overview of new student registrations
+                            </p>
+                        </div>
+                        <div className="flex rounded-lg bg-equestrian-stone-100 p-1 dark:bg-equestrian-stone-800">
+                            {['daily', 'weekly', 'monthly'].map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => setTrendMode(mode)}
+                                    className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-all ${
+                                        trendMode === mode
+                                            ? 'bg-white text-equestrian-green-900 shadow-sm dark:bg-equestrian-stone-700 dark:text-white'
+                                            : 'text-equestrian-stone-500 hover:text-equestrian-stone-900 dark:text-equestrian-stone-400 dark:hover:text-white'
+                                    }`}
+                                >
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    {chartData.length > 0 ? (
+                        <EnrollmentAreaChart data={chartData} mode={trendMode} />
+                    ) : (
+                        <div className="flex h-[280px] items-center justify-center text-sm text-equestrian-stone-400">
+                            No data available
+                        </div>
+                    )}
                 </div>
-                <div className="inline-flex rounded-lg border border-gray-200 p-1 dark:border-gray-700">
-                  {['daily', 'weekly', 'monthly'].map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setTrendMode(mode)}
-                      className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition ${
-                        trendMode === mode
-                          ? 'bg-amber-500 text-white shadow-sm'
-                          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {chartData.length === 0 ? (
-                <div className="flex h-[320px] items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-                  No enrollment data available yet.
-                </div>
-              ) : (
-                <EnrollmentAreaChart data={chartData} mode={trendMode} />
-              )}
             </div>
 
-            {/* Pending Actions – right 1 col */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-
-              <div className="mb-4 flex items-center gap-2">
-                <AlertCircle size={18} className="text-amber-500" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Pending Actions
-                </h2>
-              </div>
-
-              {!hasPendingActions ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <ShieldCheck size={36} className="mb-2 text-emerald-400" />
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    All caught up!
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    No pending reviews right now.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {/* Stables pending */}
-                  <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-3.5 dark:border-gray-800 dark:bg-gray-800/50">
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
-                        <Building2 size={18} />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                          Stables Pending
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          Awaiting approval
-                        </p>
-                      </div>
+            {/* ── Right Column (Activity & Stats) ── */}
+            <div className="space-y-8">
+                {/* Activity Feed */}
+                <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
+                    <div className="mb-6 flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-equestrian-green-950 dark:text-white">
+                            Activity
+                        </h2>
+                        <button className="text-equestrian-stone-400 hover:text-equestrian-stone-600 dark:hover:text-equestrian-stone-200">
+                            <MoreHorizontal size={20} />
+                        </button>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <span className="inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-                        {pendingStables}
-                      </span>
-                      <Link
-                        to="/admin/stables"
-                        className="inline-flex items-center gap-0.5 text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                      >
-                        Review <ArrowUpRight size={13} />
-                      </Link>
+                    
+                    <div className="relative border-l border-equestrian-stone-200 ml-3 space-y-8 dark:border-equestrian-stone-800">
+                        {recentActivity.map((item, i) => (
+                            <div key={i} className="relative pl-6">
+                                <span className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-equestrian-stone-900 ${
+                                    item.type === 'booking' ? 'bg-equestrian-gold-500' :
+                                    item.type === 'payment' ? 'bg-emerald-500' :
+                                    'bg-equestrian-stone-400'
+                                }`}></span>
+                                <p className="text-sm font-medium text-equestrian-green-950 dark:text-white">
+                                    {item.title}
+                                </p>
+                                <p className="text-xs text-equestrian-stone-500 mt-0.5 dark:text-equestrian-stone-400">
+                                    {item.desc}
+                                </p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-equestrian-stone-400 mt-2">
+                                    {item.time}
+                                </p>
+                            </div>
+                        ))}
                     </div>
-                  </div>
-
-                  {/* Coaches unverified */}
-                  <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-3.5 dark:border-gray-800 dark:bg-gray-800/50">
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400">
-                        <GraduationCap size={18} />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                          Coaches Unverified
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          Awaiting verification
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span className="inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
-                        {unverifiedCoaches}
-                      </span>
-                      <Link
-                        to="/admin/coaches"
-                        className="inline-flex items-center gap-0.5 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                      >
-                        Review <ArrowUpRight size={13} />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Three-column: Distribution / Activity / Quick Stats ── */}
-        {!loading && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Entity Distribution */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-              <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Entity Distribution
-              </h2>
-              <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-                Stables, arenas, horses &amp; disciplines
-              </p>
-
-              <div className="mx-auto h-48 w-full max-w-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={distributionData}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={40}
-                      outerRadius={72}
-                      paddingAngle={3}
-                      strokeWidth={0}
-                    >
-                      {distributionData.map((entry, i) => (
-                        <Cell key={entry.name} fill={DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {distributionData.map((item, i) => (
-                  <div key={item.name} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                    <span
-                      className="inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: DISTRIBUTION_COLORS[i] }}
-                    />
-                    {item.name}: <span className="font-semibold text-gray-900 dark:text-gray-200">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-              <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Recent Activity
-              </h2>
-              <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-                Entity counts at a glance
-              </p>
-
-              <ul className="space-y-2.5">
-                {recentActivity.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-gray-800/50"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <item.icon size={16} className="text-amber-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {item.label}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        {item.total}
-                      </span>
-                      <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500">
-                        / {item.active} active
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-              <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-gray-100">
-                Quick Stats
-              </h2>
-              <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-                Courses &amp; enrollments overview
-              </p>
-
-              <div className="space-y-4">
-                {/* Courses */}
-                <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                  <TotalActiveMiniChart
-                    total={dashboard.stats.total_courses}
-                    active={dashboard.stats.active_courses}
-                  />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <BookOpen size={14} className="text-emerald-500" />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Courses
-                      </span>
-                    </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {dashboard.stats.total_courses}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {dashboard.stats.active_courses} active
-                    </p>
-                  </div>
                 </div>
 
-                {/* Enrollments */}
-                <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                  <TotalActiveMiniChart
-                    total={dashboard.stats.total_enrollments}
-                    active={dashboard.stats.active_enrollments}
-                  />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <ClipboardList size={14} className="text-blue-500" />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Enrollments
-                      </span>
+                {/* Entity Stats */}
+                <div className="rounded-xl border border-equestrian-stone-100 bg-white p-6 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
+                    <h2 className="mb-4 text-lg font-bold text-equestrian-green-950 dark:text-white">
+                        Quick Stats
+                    </h2>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between rounded-lg border border-equestrian-stone-100 p-3 dark:border-equestrian-stone-800">
+                            <div className="flex items-center gap-3">
+                                <TotalActiveMiniChart total={dashboard.stats.total_courses} active={dashboard.stats.active_courses} />
+                                <div>
+                                    <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">Courses</p>
+                                    <p className="text-lg font-bold text-equestrian-green-950 dark:text-white">{dashboard.stats.total_courses}</p>
+                                </div>
+                            </div>
+                            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full dark:bg-emerald-900/20 dark:text-emerald-400">
+                                {dashboard.stats.active_courses} active
+                            </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between rounded-lg border border-equestrian-stone-100 p-3 dark:border-equestrian-stone-800">
+                            <div className="flex items-center gap-3">
+                                <TotalActiveMiniChart total={dashboard.stats.total_enrollments} active={dashboard.stats.active_enrollments} />
+                                <div>
+                                    <p className="text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">Enrollments</p>
+                                    <p className="text-lg font-bold text-equestrian-green-950 dark:text-white">{dashboard.stats.total_enrollments}</p>
+                                </div>
+                            </div>
+                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full dark:bg-blue-900/20 dark:text-blue-400">
+                                {dashboard.stats.active_enrollments} active
+                            </span>
+                        </div>
                     </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {dashboard.stats.total_enrollments}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {dashboard.stats.active_enrollments} active
-                    </p>
-                  </div>
                 </div>
-              </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

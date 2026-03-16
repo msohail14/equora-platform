@@ -63,7 +63,7 @@ const AppRoutes = () => {
         fallback={
           <div className="grid min-h-screen place-items-center bg-gray-50 dark:bg-gray-950">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               Loading page...
             </div>
           </div>

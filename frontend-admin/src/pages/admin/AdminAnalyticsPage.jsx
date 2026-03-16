@@ -15,6 +15,7 @@ import {
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import { getAdminAnalyticsApi } from '../../features/operations/operationsApi';
+import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const AdminAnalyticsPage = () => {
   const [startDate, setStartDate] = useState('');
@@ -37,15 +38,16 @@ const AdminAnalyticsPage = () => {
   const summaryCards = [
     {
       label: 'Total Revenue',
-      value: analytics?.total_revenue != null ? `$${Number(analytics.total_revenue).toLocaleString()}` : '-',
-      icon: DollarSign,
-      accent: 'from-emerald-500 to-teal-500',
+      value: analytics?.total_revenue != null ? Number(analytics.total_revenue).toLocaleString() : '-',
+      isCurrency: true,
+      icon: null,
+      accent: 'from-equestrian-green-500 to-equestrian-green-700',
     },
     {
       label: 'Total Bookings',
       value: analytics?.total_bookings ?? '-',
       icon: CalendarDays,
-      accent: 'from-amber-500 to-orange-500',
+      accent: 'from-equestrian-gold-500 to-equestrian-gold-700',
     },
   ];
 
@@ -55,10 +57,10 @@ const AdminAnalyticsPage = () => {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <section className="rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
         <div className="mb-4 flex items-center gap-2">
-          <BarChart3 size={20} className="text-amber-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Analytics</h2>
+          <BarChart3 size={20} className="text-equestrian-green-500" />
+          <h2 className="text-xl font-semibold text-equestrian-green-950 dark:text-white">Analytics</h2>
         </div>
 
         <div className="flex flex-wrap items-end gap-3">
@@ -88,18 +90,21 @@ const AdminAnalyticsPage = () => {
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+                className="group relative overflow-hidden rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900"
               >
                 <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.accent}`} />
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-equestrian-stone-500 dark:text-equestrian-stone-400">
                       {card.label}
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                        {card.isCurrency && <SaudiRiyalIcon className="h-7 w-7 text-equestrian-green-950 dark:text-white" />}
+                        <p className="text-2xl font-bold text-equestrian-green-950 dark:text-white">{card.value}</p>
+                    </div>
                   </div>
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${card.accent} text-white`}>
-                    <card.icon size={18} />
+                    {card.isCurrency ? <SaudiRiyalIcon className="h-6 w-6 text-white" /> : <card.icon size={18} />}
                   </span>
                 </div>
               </div>
@@ -107,10 +112,10 @@ const AdminAnalyticsPage = () => {
           </div>
 
           {riderGrowth.length > 0 && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
               <div className="mb-3 flex items-center gap-2">
-                <TrendingUp size={18} className="text-emerald-500" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Rider Growth</h3>
+                <TrendingUp size={18} className="text-equestrian-green-500" />
+                <h3 className="text-lg font-semibold text-equestrian-green-950 dark:text-white">Rider Growth</h3>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -119,7 +124,7 @@ const AdminAnalyticsPage = () => {
                     <XAxis dataKey="label" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Area type="monotone" dataKey="count" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={2} />
+                    <Area type="monotone" dataKey="count" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -127,10 +132,10 @@ const AdminAnalyticsPage = () => {
           )}
 
           {bookingVolume.length > 0 && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
               <div className="mb-3 flex items-center gap-2">
-                <CalendarDays size={18} className="text-amber-500" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Booking Volume</h3>
+                <CalendarDays size={18} className="text-equestrian-gold-500" />
+                <h3 className="text-lg font-semibold text-equestrian-green-950 dark:text-white">Booking Volume</h3>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -139,7 +144,7 @@ const AdminAnalyticsPage = () => {
                     <XAxis dataKey="label" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="count" fill="#d97706" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -147,10 +152,10 @@ const AdminAnalyticsPage = () => {
           )}
 
           {revenueData.length > 0 && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl border border-equestrian-stone-200 bg-white p-5 shadow-sm dark:border-equestrian-stone-800 dark:bg-equestrian-stone-900">
               <div className="mb-3 flex items-center gap-2">
-                <DollarSign size={18} className="text-emerald-500" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Revenue</h3>
+                <DollarSign size={18} className="text-equestrian-green-500" />
+                <h3 className="text-lg font-semibold text-equestrian-green-950 dark:text-white">Revenue</h3>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -159,7 +164,7 @@ const AdminAnalyticsPage = () => {
                     <XAxis dataKey="label" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Area type="monotone" dataKey="amount" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={2} />
+                    <Area type="monotone" dataKey="amount" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

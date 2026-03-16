@@ -153,7 +153,7 @@ const ImageCropperModal = ({
             Aspect Ratio
           </span>
           {lockAspectSelection ? (
-            <span className="inline-flex w-fit rounded-lg border border-amber-500 bg-amber-500 px-3 py-1.5 text-xs font-medium text-white">
+            <span className="inline-flex w-fit rounded-lg border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white">
               {selectedAspectOption.label}
             </span>
           ) : (
@@ -165,7 +165,7 @@ const ImageCropperModal = ({
                   onClick={() => setSelectedAspectKey(item.key)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                     selectedAspectKey === item.key
-                      ? 'border-amber-500 bg-amber-500 text-white'
+                      ? 'border-emerald-500 bg-emerald-500 text-white'
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800'
                   }`}
                 >

@@ -288,7 +288,7 @@ const CoachWeeklyScheduleCalendar = ({ coachId }) => {
                           <div className="flex gap-1">
                             <button
                               type="button"
-                              className="rounded-md border border-amber-200 bg-amber-50 p-1 text-amber-700 hover:bg-amber-100"
+                              className="rounded-md border border-emerald-200 bg-emerald-50 p-1 text-emerald-700 hover:bg-emerald-100"
                               onClick={() => openEdit(slot)}
                             >
                               <Pencil size={12} />

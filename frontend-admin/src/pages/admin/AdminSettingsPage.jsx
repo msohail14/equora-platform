@@ -52,7 +52,7 @@ const AdminSettingsPage = () => {
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-6 flex items-center gap-2">
-        <Settings size={20} className="text-amber-500" />
+        <Settings size={20} className="text-emerald-500" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Platform Settings</h2>
       </div>
 

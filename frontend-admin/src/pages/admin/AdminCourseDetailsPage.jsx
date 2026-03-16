@@ -64,7 +64,7 @@ const emptyCourseEditForm = {
 
 /* ── Shared style helpers ── */
 const selectCls =
-  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
+  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
 const labelSpanCls =
   'text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500';
 
@@ -390,7 +390,7 @@ const AdminCourseDetailsPage = () => {
     return (
       <div className="flex min-h-64 items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
           <p className="text-sm text-gray-400">Loading course details…</p>
         </div>
       </div>
@@ -477,7 +477,7 @@ const AdminCourseDetailsPage = () => {
             <span className={labelSpanCls}>Cancel Reason</span>
             <textarea
               rows={3}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 resize-none"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 resize-none"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Add reason for cancellation…"
@@ -573,7 +573,7 @@ const AdminCourseDetailsPage = () => {
                 <span className={labelSpanCls}>Description</span>
                 <textarea
                   rows={3}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 resize-none"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 resize-none"
                   value={courseEditForm.description}
                   onChange={(e) => onChangeEditCourse('description', e.target.value)}
                 />
@@ -601,11 +601,11 @@ const AdminCourseDetailsPage = () => {
             {/* Upload controls */}
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-1.5">
-                <ImagePlus size={13} className="text-amber-500 shrink-0" />
+                <ImagePlus size={13} className="text-emerald-500 shrink-0" />
                 <p className="text-xs font-bold text-gray-700 dark:text-gray-200">Course Thumbnail</p>
               </div>
               <input
-                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 file:mr-2 file:cursor-pointer file:rounded file:border-0 file:bg-amber-50 file:px-2 file:py-0.5 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:file:bg-amber-900/30 dark:file:text-amber-400"
+                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 file:mr-2 file:cursor-pointer file:rounded file:border-0 file:bg-emerald-50 file:px-2 file:py-0.5 file:text-xs file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:file:bg-emerald-900/30 dark:file:text-emerald-400"
                 type="file"
                 accept=".png,.jpg,.jpeg"
                 onChange={(e) => onSelectCourseThumbnail(e.target.files?.[0] || null)}
@@ -676,7 +676,7 @@ const AdminCourseDetailsPage = () => {
                     type="checkbox"
                     checked={selectedRiderIds.includes(rider.id)}
                     onChange={() => toggleRiderSelection(rider.id)}
-                    className="h-4 w-4 shrink-0 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                    className="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
                   />
                 </label>
               ))

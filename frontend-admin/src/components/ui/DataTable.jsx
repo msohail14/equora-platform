@@ -99,8 +99,8 @@ const DataTable = ({
                           {canSort && !sorted && (
                             <ChevronsUpDown size={12} className="text-gray-300 dark:text-gray-600" />
                           )}
-                          {sorted === 'asc' && <ChevronUp size={12} className="text-amber-500" />}
-                          {sorted === 'desc' && <ChevronDown size={12} className="text-amber-500" />}
+                          {sorted === 'asc' && <ChevronUp size={12} className="text-emerald-500" />}
+                          {sorted === 'desc' && <ChevronDown size={12} className="text-emerald-500" />}
                         </span>
                       </th>
                     );

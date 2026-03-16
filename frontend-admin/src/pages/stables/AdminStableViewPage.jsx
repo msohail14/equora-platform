@@ -30,7 +30,7 @@ const uploadBaseUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
 const statusColors = {
   available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
   busy: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-  resting: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  resting: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
   injured: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 };
 
@@ -324,7 +324,7 @@ const AdminStableViewPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading stable details…</p>
         </div>
       </div>
@@ -340,9 +340,9 @@ const AdminStableViewPage = () => {
   /* ─── shared input/select/label classes ─── */
   const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1';
   const inputCls =
-    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-amber-400';
+    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-emerald-400';
   const selectCls =
-    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
+    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 dark:bg-gray-950">
@@ -364,7 +364,7 @@ const AdminStableViewPage = () => {
               onClick={onStableToggleActive}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 stable.is_active
-                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
                   : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
               }`}
             >
@@ -372,7 +372,7 @@ const AdminStableViewPage = () => {
             </button>
             <button
               onClick={() => setIsStableModalOpen(true)}
-              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600"
+              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
             >
               Edit Stable
             </button>
@@ -389,7 +389,7 @@ const AdminStableViewPage = () => {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         {/* Stable Hero Card */}
         <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <div className="h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" />
+          <div className="h-2 bg-gradient-to-r from-emerald-400 via-emerald-500 to-stone-500" />
           <div className="p-6 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -434,10 +434,10 @@ const AdminStableViewPage = () => {
                   {stable.contact_email}
                 </span>
               )}
-              <span className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+              <span className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                 🏟 {arenas.length} Arena{arenas.length !== 1 ? 's' : ''}
               </span>
-              <span className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+              <span className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                 🐴 {horses.length} Horse{horses.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -454,7 +454,7 @@ const AdminStableViewPage = () => {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Arenas</h2>
             <button
               onClick={onArenaAdd}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -489,7 +489,7 @@ const AdminStableViewPage = () => {
                     <div className="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
                       <button
                         onClick={() => onArenaEdit(arena)}
-                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-amber-600 dark:hover:bg-gray-800 dark:hover:text-amber-400"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-emerald-600 dark:hover:bg-gray-800 dark:hover:text-emerald-400"
                         title="Edit"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -512,7 +512,7 @@ const AdminStableViewPage = () => {
                       Capacity: {arena.capacity}
                     </span>
                     {disciplines.find((d) => d.id === arena.discipline_id) && (
-                      <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                         {disciplines.find((d) => d.id === arena.discipline_id)?.name}
                       </span>
                     )}
@@ -529,7 +529,7 @@ const AdminStableViewPage = () => {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Horses</h2>
             <button
               onClick={onHorseAdd}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -567,7 +567,7 @@ const AdminStableViewPage = () => {
                     <div className="flex gap-1.5 opacity-0 transition group-hover:opacity-100">
                       <button
                         onClick={() => onHorseEdit(horse)}
-                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-amber-600 dark:hover:bg-gray-800 dark:hover:text-amber-400"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-emerald-600 dark:hover:bg-gray-800 dark:hover:text-emerald-400"
                         title="Edit"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -576,7 +576,7 @@ const AdminStableViewPage = () => {
                       </button>
                       <button
                         onClick={() => onHorseToggleActive(horse)}
-                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/30 dark:hover:text-amber-400"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
                         title={horse.status === 'available' ? 'Deactivate' : 'Activate'}
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -599,7 +599,7 @@ const AdminStableViewPage = () => {
                       {horse.status}
                     </span>
                     {disciplines.find((d) => d.id === horse.discipline_id) && (
-                      <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                         {disciplines.find((d) => d.id === horse.discipline_id)?.name}
                       </span>
                     )}
@@ -669,7 +669,7 @@ const AdminStableViewPage = () => {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setStableLogoFile(e.target.files?.[0])}
-                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">
@@ -683,7 +683,7 @@ const AdminStableViewPage = () => {
               <button
                 type="button"
                 onClick={onStableSave}
-                className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
               >
                 Save Stable
               </button>
@@ -747,7 +747,7 @@ const AdminStableViewPage = () => {
                 type="file"
                 accept=".png,.jpg,.jpeg"
                 onChange={(e) => setArenaImageFile(e.target.files?.[0])}
-                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG/JPG/JPEG only, max 2MB.</p>
             </div>
@@ -761,7 +761,7 @@ const AdminStableViewPage = () => {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
               >
                 {editingArenaId ? 'Update Arena' : 'Add Arena'}
               </button>
@@ -837,7 +837,7 @@ const AdminStableViewPage = () => {
                 type="file"
                 accept=".png,.jpg,.jpeg"
                 onChange={(e) => setHorseImageFile(e.target.files?.[0])}
-                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG/JPG/JPEG only, max 2MB.</p>
             </div>
@@ -851,7 +851,7 @@ const AdminStableViewPage = () => {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
               >
                 {editingHorseId ? 'Update Horse' : 'Add Horse'}
               </button>

@@ -250,7 +250,7 @@ const AdminArenasPage = () => {
               </span>
               <textarea
                 rows={3}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Optional arena description"
@@ -259,7 +259,7 @@ const AdminArenasPage = () => {
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Stable</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.stable_id}
                 onChange={(e) => setForm((prev) => ({ ...prev, stable_id: e.target.value }))}
                 required
@@ -275,7 +275,7 @@ const AdminArenasPage = () => {
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Discipline</span>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                 value={form.discipline_id}
                 onChange={(e) => setForm((prev) => ({ ...prev, discipline_id: e.target.value }))}
                 required

@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { Banknote } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import { getAdminPayoutsApi, processAdminPayoutApi } from '../../features/operations/operationsApi';
+import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const STATUS_OPTIONS = ['all', 'pending', 'processing', 'paid'];
 
@@ -63,20 +64,26 @@ const AdminPayoutsPage = () => {
 
   const formatAmount = (amount) => {
     const num = Number(amount);
-    return Number.isNaN(num) ? '-' : `$${num.toFixed(2)}`;
+    if (Number.isNaN(num)) return '-';
+    return (
+      <span className="flex items-center gap-1 font-medium">
+        <SaudiRiyalIcon className="h-4 w-4 text-equestrian-stone-600 dark:text-equestrian-stone-300" />
+        {num.toFixed(2)}
+      </span>
+    );
   };
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Banknote size={20} className="text-amber-500" />
+          <Banknote size={20} className="text-emerald-500" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Coach Payouts</h2>
         </div>
         <label className="grid gap-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
           <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >

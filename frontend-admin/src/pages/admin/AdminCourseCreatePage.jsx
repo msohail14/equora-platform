@@ -57,7 +57,7 @@ const toCoursePayload = (form) => ({
 });
 
 const selectClass =
-  'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-sm transition-all duration-150 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-100 dark:focus:border-amber-400';
+  'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-sm transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-100 dark:focus:border-emerald-400';
 
 const labelClass = 'text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500';
 
@@ -65,8 +65,8 @@ const SectionCard = ({ icon: Icon, title, children, accent }) => (
   <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
     <div className={`flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800 ${accent || 'bg-gray-50 dark:bg-gray-800/50'}`}>
       {Icon && (
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-          <Icon size={15} className="text-amber-600 dark:text-amber-400" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+          <Icon size={15} className="text-emerald-600 dark:text-emerald-400" />
         </span>
       )}
       <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100">{title}</h2>
@@ -191,7 +191,7 @@ const AdminCourseCreatePage = () => {
       </div>
 
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-400 to-rose-400 px-6 py-8 shadow-lg sm:px-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-stone-400 to-rose-400 px-6 py-8 shadow-lg sm:px-8">
         {/* Decorative circles */}
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-8 right-20 h-32 w-32 rounded-full bg-white/10" />
@@ -207,7 +207,7 @@ const AdminCourseCreatePage = () => {
       {loading && (
         <div className="flex items-center justify-center rounded-2xl border border-gray-100 bg-white py-12 dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-200 border-t-amber-500" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-500" />
             <p className="text-sm text-gray-500 dark:text-gray-400">Loading form data…</p>
           </div>
         </div>
@@ -310,7 +310,7 @@ const AdminCourseCreatePage = () => {
                       <span className={labelClass}>Description</span>
                       <textarea
                         rows={4}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-sm transition-all duration-150 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-100 resize-none"
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-sm transition-all duration-150 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-100 resize-none"
                         value={form.description}
                         onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                         placeholder="Course summary, outcomes, or notes…"
@@ -417,8 +417,8 @@ const AdminCourseCreatePage = () => {
             <div className="xl:sticky xl:top-6 xl:self-start">
               <div className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
                 <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                    <ImagePlus size={15} className="text-amber-600 dark:text-amber-400" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                    <ImagePlus size={15} className="text-emerald-600 dark:text-emerald-400" />
                   </span>
                   <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100">Course Thumbnail</h2>
                 </div>
@@ -448,7 +448,7 @@ const AdminCourseCreatePage = () => {
                   <label className="grid gap-1.5">
                     <span className={labelClass}>Upload Image *</span>
                     <input
-                      className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 shadow-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-amber-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300 dark:file:bg-amber-900/30 dark:file:text-amber-400"
+                      className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 shadow-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300 dark:file:bg-emerald-900/30 dark:file:text-emerald-400"
                       type="file"
                       accept=".png,.jpg,.jpeg"
                       onChange={(e) => onSelectImage(e.target.files?.[0] || null)}
