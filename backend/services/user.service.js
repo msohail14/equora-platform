@@ -102,9 +102,9 @@ export const signupUser = async ({
     existingUser.date_of_birth = date_of_birth || null;
     existingUser.gender = normalizedGender;
     existingUser.profile_picture_url = profile_picture_url ?? existingUser.profile_picture_url;
-    existingUser.email_verification_otp = verificationOtp;
-    existingUser.email_verification_expires = verificationExpiry;
-    existingUser.is_email_verified = false;
+    existingUser.is_email_verified = true;
+    existingUser.email_verification_otp = null;
+    existingUser.email_verification_expires = null;
     await existingUser.save();
 
     if (profile_picture_url && previousProfilePictureUrl && previousProfilePictureUrl !== profile_picture_url) {
@@ -115,16 +115,12 @@ export const signupUser = async ({
       }
     }
 
-    await sendOtpEmail({
-      to: existingUser.email,
-      otp: verificationOtp,
-      name: `${existingUser.first_name || ''} ${existingUser.last_name || ''}`.trim() || 'User',
-    });
-
+    const token = getJwtToken(existingUser);
     const safeExistingUser = await User.findByPk(existingUser.id, { attributes: publicUserFields });
     return {
-      message: `Account exists but email is not verified. OTP sent to email (valid for ${expiryMinutes} minutes).`,
+      message: 'Signup successful.',
       user: safeExistingUser,
+      token,
     };
   }
 
@@ -142,21 +138,15 @@ export const signupUser = async ({
     date_of_birth: date_of_birth || null,
     gender: normalizedGender,
     profile_picture_url: profile_picture_url || null,
-    is_email_verified: false,
-    email_verification_otp: verificationOtp,
-    email_verification_expires: verificationExpiry,
+    is_email_verified: true,
   });
 
-  await sendOtpEmail({
-    to: user.email,
-    otp: verificationOtp,
-    name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
-  });
-
+  const token = getJwtToken(user);
   const safeUser = await User.findByPk(user.id, { attributes: publicUserFields });
   return {
-    message: `Signup successful. OTP sent to email (valid for ${expiryMinutes} minutes).`,
+    message: 'Signup successful.',
     user: safeUser,
+    token,
   };
 };
 
