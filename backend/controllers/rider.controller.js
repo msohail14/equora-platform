@@ -92,7 +92,8 @@ export const updateRiderController = async (req, res) => {
 
 export const resetRiderPasswordController = async (req, res) => {
   try {
-    const data = await adminResetUserPassword(req.params.id);
+    const options = { method: req.body?.method };
+    const data = await adminResetUserPassword(req.params.id, options);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

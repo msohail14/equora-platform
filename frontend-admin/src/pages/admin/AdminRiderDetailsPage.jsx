@@ -240,14 +240,40 @@ const AdminRiderDetailsPage = () => {
     }
   }, [rider, fetchRiderDetails]);
 
-  const onResetPassword = useCallback(async () => {
+  const [showResetPasswordChoice, setShowResetPasswordChoice] = useState(false);
+  const [resetPasswordResult, setResetPasswordResult] = useState(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+
+  const onResetPasswordEmail = useCallback(async () => {
     if (!rider) return;
-    if (!window.confirm(`Send a password reset email to ${rider.email}?`)) return;
+    setShowResetPasswordChoice(false);
+    setResettingPassword(true);
+    setResetPasswordResult(null);
     try {
-      const response = await resetRiderPasswordApi(rider.id);
-      toast.success(response?.message || "Password reset email sent.");
+      const response = await resetRiderPasswordApi(rider.id, "email");
+      toast.success(response?.message || "Done.");
+      setResetPasswordResult(response);
     } catch (error) {
-      toast.error(error.message || "Failed to send reset email.");
+      toast.error(error.message || "Failed.");
+    } finally {
+      setResettingPassword(false);
+    }
+  }, [rider]);
+
+  const onResetPasswordManual = useCallback(async () => {
+    if (!rider) return;
+    if (!window.confirm(`Set a new temporary password for ${rider.email}? They will need to use it to sign in.`)) return;
+    setShowResetPasswordChoice(false);
+    setResettingPassword(true);
+    setResetPasswordResult(null);
+    try {
+      const response = await resetRiderPasswordApi(rider.id, "manual");
+      toast.success(response?.message || "Done.");
+      setResetPasswordResult(response);
+    } catch (error) {
+      toast.error(error.message || "Failed.");
+    } finally {
+      setResettingPassword(false);
     }
   }, [rider]);
 
@@ -401,9 +427,14 @@ const AdminRiderDetailsPage = () => {
             <Plus size={14} className="mr-1" />
             Add Session
           </AppButton>
-          <AppButton type="button" variant="secondary" onClick={onResetPassword}>
+          <AppButton
+            type="button"
+            variant="secondary"
+            onClick={() => setShowResetPasswordChoice(true)}
+            disabled={resettingPassword}
+          >
             <KeyRound size={14} className="mr-1" />
-            Reset Password
+            {resettingPassword ? "Sending…" : "Reset Password"}
           </AppButton>
           <AppButton type="button" onClick={onToggleRiderStatus}>
             <UserX size={14} className="mr-1" />
@@ -964,6 +995,89 @@ const AdminRiderDetailsPage = () => {
               Close
             </AppButton>
           </div>
+        </div>
+      </Modal>
+
+      {/* Reset password: choose method */}
+      <Modal
+        isOpen={showResetPasswordChoice}
+        title="Reset password"
+        onClose={() => setShowResetPasswordChoice(false)}
+      >
+        <div className="grid gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Send a reset link by email (if email is configured) or set a temporary password and share it with the rider.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <AppButton type="button" onClick={onResetPasswordEmail}>
+              Send reset email
+            </AppButton>
+            <AppButton type="button" variant="secondary" onClick={onResetPasswordManual}>
+              Set temporary password
+            </AppButton>
+            <AppButton type="button" variant="secondary" onClick={() => setShowResetPasswordChoice(false)}>
+              Cancel
+            </AppButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reset password: show result (temp password or link to copy) */}
+      <Modal
+        isOpen={!!resetPasswordResult?.temporary_password || !!resetPasswordResult?.reset_link}
+        title="Share with rider"
+        onClose={() => setResetPasswordResult(null)}
+      >
+        <div className="grid gap-3">
+          {resetPasswordResult?.temporary_password && (
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Temporary password
+              </label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-mono dark:border-gray-700 dark:bg-gray-800">
+                  {resetPasswordResult.temporary_password}
+                </code>
+                <AppButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(resetPasswordResult.temporary_password);
+                    toast.success("Copied to clipboard.");
+                  }}
+                >
+                  Copy
+                </AppButton>
+              </div>
+            </div>
+          )}
+          {resetPasswordResult?.reset_link && (
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Reset link
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={resetPasswordResult.reset_link}
+                  className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                />
+                <AppButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(resetPasswordResult.reset_link);
+                    toast.success("Copied to clipboard.");
+                  }}
+                >
+                  Copy
+                </AppButton>
+              </div>
+            </div>
+          )}
+          <AppButton type="button" onClick={() => setResetPasswordResult(null)}>
+            Done
+          </AppButton>
         </div>
       </Modal>
     </div>

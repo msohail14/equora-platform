@@ -7,6 +7,69 @@ import Modal from '../../components/ui/Modal';
 import { createRiderApi, getRidersApi } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
+/** Modal when rider is created but email was not sent: show reset link and temp password to copy */
+const CreateRiderShareModal = ({ share, onClose }) => {
+  const open = !!(share?.reset_link || share?.temporary_password);
+  return (
+  <Modal isOpen={open} title="Share with rider" onClose={onClose}>
+    <div className="grid gap-3">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Invitation email could not be sent. Share the details below with the rider.
+      </p>
+      {share?.temporary_password && (
+        <div className="grid gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Temporary password
+          </label>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-mono dark:border-gray-700 dark:bg-gray-800">
+              {share.temporary_password}
+            </code>
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                navigator.clipboard?.writeText(share.temporary_password);
+                toast.success('Copied.');
+              }}
+            >
+              Copy
+            </AppButton>
+          </div>
+        </div>
+      )}
+      {share?.reset_link && (
+        <div className="grid gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Reset link
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={share.reset_link}
+              className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+            />
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                navigator.clipboard?.writeText(share.reset_link);
+                toast.success('Copied.');
+              }}
+            >
+              Copy
+            </AppButton>
+          </div>
+        </div>
+      )}
+      <AppButton type="button" onClick={onClose}>
+        Done
+      </AppButton>
+    </div>
+  </Modal>
+  );
+};
+
 const emptyCreateForm = {
   email: '',
   mobile_number: '',
@@ -29,6 +92,8 @@ const AdminRidersPage = () => {
   const [pagination, setPagination] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(emptyCreateForm);
+  const [createResultShare, setCreateResultShare] = useState(null);
+  const [creatingRider, setCreatingRider] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const fetchRiders = async (targetPage = page, targetSearch = debouncedSearch) => {
@@ -60,13 +125,23 @@ const AdminRidersPage = () => {
 
   const onCreateRider = async (event) => {
     event.preventDefault();
+    if (creatingRider) return;
+    setCreatingRider(true);
     try {
       const response = await createRiderApi(createForm);
       toast.success(response?.message || 'Rider created successfully.');
       resetCreateForm();
       await fetchRiders(page, debouncedSearch);
+      if (!response?.email_sent && (response?.reset_link || response?.temporary_password)) {
+        setCreateResultShare({
+          reset_link: response.reset_link,
+          temporary_password: response.temporary_password,
+        });
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to create rider.');
+    } finally {
+      setCreatingRider(false);
     }
   };
 
@@ -206,13 +281,17 @@ const AdminRidersPage = () => {
             />
           </div>
           <div className="sm:col-span-2 flex flex-wrap gap-2">
-            <AppButton type="submit">Create Rider</AppButton>
+            <AppButton type="submit" disabled={creatingRider}>
+              {creatingRider ? 'Creating…' : 'Create Rider'}
+            </AppButton>
             <AppButton type="button" variant="secondary" onClick={resetCreateForm}>
               Cancel
             </AppButton>
           </div>
         </form>
       </Modal>
+
+      <CreateRiderShareModal share={createResultShare} onClose={() => setCreateResultShare(null)} />
     </section>
   );
 };

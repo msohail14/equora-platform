@@ -4,32 +4,65 @@ import { Op } from 'sequelize';
 import { Course, CourseEnrollment, CourseSession, Discipline, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail } from './mail.service.js';
 
-export const adminResetUserPassword = async (userId) => {
+/**
+ * Admin reset rider password. Supports two methods:
+ * - email: send reset link via email (if email fails, still returns reset_link for manual sharing)
+ * - manual: set a temporary password and return it so admin can share with the rider
+ * @param {string} userId - Rider user id
+ * @param {{ method?: 'email' | 'manual' }} [options] - method: 'email' (default) or 'manual'
+ */
+export const adminResetUserPassword = async (userId, options = {}) => {
   const user = await User.findByPk(userId);
   if (!user) {
     throw new Error('User not found.');
   }
 
-  const resetToken = crypto.randomBytes(32).toString('hex');
+  const method = (options.method || 'email').toLowerCase();
   const expiryMinutes = Number(process.env.RESET_TOKEN_EXPIRES_MINUTES || 60);
-  const expiryDate = new Date(Date.now() + expiryMinutes * 60 * 1000);
+  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
 
+  if (method === 'manual') {
+    const temporaryPassword = crypto.randomBytes(12).toString('hex');
+    const password_hash = await bcrypt.hash(temporaryPassword, 10);
+    user.password_hash = password_hash;
+    user.reset_password_token = null;
+    user.reset_password_expires = null;
+    await user.save();
+    return {
+      message: 'Temporary password set. Share it with the rider; they should change it after first login.',
+      method: 'manual',
+      temporary_password: temporaryPassword,
+    };
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expiryDate = new Date(Date.now() + expiryMinutes * 60 * 1000);
   user.reset_password_token = resetToken;
   user.reset_password_expires = expiryDate;
   await user.save();
 
-  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/reset-password?token=${resetToken}`;
 
-  await sendResetPasswordLinkEmail({
-    to: user.email,
-    resetLink,
-    name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
-    expiresMinutes: expiryMinutes,
-  });
+  let emailSent = false;
+  try {
+    await sendResetPasswordLinkEmail({
+      to: user.email,
+      resetLink,
+      name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
+      expiresMinutes: expiryMinutes,
+    });
+    emailSent = true;
+  } catch (err) {
+    // Email not configured or failed — still return reset_link for manual sharing
+  }
 
   return {
-    message: `Password reset link sent to ${user.email} (valid for ${expiryMinutes} minutes).`,
+    message: emailSent
+      ? `Password reset link sent to ${user.email} (valid for ${expiryMinutes} minutes).`
+      : `Reset link generated (email not sent). Share the link below with ${user.email}.`,
+    method: 'email',
+    email_sent: emailSent,
+    reset_link: resetLink,
   };
 };
 
@@ -134,15 +167,26 @@ export const createRiderByAdmin = async (payload) => {
   const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/reset-password?token=${resetToken}`;
 
-  await sendResetPasswordLinkEmail({
-    to: rider.email,
-    resetLink,
-    name: `${rider.first_name || ''} ${rider.last_name || ''}`.trim() || 'Rider',
-    expiresMinutes: expiryMinutes,
-  });
+  let emailSent = false;
+  try {
+    await sendResetPasswordLinkEmail({
+      to: rider.email,
+      resetLink,
+      name: `${rider.first_name || ''} ${rider.last_name || ''}`.trim() || 'Rider',
+      expiresMinutes: expiryMinutes,
+    });
+    emailSent = true;
+  } catch (err) {
+    // Email service not configured or failed — rider is still created; admin can share link manually
+  }
 
   return {
-    message: 'Rider created and invitation email sent successfully.',
+    message: emailSent
+      ? 'Rider created and invitation email sent successfully.'
+      : 'Rider created. Invitation email could not be sent; share the reset link below with the rider.',
+    email_sent: emailSent,
+    reset_link: resetLink,
+    temporary_password: emailSent ? undefined : randomPassword,
     rider: {
       id: rider.id,
       first_name: rider.first_name,
