@@ -1,5 +1,6 @@
 import {
   getBookingStables,
+  getStableArenas,
   getStableCoaches,
   getCoachSlots,
   getStableHorses,
@@ -29,6 +30,17 @@ export const getBookingStablesController = async (req, res) => {
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getStableArenasController = async (req, res) => {
+  try {
+    const data = await getStableArenas({
+      stableId: req.params.id,
     });
     return res.status(200).json(data);
   } catch (error) {

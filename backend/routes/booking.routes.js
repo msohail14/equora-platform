@@ -3,6 +3,7 @@ import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import {
   getBookingStablesController,
+  getStableArenasController,
   getStableCoachesController,
   getCoachSlotsController,
   getStableHorsesController,
@@ -17,6 +18,7 @@ import {
 const router = express.Router();
 
 router.get('/stables', getBookingStablesController);
+router.get('/stables/:id/arenas', getStableArenasController);
 router.get('/stables/:id/coaches', getStableCoachesController);
 router.get('/stables/:id/horses', getStableHorsesController);
 

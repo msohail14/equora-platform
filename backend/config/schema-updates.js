@@ -626,6 +626,23 @@ const ensureFeaturedColumns = async () => {
   await ensureColumnExists('horses', 'is_featured', 'ADD COLUMN `is_featured` BOOLEAN NOT NULL DEFAULT FALSE AFTER `max_daily_sessions`');
 };
 
+const ensureBookingTypeAndNullableCoach = async () => {
+  await ensureColumnExists('lesson_bookings', 'booking_type', "ADD COLUMN `booking_type` ENUM('lesson','arena_only') NOT NULL DEFAULT 'lesson' AFTER `arena_id`");
+  const [results] = await sequelize.query(`
+    SELECT COLUMN_NAME, IS_NULLABLE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'lesson_bookings'
+      AND COLUMN_NAME = 'coach_id'
+  `);
+  if (results?.[0] && results[0].IS_NULLABLE === 'NO') {
+    await sequelize.query(`
+      ALTER TABLE \`lesson_bookings\`
+      MODIFY COLUMN \`coach_id\` INT NULL
+    `);
+  }
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -657,4 +674,5 @@ export const applySchemaUpdates = async () => {
   await ensureCourseSessionNewColumns();
   await ensureAdminRoleColumn();
   await ensureFeaturedColumns();
+  await ensureBookingTypeAndNullableCoach();
 };

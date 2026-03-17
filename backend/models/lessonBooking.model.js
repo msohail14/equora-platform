@@ -19,7 +19,7 @@ const LessonBooking = sequelize.define(
     },
     coach_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'user',
         key: 'id',
@@ -40,6 +40,11 @@ const LessonBooking = sequelize.define(
         model: 'arenas',
         key: 'id',
       },
+    },
+    booking_type: {
+      type: DataTypes.ENUM('lesson', 'arena_only'),
+      allowNull: false,
+      defaultValue: 'lesson',
     },
     horse_id: {
       type: DataTypes.INTEGER,

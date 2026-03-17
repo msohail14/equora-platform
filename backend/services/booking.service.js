@@ -77,6 +77,27 @@ export const getBookingStables = async ({ search, page, limit }) => {
   };
 };
 
+export const getStableArenas = async ({ stableId }) => {
+  if (!stableId) {
+    throw new Error('stableId is required.');
+  }
+
+  const stable = await Stable.findByPk(stableId);
+  if (!stable || !stable.is_active || !stable.is_approved) {
+    throw new Error('Stable not found.');
+  }
+
+  const arenas = await Arena.findAll({
+    where: { stable_id: stableId },
+    attributes: ['id', 'name', 'description', 'capacity', 'discipline_id', 'image_url'],
+    order: [['name', 'ASC']],
+  });
+
+  return {
+    data: arenas.map((a) => a.get({ plain: true })),
+  };
+};
+
 export const getStableCoaches = async ({ stableId, search, page, limit }) => {
   if (!stableId) {
     throw new Error('stableId is required.');
@@ -309,16 +330,26 @@ export const getStableHorses = async ({ stableId, discipline, level, date }) => 
 export const createBooking = async ({
   riderId, coachId, stableId, arenaId, horseId,
   bookingDate, startTime, endTime, lessonType, price, notes,
+  bookingType = 'lesson',
 }) => {
-  if (!riderId || !coachId || !stableId || !bookingDate || !startTime || !endTime) {
-    throw new Error('riderId, coachId, stableId, bookingDate, startTime, and endTime are required.');
+  if (!riderId || !stableId || !bookingDate || !startTime || !endTime) {
+    throw new Error('riderId, stableId, bookingDate, startTime, and endTime are required.');
+  }
+
+  const isArenaOnly = bookingType === 'arena_only';
+  if (isArenaOnly) {
+    if (!arenaId) throw new Error('arenaId is required for arena-only booking.');
+  } else {
+    if (!coachId) throw new Error('coachId is required for lesson booking.');
   }
 
   const rider = await User.findByPk(riderId);
   if (!rider) throw new Error('Rider not found.');
 
-  const coach = await User.findByPk(coachId);
-  if (!coach || coach.role !== 'coach') throw new Error('Coach not found.');
+  if (coachId) {
+    const coach = await User.findByPk(coachId);
+    if (!coach || coach.role !== 'coach') throw new Error('Coach not found.');
+  }
 
   const stable = await Stable.findByPk(stableId);
   if (!stable) throw new Error('Stable not found.');
@@ -335,7 +366,7 @@ export const createBooking = async ({
 
   const booking = await LessonBooking.create({
     rider_id: riderId,
-    coach_id: coachId,
+    coach_id: coachId || null,
     stable_id: stableId,
     arena_id: arenaId || null,
     horse_id: horseId || null,
@@ -343,9 +374,10 @@ export const createBooking = async ({
     start_time: startTime,
     end_time: endTime,
     lesson_type: lessonType || 'private',
-    status: 'pending_horse_approval',
+    status: isArenaOnly ? 'confirmed' : 'pending_horse_approval',
     price: price || null,
     notes: notes || null,
+    booking_type: isArenaOnly ? 'arena_only' : 'lesson',
   });
 
   if (horseId) {
@@ -362,13 +394,15 @@ export const createBooking = async ({
     await availability.save();
   }
 
-  await Notification.create({
-    user_id: coachId,
-    type: 'lesson_booked',
-    title: 'New Booking Request',
-    body: `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`,
-    data: { booking_id: booking.id },
-  });
+  if (coachId) {
+    await Notification.create({
+      user_id: coachId,
+      type: 'lesson_booked',
+      title: 'New Booking Request',
+      body: `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`,
+      data: { booking_id: booking.id },
+    });
+  }
 
   return booking;
 };
