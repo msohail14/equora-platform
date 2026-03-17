@@ -1,8 +1,5 @@
-import React from 'react';
-
 /**
- * Equora Q monogram.
- * Stylized gold Q logo for brand identity across the admin dashboard.
+ * Equora Q monogram -- ring shape with elegant tail.
  */
 export const HorseIcon = ({ className = 'w-6 h-6', size, ...props }) => {
   const s = size ?? 24;
@@ -16,8 +13,10 @@ export const HorseIcon = ({ className = 'w-6 h-6', size, ...props }) => {
       className={className}
       {...props}
     >
-      <circle cx="50" cy="50" r="38" />
-      <path d="M 58 58 Q 75 75 92 92 L 92 78 Q 75 60 58 58 Z" />
+      <path
+        fillRule="evenodd"
+        d="M50 10C27.9 10 10 27.9 10 50s17.9 40 40 40c7.5 0 14.5-2.1 20.5-5.7l6.8 6.8c2 2 5.2 2 7.2 0s2-5.2 0-7.2l-6.2-6.2C84.7 71.2 90 61.2 90 50c0-22.1-17.9-40-40-40zm0 14c-14.4 0-26 11.6-26 26s11.6 26 26 26c4.3 0 8.4-1.1 12-3l-9.3-9.3c-2-2-2-5.2 0-7.2s5.2-2 7.2 0l9.5 9.5C73.2 61.6 76 56.2 76 50c0-14.4-11.6-26-26-26z"
+      />
     </svg>
   );
 };
