@@ -55,11 +55,13 @@ export const getAllHorsesController = async (req, res) => {
 
 export const getAllHorsesGlobalController = async (req, res) => {
   try {
+    const featured = String(req.query.featured || 'false').toLowerCase() === 'true';
     const data = await getAllHorses({
       adminId: req.user?.id ?? null,
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
+      featured: featured || undefined,
     });
     return res.status(200).json(data);
   } catch (error) {

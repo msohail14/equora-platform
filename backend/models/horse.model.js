@@ -62,6 +62,11 @@ const Horse = sequelize.define(
       allowNull: false,
       defaultValue: 3,
     },
+    is_featured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     status: {
       type: DataTypes.ENUM('available', 'busy', 'resting', 'injured'),
       allowNull: false,

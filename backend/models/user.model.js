@@ -77,6 +77,11 @@ const User = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    is_featured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     is_verified: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

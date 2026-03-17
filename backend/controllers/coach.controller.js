@@ -39,8 +39,10 @@ export const createCoachController = async (req, res) => {
 export const getAllCoachesController = async (req, res) => {
   try {
     const include_inactive = String(req.query.include_inactive || 'false').toLowerCase() === 'true';
+    const featured = String(req.query.featured || 'false').toLowerCase() === 'true';
     const data = await getAllCoaches({
       include_inactive,
+      featured: featured || undefined,
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,

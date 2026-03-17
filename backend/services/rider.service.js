@@ -4,6 +4,35 @@ import { Op } from 'sequelize';
 import { Course, CourseEnrollment, CourseSession, Discipline, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail } from './mail.service.js';
 
+export const adminResetUserPassword = async (userId) => {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error('User not found.');
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expiryMinutes = Number(process.env.RESET_TOKEN_EXPIRES_MINUTES || 60);
+  const expiryDate = new Date(Date.now() + expiryMinutes * 60 * 1000);
+
+  user.reset_password_token = resetToken;
+  user.reset_password_expires = expiryDate;
+  await user.save();
+
+  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/reset-password?token=${resetToken}`;
+
+  await sendResetPasswordLinkEmail({
+    to: user.email,
+    resetLink,
+    name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
+    expiresMinutes: expiryMinutes,
+  });
+
+  return {
+    message: `Password reset link sent to ${user.email} (valid for ${expiryMinutes} minutes).`,
+  };
+};
+
 const normalizePagination = ({ page, limit }) => {
   const parsedPage = Number(page);
   const parsedLimit = Number(limit);
@@ -102,7 +131,7 @@ export const createRiderByAdmin = async (payload) => {
     reset_password_expires: expiryDate,
   });
 
-  const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/reset-password?token=${resetToken}`;
 
   await sendResetPasswordLinkEmail({

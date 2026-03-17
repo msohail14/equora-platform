@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  Eye, Pencil, UserPlus, Users, CheckCircle2, XCircle, Loader2, Mail, User,
+  Eye, Pencil, UserPlus, Users, CheckCircle2, XCircle, Loader2, Mail, User, Star,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppButton from '../../components/ui/AppButton';
@@ -104,6 +104,7 @@ const AdminCoachesPage = () => {
       date_of_birth: coach.date_of_birth || '',
       gender: coach.gender || '',
       is_active:  coach.is_active !== false,
+      is_featured: !!coach.is_featured,
     });
     setIsEditModalOpen(true);
   };
@@ -238,6 +239,7 @@ const AdminCoachesPage = () => {
                     { icon: Mail,        label: 'Email'  },
                     { icon: CheckCircle2,label: 'Rating' },
                     { icon: CheckCircle2,label: 'Status' },
+                    { icon: Star,        label: 'Featured'},
                     { icon: null,        label: 'Actions'},
                   ].map(({ icon: Icon, label }) => (
                     <th
@@ -298,6 +300,26 @@ const AdminCoachesPage = () => {
                             <span className="size-1.5 rounded-full bg-gray-400" /> Inactive
                           </span>
                         )}
+                      </td>
+
+                      {/* featured */}
+                      <td className="px-5 py-3.5">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await updateCoachApi({ coachId: coach.id, payload: { is_featured: !coach.is_featured } });
+                              toast.success(coach.is_featured ? 'Removed from featured' : 'Marked as featured');
+                              await fetchCoaches(page, debouncedSearch);
+                            } catch (err) {
+                              toast.error('Failed to update featured status');
+                            }
+                          }}
+                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                          title={coach.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                        >
+                          <Star size={16} className={coach.is_featured ? 'fill-amber-400 text-amber-400' : 'text-gray-300'} />
+                        </button>
                       </td>
 
                       {/* actions */}
@@ -413,6 +435,15 @@ const AdminCoachesPage = () => {
             onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
             required
           />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!createForm.is_featured}
+              onChange={(e) => setCreateForm((p) => ({ ...p, is_featured: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Featured</span>
+          </label>
           <div className="flex flex-wrap gap-2">
             <AppButton type="submit"><UserPlus size={13} className="mr-1" /> Create Coach</AppButton>
             <AppButton type="button" variant="secondary" onClick={resetCreateForm}>Cancel</AppButton>
@@ -482,6 +513,15 @@ const AdminCoachesPage = () => {
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!editForm.is_featured}
+              onChange={(e) => setEditForm((p) => ({ ...p, is_featured: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Featured</span>
           </label>
           <div className="flex flex-wrap gap-2">
             <AppButton type="submit"><Pencil size={13} className="mr-1" /> Update Coach</AppButton>

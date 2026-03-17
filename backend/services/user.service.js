@@ -301,7 +301,7 @@ export const forgotPassword = async ({ email }) => {
   user.reset_password_expires = expiryDate;
   await user.save();
 
-  const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/reset-password?token=${resetToken}`;
 
 

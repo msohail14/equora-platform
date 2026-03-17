@@ -91,7 +91,7 @@ export const createHorse = async ({ adminId, payload }) => {
   return horse;
 };
 
-export const getAllHorses = async ({ adminId, stableId, search, page, limit }) => {
+export const getAllHorses = async ({ adminId, stableId, search, page, limit, featured } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
 
@@ -111,6 +111,9 @@ export const getAllHorses = async ({ adminId, stableId, search, page, limit }) =
   }
 
   const where = {};
+  if (featured) {
+    where.is_featured = true;
+  }
   const keyword = String(search || '').trim();
   if (keyword) {
     where[Op.or] = [
@@ -193,6 +196,9 @@ export const updateHorse = async ({ adminId, horseId, payload }) => {
     horse.description = payload.description || null;
   }
   horse.profile_picture_url = payload.profile_picture_url ?? horse.profile_picture_url;
+  if (payload.is_featured !== undefined) {
+    horse.is_featured = String(payload.is_featured).toLowerCase() === 'true' || payload.is_featured === true;
+  }
   horse.status = payload.status ?? horse.status;
   await horse.save();
 

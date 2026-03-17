@@ -117,6 +117,52 @@ export const getAllStables = async ({ adminId, include_inactive, search, page, l
   };
 };
 
+export const getPublicStables = async ({ search, page, limit, featured } = {}) => {
+  const pagination = normalizePagination({ page, limit });
+  const offset = (pagination.page - 1) * pagination.limit;
+  const where = { is_active: true, is_approved: true };
+
+  if (featured) {
+    where.is_featured = true;
+  }
+
+  const keyword = String(search || '').trim();
+  if (keyword) {
+    where[Op.or] = [
+      { name: { [Op.like]: `%${keyword}%` } },
+      { city: { [Op.like]: `%${keyword}%` } },
+      { state: { [Op.like]: `%${keyword}%` } },
+      { country: { [Op.like]: `%${keyword}%` } },
+    ];
+  }
+
+  const { rows, count } = await Stable.findAndCountAll({
+    where,
+    order: [['id', 'DESC']],
+    offset,
+    limit: pagination.limit,
+  });
+
+  return {
+    data: rows,
+    pagination: buildPaginationMeta({
+      currentPage: pagination.page,
+      limit: pagination.limit,
+      totalRecords: count,
+    }),
+  };
+};
+
+export const getPublicStableById = async (stableId) => {
+  const stable = await Stable.findOne({
+    where: { id: stableId, is_active: true, is_approved: true },
+  });
+  if (!stable) {
+    throw new Error('Stable not found.');
+  }
+  return stable;
+};
+
 export const getStableById = async ({ adminId, stableId }) => {
   const stable = await Stable.findOne({
     where: {
@@ -166,6 +212,9 @@ export const updateStable = async ({ adminId, stableId, payload }) => {
   stable.contact_email = payload.contact_email ?? stable.contact_email;
   stable.logo_url = payload.logo_url ?? stable.logo_url;
   stable.description = payload.description ?? stable.description;
+  if (payload.is_featured !== undefined && payload.is_featured !== null && payload.is_featured !== '') {
+    stable.is_featured = String(payload.is_featured).toLowerCase() === 'true' || payload.is_featured === true;
+  }
   stable.is_active = payload.is_active ?? stable.is_active;
   await stable.save();
 

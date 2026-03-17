@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { Star } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
   createStableApi,
   getStablesApi,
+  updateStableApi,
 } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
@@ -115,6 +117,7 @@ const AdminStablesPage = () => {
             <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Location</th>
+              <th className="px-3 py-2">Featured</th>
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
@@ -124,6 +127,24 @@ const AdminStablesPage = () => {
                 <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{stable.name}</td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
                   {[stable.city, stable.state, stable.country, stable.pincode].filter(Boolean).join(', ') || '-'}
+                </td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await updateStableApi({ stableId: stable.id, payload: { is_featured: !stable.is_featured } });
+                        toast.success(stable.is_featured ? 'Removed from featured' : 'Marked as featured');
+                        await fetchStables(page, debouncedSearch);
+                      } catch (err) {
+                        toast.error('Failed to update featured status');
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title={stable.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                  >
+                    <Star size={16} className={stable.is_featured ? 'fill-amber-400 text-amber-400' : 'text-gray-300'} />
+                  </button>
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1.5">
@@ -167,6 +188,16 @@ const AdminStablesPage = () => {
             <FormInput label="Longitude" name="longitude" value={form.longitude} onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))} />
           </div>
           <FormInput label="Description" name="description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!form.is_featured}
+              onChange={(e) => setForm((prev) => ({ ...prev, is_featured: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Featured</span>
+          </label>
 
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Logo (optional)</span>

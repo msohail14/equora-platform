@@ -110,7 +110,7 @@ export const forgotAdminPassword = async ({ email }) => {
   admin.reset_password_expires = expiryDate;
   await admin.save();
 
-  const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendBaseUrl.replace(/\/+$/, '')}/admin/reset-password?token=${resetToken}`;
 
   await sendResetTokenEmail({

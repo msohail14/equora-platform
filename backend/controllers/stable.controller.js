@@ -2,6 +2,8 @@ import {
   createStable,
   deleteStable,
   getAllStables,
+  getPublicStables,
+  getPublicStableById,
   getStableById,
   updateStable,
 } from '../services/stable.service.js';
@@ -34,6 +36,30 @@ export const createStableController = async (req, res) => {
     if (req.file) {
       await deleteFileIfExists(req.file.path);
     }
+    return handleError(res, error);
+  }
+};
+
+export const getPublicStablesController = async (req, res) => {
+  try {
+    const featured = String(req.query.featured || 'false').toLowerCase() === 'true';
+    const data = await getPublicStables({
+      search: req.query.search,
+      page: req.query.page,
+      limit: req.query.limit,
+      featured,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getPublicStableByIdController = async (req, res) => {
+  try {
+    const data = await getPublicStableById(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
     return handleError(res, error);
   }
 };

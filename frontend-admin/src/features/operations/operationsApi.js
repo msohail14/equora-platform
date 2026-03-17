@@ -160,6 +160,8 @@ export const getRiderSessionsApi = (riderId, { page = 1, limit = 10 } = {}) =>
 export const updateRiderApi = ({ riderId, payload }) => axiosInstance.put(`/riders/${riderId}`, payload);
 export const updateRiderStatusApi = ({ riderId, is_active }) =>
   axiosInstance.put(`/riders/${riderId}/status`, { is_active });
+export const resetRiderPasswordApi = (riderId) =>
+  axiosInstance.post(`/riders/${riderId}/reset-password`);
 
 export const getAdminDashboardApi = () => axiosInstance.get('/admin/dashboard');
 

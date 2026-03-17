@@ -1,4 +1,5 @@
 import {
+  adminResetUserPassword,
   createRiderByAdmin,
   getAllRiders,
   getRiderDetailsWithEnrollments,
@@ -83,6 +84,15 @@ export const updateRiderStatusController = async (req, res) => {
 export const updateRiderController = async (req, res) => {
   try {
     const data = await updateRider(req.params.id, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const resetRiderPasswordController = async (req, res) => {
+  try {
+    const data = await adminResetUserPassword(req.params.id);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

@@ -6,14 +6,16 @@ import {
   createStableController,
   deleteStableController,
   getAllStablesController,
+  getPublicStablesController,
+  getPublicStableByIdController,
   getStableByIdController,
   updateStableController,
 } from '../controllers/stable.controller.js';
 
 const router = express.Router();
 
-router.get('/public', getAllStablesController);
-router.get('/public/:id', getStableByIdController);
+router.get('/public', getPublicStablesController);
+router.get('/public/:id', getPublicStableByIdController);
 
 router.post('/', adminAuthMiddleware, uploadStableLogo, createStableController);
 router.get('/', adminAuthMiddleware, getAllStablesController);

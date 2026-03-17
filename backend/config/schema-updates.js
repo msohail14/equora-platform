@@ -620,6 +620,12 @@ const ensureAdminRoleColumn = async () => {
   }
 };
 
+const ensureFeaturedColumns = async () => {
+  await ensureColumnExists('stables', 'is_featured', 'ADD COLUMN `is_featured` BOOLEAN NOT NULL DEFAULT FALSE AFTER `lesson_price_max`');
+  await ensureColumnExists('user', 'is_featured', 'ADD COLUMN `is_featured` BOOLEAN NOT NULL DEFAULT FALSE AFTER `bio`');
+  await ensureColumnExists('horses', 'is_featured', 'ADD COLUMN `is_featured` BOOLEAN NOT NULL DEFAULT FALSE AFTER `max_daily_sessions`');
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -650,4 +656,5 @@ export const applySchemaUpdates = async () => {
   await ensurePlatformSettingsTable();
   await ensureCourseSessionNewColumns();
   await ensureAdminRoleColumn();
+  await ensureFeaturedColumns();
 };

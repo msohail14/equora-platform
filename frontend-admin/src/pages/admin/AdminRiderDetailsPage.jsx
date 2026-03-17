@@ -8,7 +8,7 @@ import {
 } from "react";
 import { toast } from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Plus, UserX } from "lucide-react";
+import { ArrowLeft, KeyRound, Pencil, Plus, UserX } from "lucide-react";
 import AppButton from "../../components/ui/AppButton";
 import FormInput from "../../components/ui/FormInput";
 import Modal from "../../components/ui/Modal";
@@ -32,6 +32,7 @@ import {
   getRiderDetailsApi,
   getRiderSessionsApi,
   getRiderStatsApi,
+  resetRiderPasswordApi,
   updateCourseSessionApi,
   updateRiderApi,
   updateRiderStatusApi,
@@ -239,6 +240,17 @@ const AdminRiderDetailsPage = () => {
     }
   }, [rider, fetchRiderDetails]);
 
+  const onResetPassword = useCallback(async () => {
+    if (!rider) return;
+    if (!window.confirm(`Send a password reset email to ${rider.email}?`)) return;
+    try {
+      const response = await resetRiderPasswordApi(rider.id);
+      toast.success(response?.message || "Password reset email sent.");
+    } catch (error) {
+      toast.error(error.message || "Failed to send reset email.");
+    }
+  }, [rider]);
+
   const onSubmitCreateSession = useCallback(
     async (event) => {
       event.preventDefault();
@@ -388,6 +400,10 @@ const AdminRiderDetailsPage = () => {
           >
             <Plus size={14} className="mr-1" />
             Add Session
+          </AppButton>
+          <AppButton type="button" variant="secondary" onClick={onResetPassword}>
+            <KeyRound size={14} className="mr-1" />
+            Reset Password
           </AppButton>
           <AppButton type="button" onClick={onToggleRiderStatus}>
             <UserX size={14} className="mr-1" />

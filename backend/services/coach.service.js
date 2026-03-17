@@ -24,6 +24,7 @@ const publicCoachFields = [
   'date_of_birth',
   'gender',
   'profile_picture_url',
+  'is_featured',
   'is_email_verified',
   'is_active',
   'created_at',
@@ -95,12 +96,15 @@ export const createCoach = async ({
   };
 };
 
-export const getAllCoaches = async ({ include_inactive, search, page, limit } = {}) => {
+export const getAllCoaches = async ({ include_inactive, search, page, limit, featured } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
   const where = { role: 'coach' };
   if (!include_inactive) {
     where.is_active = true;
+  }
+  if (featured) {
+    where.is_featured = true;
   }
   const keyword = String(search || '').trim();
   if (keyword) {
@@ -187,6 +191,7 @@ export const updateCoach = async (coachId, payload) => {
   if (payload.gender !== undefined) {
     coach.gender = normalizeGender(payload.gender);
   }
+  coach.is_featured = toBoolean(payload.is_featured, coach.is_featured);
   coach.is_active = toBoolean(payload.is_active, coach.is_active);
   await coach.save();
 

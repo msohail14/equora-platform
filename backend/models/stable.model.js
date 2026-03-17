@@ -72,6 +72,11 @@ const Stable = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
+    is_featured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     is_approved: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

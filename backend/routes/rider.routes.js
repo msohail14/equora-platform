@@ -6,6 +6,7 @@ import {
   getRiderDetailsController,
   getRiderSessionsController,
   getRiderStatsController,
+  resetRiderPasswordController,
   updateRiderController,
   updateRiderStatusController,
 } from '../controllers/rider.controller.js';
@@ -19,5 +20,6 @@ router.get('/:id/stats', adminAuthMiddleware, getRiderStatsController);
 router.get('/:id/sessions', adminAuthMiddleware, getRiderSessionsController);
 router.put('/:id', adminAuthMiddleware, updateRiderController);
 router.put('/:id/status', adminAuthMiddleware, updateRiderStatusController);
+router.post('/:id/reset-password', adminAuthMiddleware, resetRiderPasswordController);
 
 export default router;

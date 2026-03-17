@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, Star } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import ImageCropperModal, { DEFAULT_CROP_ASPECT_OPTIONS } from '../../components/ui/ImageCropperModal';
@@ -119,6 +119,7 @@ const AdminHorsesPage = () => {
       discipline_id: horse.discipline_id || '',
       stable_id: horse.stable_id || '',
       status: horse.status || 'available',
+      is_featured: !!horse.is_featured,
     });
     setImageFile(null);
     setIsHorseModalOpen(true);
@@ -198,6 +199,7 @@ const AdminHorsesPage = () => {
               <th className="px-3 py-2">Stable</th>
               <th className="px-3 py-2">Discipline</th>
               <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Featured</th>
               <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
@@ -216,6 +218,24 @@ const AdminHorsesPage = () => {
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusColor(horse.status)}`}>
                     {horse.status}
                   </span>
+                </td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await updateHorseApi({ horseId: horse.id, payload: { is_featured: !horse.is_featured } });
+                        toast.success(horse.is_featured ? 'Removed from featured' : 'Marked as featured');
+                        await fetchPageData(page, debouncedSearch);
+                      } catch (err) {
+                        toast.error('Failed to update featured status');
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title={horse.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                  >
+                    <Star size={16} className={horse.is_featured ? 'fill-amber-400 text-amber-400' : 'text-gray-300'} />
+                  </button>
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1.5">
@@ -241,7 +261,7 @@ const AdminHorsesPage = () => {
             ))}
             {!loading && !horses.length ? (
               <tr className="border-t border-gray-200 dark:border-gray-800">
-                <td colSpan={8} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={9} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   No horses found.
                 </td>
               </tr>
@@ -335,6 +355,16 @@ const AdminHorsesPage = () => {
               </select>
             </label>
           </div>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!form.is_featured}
+              onChange={(e) => setForm((prev) => ({ ...prev, is_featured: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Featured</span>
+          </label>
 
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">

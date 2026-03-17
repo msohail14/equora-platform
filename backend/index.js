@@ -37,6 +37,7 @@ import coachDashboardRoutes from './routes/coach-dashboard.routes.js';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 6060);
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -55,6 +56,7 @@ const FRONTEND_URL = IS_PRODUCTION
 const allowedOrigins = [
   FRONTEND_URL,
   process.env.FRONTEND_URL_PROD,
+  'https://equestrian-platform.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
 ].filter(Boolean);
