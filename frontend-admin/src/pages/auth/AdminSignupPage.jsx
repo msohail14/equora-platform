@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import AuthLayout from '../../components/layout/AuthLayout';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import { submitStableRegistrationApi } from '../../features/auth/authApi';
 
 const AdminSignupPage = () => {
@@ -23,6 +24,16 @@ const AdminSignupPage = () => {
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePlaceSelect = (place) => {
+    setForm((prev) => ({
+      ...prev,
+      business_name: place.name || prev.business_name,
+      city: place.city || prev.city,
+      country: place.country || prev.country,
+      phone: place.contact_phone || prev.phone,
+    }));
   };
 
   const onSubmit = async (e) => {
@@ -80,6 +91,14 @@ const AdminSignupPage = () => {
       footerLinks={[{ to: '/admin/login', label: 'Already have an account? Sign in' }]}
     >
       <form onSubmit={onSubmit} className="space-y-4">
+        <PlacesAutocomplete
+          onSelect={handlePlaceSelect}
+          placeholder="Search your stable on Google Maps..."
+        />
+        <p className="!mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Select from results to auto-fill, or enter details manually below.
+        </p>
+
         <FormInput
           label="Stable / Business Name"
           name="business_name"
@@ -127,7 +146,7 @@ const AdminSignupPage = () => {
           type="tel"
           value={form.phone}
           onChange={onChange}
-          placeholder="+971 50 123 4567"
+          placeholder="+966 50 123 4567"
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -136,14 +155,14 @@ const AdminSignupPage = () => {
             name="city"
             value={form.city}
             onChange={onChange}
-            placeholder="e.g. Dubai"
+            placeholder="e.g. Riyadh"
           />
           <FormInput
             label="Country"
             name="country"
             value={form.country}
             onChange={onChange}
-            placeholder="e.g. UAE"
+            placeholder="e.g. Saudi Arabia"
           />
         </div>
 

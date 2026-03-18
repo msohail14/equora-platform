@@ -1,8 +1,16 @@
 import express from 'express';
-import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 const API_BASE = 'https://places.googleapis.com/v1';
+
+const placesRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: { message: 'Too many places requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.get('/health', (_req, res) => {
   const keySet = !!process.env.GOOGLE_PLACES_API_KEY;
@@ -12,7 +20,7 @@ router.get('/health', (_req, res) => {
   });
 });
 
-router.get('/autocomplete', adminAuthMiddleware, async (req, res) => {
+router.get('/autocomplete', placesRateLimiter, async (req, res) => {
   try {
     const { query } = req.query;
     if (!query) return res.status(400).json({ message: 'query parameter required.' });
@@ -51,7 +59,7 @@ router.get('/autocomplete', adminAuthMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:placeId/details', adminAuthMiddleware, async (req, res) => {
+router.get('/:placeId/details', placesRateLimiter, async (req, res) => {
   try {
     const { placeId } = req.params;
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
