@@ -96,9 +96,32 @@ export const getStableHorsesController = async (req, res) => {
 
 export const createBookingController = async (req, res) => {
   try {
+    const b = req.body;
+    const startTime = b.startTime || b.start_time || b.time || '';
+    const durationMin = Number(b.durationMinutes || b.duration_minutes || 60);
+    let endTime = b.endTime || b.end_time || '';
+    if (!endTime && startTime) {
+      const [h, m] = startTime.split(':').map(Number);
+      const totalMin = (h * 60 + (m || 0)) + durationMin;
+      const eH = Math.floor(totalMin / 60) % 24;
+      const eM = totalMin % 60;
+      endTime = `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:00`;
+    }
     const data = await createBooking({
       riderId: req.user.id,
-      ...req.body,
+      coachId: b.coachId || b.coach_id || null,
+      stableId: b.stableId || b.stable_id,
+      arenaId: b.arenaId || b.arena_id || null,
+      horseId: b.horseId || b.horse_id || null,
+      bookingDate: b.bookingDate || b.booking_date || b.date,
+      startTime,
+      endTime,
+      lessonType: b.lessonType || b.lesson_type || 'private',
+      price: b.price || null,
+      notes: b.notes || null,
+      bookingType: b.bookingType || b.booking_type || 'lesson',
+      durationMinutes: durationMin,
+      horseAssignment: b.horseAssignment || b.horse_assignment || 'stable_assigns',
     });
     return res.status(201).json(data);
   } catch (error) {

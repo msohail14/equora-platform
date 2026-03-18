@@ -92,7 +92,10 @@ export const createCourse = async (coachId, payload) => {
     max_enrollment: payload.max_enrollment || null,
     price: payload.price || null,
     thumbnail_url: payload.thumbnail_url || null,
+    layout_image_url: payload.layout_image_url || null,
+    layout_drawing_data: payload.layout_drawing_data || null,
     status: payload.status || 'draft',
+    visibility: payload.visibility || 'public',
     is_active: payload.is_active ?? true,
   });
 
@@ -248,6 +251,9 @@ export const updateCourse = async (courseId, coachId, payload) => {
   if (payload.max_enrollment !== undefined) course.max_enrollment = payload.max_enrollment;
   if (payload.price !== undefined) course.price = payload.price;
   if (payload.thumbnail_url !== undefined) course.thumbnail_url = payload.thumbnail_url;
+  if (payload.layout_image_url !== undefined) course.layout_image_url = payload.layout_image_url;
+  if (payload.layout_drawing_data !== undefined) course.layout_drawing_data = payload.layout_drawing_data;
+  if (payload.visibility !== undefined) course.visibility = payload.visibility;
   if (payload.status !== undefined) course.status = payload.status;
   if (payload.is_active !== undefined) course.is_active = payload.is_active;
 
