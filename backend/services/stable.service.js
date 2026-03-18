@@ -1,5 +1,7 @@
 import { Op } from 'sequelize';
+import bcrypt from 'bcryptjs';
 import Stable from '../models/stable.model.js';
+import Admin from '../models/admin.model.js';
 import { deleteFileIfExists, toAbsolutePathFromPublic } from '../utils/file.util.js';
 
 const normalizePagination = ({ page, limit }) => {
@@ -49,11 +51,33 @@ export const createStable = async ({ adminId, payload }) => {
     logo_url,
     description,
     is_active,
+    owner_email,
+    owner_password,
+    owner_first_name,
+    owner_last_name,
   } =
     payload;
 
   if (!name || !city || !state || !country || !pincode) {
     throw new Error('name, city, state, country, and pincode are required.');
+  }
+
+  let stableAdminId = adminId;
+
+  if (owner_email && owner_password) {
+    const existingAdmin = await Admin.findOne({ where: { email: owner_email } });
+    if (existingAdmin) {
+      throw new Error('An account with this owner email already exists.');
+    }
+    const hashedPassword = await bcrypt.hash(owner_password, 10);
+    const newOwner = await Admin.create({
+      email: owner_email,
+      password_hash: hashedPassword,
+      first_name: owner_first_name || null,
+      last_name: owner_last_name || null,
+      role: 'stable_owner',
+    });
+    stableAdminId = newOwner.id;
   }
 
   const builtLocationAddress =
@@ -74,7 +98,7 @@ export const createStable = async ({ adminId, payload }) => {
     logo_url: logo_url || null,
     description: description || null,
     is_active: is_active ?? true,
-    admin_id: adminId,
+    admin_id: stableAdminId,
   });
 
   return stable;
@@ -175,7 +199,18 @@ export const getStableById = async ({ adminId, stableId }) => {
     throw new Error('Stable not found.');
   }
 
-  return stable;
+  const result = stable.toJSON();
+
+  if (stable.admin_id) {
+    const owner = await Admin.findByPk(stable.admin_id, {
+      attributes: ['id', 'email', 'first_name', 'last_name', 'role', 'created_at'],
+    });
+    if (owner && owner.role === 'stable_owner') {
+      result.owner = owner.toJSON();
+    }
+  }
+
+  return result;
 };
 
 export const updateStable = async ({ adminId, stableId, payload }) => {

@@ -624,7 +624,7 @@ export const updateAdminSettings = async ({ settings }) => {
   return getAdminSettings();
 };
 
-export const inviteStableOwner = async ({ stableId, email, firstName, lastName }, invitedByAdminId) => {
+export const inviteStableOwner = async ({ stableId, email, firstName, lastName, password }, invitedByAdminId) => {
   const invitingAdmin = await Admin.findByPk(invitedByAdminId);
   if (!invitingAdmin || invitingAdmin.role !== 'super_admin') {
     throw new Error('Only super admins can invite stable owners.');
@@ -640,8 +640,8 @@ export const inviteStableOwner = async ({ stableId, email, firstName, lastName }
     throw new Error('Email already exists.');
   }
 
-  const tempPassword = crypto.randomBytes(16).toString('hex');
-  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+  const finalPassword = password || crypto.randomBytes(16).toString('hex');
+  const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
   const newAdmin = await Admin.create({
     email,
@@ -655,7 +655,7 @@ export const inviteStableOwner = async ({ stableId, email, firstName, lastName }
   await stable.save();
 
   const safeAdmin = await Admin.findByPk(newAdmin.id, { attributes: publicAdminFields });
-  return { admin: safeAdmin, stable_id: stable.id, temp_password: tempPassword };
+  return { admin: safeAdmin, stable_id: stable.id, temp_password: password ? undefined : finalPassword };
 };
 
 export const getAdminBookings = async ({ status, page, limit, date }) => {

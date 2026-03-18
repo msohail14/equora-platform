@@ -5,6 +5,7 @@ import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import { API_BASE_URL } from '../../lib/axiosInstance';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import {
   createArenaApi,
   createHorseApi,
@@ -17,6 +18,7 @@ import {
   getHorsesByStableApi,
   getStableByIdApi,
   getStableLinkedCoachesApi,
+  inviteStableOwnerApi,
   linkCoachToStableApi,
   unlinkCoachFromStableApi,
   updateArenaApi,
@@ -103,6 +105,9 @@ const AdminStableViewPage = () => {
   const [editingHorseId, setEditingHorseId] = useState(null);
   const [isHorseModalOpen, setIsHorseModalOpen] = useState(false);
 
+  const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+  const [ownerForm, setOwnerForm] = useState({ email: '', password: '', firstName: '', lastName: '' });
+
   const [linkedCoaches, setLinkedCoaches] = useState([]);
   const [coachesLoading, setCoachesLoading] = useState(false);
   const [isAddCoachModalOpen, setIsAddCoachModalOpen] = useState(false);
@@ -187,6 +192,20 @@ const AdminStableViewPage = () => {
     setHorseImageFile(null);
     setEditingHorseId(null);
     setIsHorseModalOpen(false);
+  };
+
+  const handlePlaceSelect = (place) => {
+    setStableForm((prev) => ({
+      ...prev,
+      name: place.name || prev.name,
+      city: place.city || prev.city,
+      state: place.state || prev.state,
+      country: place.country || prev.country,
+      pincode: place.pincode || prev.pincode,
+      latitude: place.latitude ?? prev.latitude,
+      longitude: place.longitude ?? prev.longitude,
+      contact_phone: place.contact_phone || prev.contact_phone,
+    }));
   };
 
   const onStableSave = async () => {
@@ -407,6 +426,23 @@ const AdminStableViewPage = () => {
     }
   };
 
+  const handleAssignOwner = async (e) => {
+    e.preventDefault();
+    if (!ownerForm.email || !ownerForm.password) {
+      toast.error('Email and password are required.');
+      return;
+    }
+    try {
+      await inviteStableOwnerApi(stableId, ownerForm);
+      toast.success('Owner account created and assigned.');
+      setIsOwnerModalOpen(false);
+      setOwnerForm({ email: '', password: '', firstName: '', lastName: '' });
+      await refreshStableData();
+    } catch (err) {
+      toast.error(err.message || 'Failed to assign owner.');
+    }
+  };
+
   const updateDayHours = (day, field, value) => {
     setOperatingHours((prev) => ({
       ...prev,
@@ -552,6 +588,33 @@ const AdminStableViewPage = () => {
             {stable.description && (
               <p className="mt-4 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{stable.description}</p>
             )}
+
+            {/* Owner Info */}
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Stable Owner</h3>
+              {stable.owner ? (
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {`${stable.owner.first_name || ''} ${stable.owner.last_name || ''}`.trim() || 'Unnamed'}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">{stable.owner.email}</span>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    {stable.owner.role}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400 dark:text-gray-500">No owner assigned</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsOwnerModalOpen(true)}
+                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+                  >
+                    Assign Owner
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -824,6 +887,8 @@ const AdminStableViewPage = () => {
         <div className="p-6">
           <h2 className="mb-5 text-lg font-bold text-gray-900 dark:text-white">Edit Stable</h2>
           <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+            <PlacesAutocomplete onSelect={handlePlaceSelect} />
+            <p className="text-xs text-gray-400 dark:text-gray-500">Search to auto-fill fields, or edit manually below.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className={labelCls}>Name *</label>
@@ -1108,6 +1173,38 @@ const AdminStableViewPage = () => {
             </div>
           </form>
         </div>
+      </Modal>
+
+      {/* Assign Owner Modal */}
+      <Modal isOpen={isOwnerModalOpen} title="Assign Stable Owner" onClose={() => setIsOwnerModalOpen(false)}>
+        <form onSubmit={handleAssignOwner} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>First Name</label>
+              <input className={inputCls} value={ownerForm.firstName} onChange={(e) => setOwnerForm((p) => ({ ...p, firstName: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>Last Name</label>
+              <input className={inputCls} value={ownerForm.lastName} onChange={(e) => setOwnerForm((p) => ({ ...p, lastName: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Email *</label>
+            <input type="email" className={inputCls} value={ownerForm.email} onChange={(e) => setOwnerForm((p) => ({ ...p, email: e.target.value }))} required />
+          </div>
+          <div>
+            <label className={labelCls}>Password *</label>
+            <input type="password" className={inputCls} value={ownerForm.password} onChange={(e) => setOwnerForm((p) => ({ ...p, password: e.target.value }))} required />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => setIsOwnerModalOpen(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+              Cancel
+            </button>
+            <button type="submit" className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600">
+              Create & Assign
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* Add Coach Modal */}

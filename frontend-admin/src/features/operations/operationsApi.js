@@ -252,3 +252,6 @@ export const getPlaceDetailsApi = (placeId) =>
 
 export const getObstacleTypesApi = () =>
   axiosInstance.get('/obstacle-types');
+
+export const inviteStableOwnerApi = (stableId, payload) =>
+  axiosInstance.post(`/admin/stables/${stableId}/invite-owner`, payload);

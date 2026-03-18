@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import {
   approveStableApi,
   createStableApi,
@@ -26,6 +27,13 @@ const emptyForm = {
   longitude: '',
 };
 
+const emptyOwnerForm = {
+  owner_first_name: '',
+  owner_last_name: '',
+  owner_email: '',
+  owner_password: '',
+};
+
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const defaultOperatingHours = () =>
@@ -39,6 +47,8 @@ const AdminStablesPage = () => {
   const [pagination, setPagination] = useState(null);
 
   const [form, setForm] = useState(emptyForm);
+  const [ownerForm, setOwnerForm] = useState(emptyOwnerForm);
+  const [createOwner, setCreateOwner] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [isStableModalOpen, setIsStableModalOpen] = useState(false);
   const [operatingHours, setOperatingHours] = useState(defaultOperatingHours);
@@ -73,6 +83,8 @@ const AdminStablesPage = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
+    setOwnerForm(emptyOwnerForm);
+    setCreateOwner(false);
     setLogoFile(null);
     setOperatingHours(defaultOperatingHours());
     setIsStableModalOpen(false);
@@ -85,10 +97,32 @@ const AdminStablesPage = () => {
     }));
   };
 
+  const handlePlaceSelect = (place) => {
+    setForm((prev) => ({
+      ...prev,
+      name: place.name || prev.name,
+      city: place.city || prev.city,
+      state: place.state || prev.state,
+      country: place.country || prev.country,
+      pincode: place.pincode || prev.pincode,
+      latitude: place.latitude ?? prev.latitude,
+      longitude: place.longitude ?? prev.longitude,
+      contact_phone: place.contact_phone || prev.contact_phone,
+    }));
+  };
+
   const onSubmit = async (event) => {
     event.preventDefault();
+    if (createOwner && (!ownerForm.owner_email || !ownerForm.owner_password)) {
+      toast.error('Owner email and password are required when creating an owner account.');
+      return;
+    }
     try {
-      const payload = { ...form, operating_hours: JSON.stringify(operatingHours) };
+      const payload = {
+        ...form,
+        operating_hours: JSON.stringify(operatingHours),
+        ...(createOwner ? ownerForm : {}),
+      };
       await createStableApi({ payload, logoFile });
       toast.success('Stable created successfully.');
       resetForm();
@@ -217,6 +251,9 @@ const AdminStablesPage = () => {
 
       <Modal isOpen={isStableModalOpen} title={'Add New Stable'} onClose={resetForm}>
         <form className="grid gap-3" onSubmit={onSubmit}>
+          <PlacesAutocomplete onSelect={handlePlaceSelect} />
+          <p className="text-xs text-gray-400 dark:text-gray-500">Select a place above to auto-fill, or enter details manually below.</p>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <FormInput label="Stable Name *" name="name" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} required />
             <FormInput label="City *" name="city" value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} required />
@@ -289,6 +326,27 @@ const AdminStablesPage = () => {
                 );
               })}
             </div>
+          </div>
+
+          {/* Owner Account */}
+          <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={createOwner}
+                onChange={(e) => setCreateOwner(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+              />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Create owner login for this stable</span>
+            </label>
+            {createOwner && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <FormInput label="Owner First Name" name="owner_first_name" value={ownerForm.owner_first_name} onChange={(e) => setOwnerForm((prev) => ({ ...prev, owner_first_name: e.target.value }))} />
+                <FormInput label="Owner Last Name" name="owner_last_name" value={ownerForm.owner_last_name} onChange={(e) => setOwnerForm((prev) => ({ ...prev, owner_last_name: e.target.value }))} />
+                <FormInput label="Owner Email *" name="owner_email" type="email" value={ownerForm.owner_email} onChange={(e) => setOwnerForm((prev) => ({ ...prev, owner_email: e.target.value }))} required />
+                <FormInput label="Owner Password *" name="owner_password" type="password" value={ownerForm.owner_password} onChange={(e) => setOwnerForm((prev) => ({ ...prev, owner_password: e.target.value }))} required />
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
