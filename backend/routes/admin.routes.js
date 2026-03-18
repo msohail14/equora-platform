@@ -26,6 +26,12 @@ import {
   updateAdminSettingsController,
   verifyCoachController,
 } from '../controllers/admin.controller.js';
+import {
+  submitRegistrationController,
+  getRegistrationsController,
+  approveRegistrationController,
+  rejectRegistrationController,
+} from '../controllers/stableRegistration.controller.js';
 
 const router = express.Router();
 
@@ -50,5 +56,10 @@ router.post('/stables/:id/invite-owner', superAdminOnly, inviteStableOwnerContro
 router.get('/stables/:id/coaches', adminAuthMiddleware, getStableCoachesAdminController);
 router.post('/stables/:id/coaches', adminAuthMiddleware, linkStableCoachAdminController);
 router.delete('/stables/:id/coaches/:coachId', adminAuthMiddleware, unlinkStableCoachAdminController);
+
+router.post('/stable-registrations', authRateLimiter, submitRegistrationController);
+router.get('/stable-registrations', superAdminOnly, getRegistrationsController);
+router.patch('/stable-registrations/:id/approve', superAdminOnly, approveRegistrationController);
+router.patch('/stable-registrations/:id/reject', superAdminOnly, rejectRegistrationController);
 
 export default router;

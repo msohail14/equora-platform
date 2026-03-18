@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   CalendarCheck,
   Building2,
+  ClipboardList,
   LayoutGrid,
   Medal,
   GraduationCap,
@@ -40,6 +41,7 @@ const navSections = [
     label: 'Management',
     items: [
       { label: 'Stables', to: '/admin/stables', icon: Building2, roles: ALL_ROLES },
+      { label: 'Registrations', to: '/admin/stable-registrations', icon: ClipboardList, roles: ['super_admin'] },
       { label: 'Arenas', to: '/admin/arenas', icon: LayoutGrid, roles: ALL_ROLES },
       { label: 'Horses', to: '/admin/horses', icon: HorseIcon, roles: ALL_ROLES },
       { label: 'Disciplines', to: '/admin/disciplines', icon: Medal, roles: ['super_admin'] },

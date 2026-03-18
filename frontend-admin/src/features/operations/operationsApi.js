@@ -255,3 +255,15 @@ export const getObstacleTypesApi = () =>
 
 export const inviteStableOwnerApi = (stableId, payload) =>
   axiosInstance.post(`/admin/stables/${stableId}/invite-owner`, payload);
+
+export const getStableRegistrationsApi = ({ status, page = 1, limit = 20 } = {}) => {
+  const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (status) query.set('status', status);
+  return axiosInstance.get(`/admin/stable-registrations?${query.toString()}`);
+};
+
+export const approveStableRegistrationApi = (registrationId, { password }) =>
+  axiosInstance.patch(`/admin/stable-registrations/${registrationId}/approve`, { password });
+
+export const rejectStableRegistrationApi = (registrationId, { admin_notes } = {}) =>
+  axiosInstance.patch(`/admin/stable-registrations/${registrationId}/reject`, { admin_notes });

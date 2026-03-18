@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { searchPlacesApi, getPlaceDetailsApi } from '../../features/operations/operationsApi';
 
 const PlacesAutocomplete = ({ onSelect, placeholder = 'Search for a place on Google Maps...' }) => {
@@ -39,7 +40,9 @@ const PlacesAutocomplete = ({ onSelect, placeholder = 'Search for a place on Goo
         const predictions = res?.data || [];
         setSuggestions(predictions);
         setOpen(predictions.length > 0);
-      } catch {
+      } catch (err) {
+        console.error('Places autocomplete error:', err);
+        toast.error(err?.message || 'Places search failed. Check API key configuration.');
         setSuggestions([]);
         setOpen(false);
       } finally {
@@ -71,7 +74,9 @@ const PlacesAutocomplete = ({ onSelect, placeholder = 'Search for a place on Goo
         google_rating: place.rating ?? '',
         website: place.website || '',
       });
-    } catch {
+    } catch (err) {
+      console.error('Place details error:', err);
+      toast.error(err?.message || 'Failed to fetch place details.');
       onSelect?.({ name: prediction.structured_formatting?.main_text || '' });
     } finally {
       setSelecting(false);

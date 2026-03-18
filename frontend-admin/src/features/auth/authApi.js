@@ -1,8 +1,5 @@
 import axiosInstance from '../../lib/axiosInstance';
 
-export const signupAdminApi = (payload) =>
-  axiosInstance.post('/admin/signup', payload);
-
 export const loginAdminApi = (payload) =>
   axiosInstance.post('/admin/login', payload);
 
@@ -20,3 +17,6 @@ export const changePasswordAdminApi = (payload) =>
 
 export const changeProfileAdminApi = (payload) =>
   axiosInstance.put('/admin/change-profile', payload);
+
+export const submitStableRegistrationApi = (payload) =>
+  axiosInstance.post('/admin/stable-registrations', payload);

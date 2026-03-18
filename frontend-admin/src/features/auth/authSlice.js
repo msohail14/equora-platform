@@ -8,7 +8,6 @@ import {
   loginAdminApi,
   resendResetTokenAdminApi,
   resetPasswordAdminApi,
-  signupAdminApi,
 } from './authApi';
 
 const ADMIN_STORAGE_KEY = 'hr_admin_profile';
@@ -50,11 +49,6 @@ export const bootstrapAuth = createAsyncThunk('auth/bootstrap', async () => {
   }
 
   return { admin, token };
-});
-
-export const signupAdmin = createAsyncThunk('auth/signup', async (payload) => {
-  const data = await signupAdminApi(payload);
-  return applyAuthPayload(data);
 });
 
 export const loginAdmin = createAsyncThunk('auth/login', async (payload) => {
@@ -122,21 +116,6 @@ const authSlice = createSlice({
       })
       .addCase(bootstrapAuth.rejected, (state) => {
         state.initialized = true;
-      })
-      .addCase(signupAdmin.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-        state.message = null;
-      })
-      .addCase(signupAdmin.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.admin = action.payload.admin;
-        state.token = action.payload.token;
-        state.message = 'Admin account created successfully.';
-      })
-      .addCase(signupAdmin.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message;
       })
       .addCase(loginAdmin.pending, (state) => {
         state.status = 'loading';

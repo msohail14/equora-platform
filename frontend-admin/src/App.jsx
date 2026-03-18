@@ -20,6 +20,7 @@ const AdminRidersPage = lazy(() => import('./pages/admin/AdminRidersPage'));
 const AdminRiderDetailsPage = lazy(() => import('./pages/admin/AdminRiderDetailsPage'));
 const AdminStablesPage = lazy(() => import('./pages/stables/AdminStablesPage'));
 const AdminStableViewPage = lazy(() => import('./pages/stables/AdminStableViewPage'));
+const AdminStableRegistrationsPage = lazy(() => import('./pages/admin/AdminStableRegistrationsPage'));
 const AdminForgotPasswordPage = lazy(() => import('./pages/auth/AdminForgotPasswordPage'));
 const AdminLoginPage = lazy(() => import('./pages/auth/AdminLoginPage'));
 const AdminResetPasswordPage = lazy(() => import('./pages/auth/AdminResetPasswordPage'));
@@ -83,6 +84,7 @@ const AppRoutes = () => {
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="stables" element={<AdminStablesPage />} />
               <Route path="stables/:stableId" element={<AdminStableViewPage />} />
+              <Route path="stable-registrations" element={<AdminStableRegistrationsPage />} />
               <Route path="arenas" element={<AdminArenasPage />} />
               <Route path="horses" element={<AdminHorsesPage />} />
               <Route path="disciplines" element={<AdminDisciplinesPage />} />

@@ -79,6 +79,15 @@ const AdminLoginPage = () => {
         <AppButton type="submit" disabled={isLoading}>
           {isLoading ? 'Logging in...' : 'Sign in'}
         </AppButton>
+
+        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Own a stable?{' '}
+            <Link to="/admin/signup" className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
+              Register here
+            </Link>
+          </p>
+        </div>
       </form>
     </AuthLayout>
   );
