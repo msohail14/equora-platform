@@ -219,3 +219,36 @@ export const updateCourseLayoutApi = ({ courseId, layoutImage, drawingData }) =>
   });
 };
 export const deleteCourseLayoutApi = (courseId) => axiosInstance.delete(`/courses/${courseId}/layout`);
+
+export const getAvailableSlotsApi = (stableId, date, duration) =>
+  axiosInstance.get(`/bookings/stables/${stableId}/available-slots`, { params: { date, duration } });
+
+export const approveBookingApi = (id) =>
+  axiosInstance.patch(`/bookings/${id}/approve`);
+
+export const declineBookingApi = (id, reason) =>
+  axiosInstance.patch(`/bookings/${id}/decline`, { reason });
+
+export const startBookingApi = (id) =>
+  axiosInstance.patch(`/bookings/${id}/start`);
+
+export const completeBookingApi = (id) =>
+  axiosInstance.patch(`/bookings/${id}/complete`);
+
+export const getStableLinkedCoachesApi = (stableId) =>
+  axiosInstance.get(`/admin/stables/${stableId}/coaches`);
+
+export const linkCoachToStableApi = (stableId, coachId, isPrimary = false) =>
+  axiosInstance.post(`/admin/stables/${stableId}/coaches`, { coach_id: coachId, is_primary: isPrimary });
+
+export const unlinkCoachFromStableApi = (stableId, coachId) =>
+  axiosInstance.delete(`/admin/stables/${stableId}/coaches/${coachId}`);
+
+export const searchPlacesApi = (query) =>
+  axiosInstance.get('/places/autocomplete', { params: { query } });
+
+export const getPlaceDetailsApi = (placeId) =>
+  axiosInstance.get(`/places/${placeId}/details`);
+
+export const getObstacleTypesApi = () =>
+  axiosInstance.get('/obstacle-types');

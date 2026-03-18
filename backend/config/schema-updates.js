@@ -643,6 +643,99 @@ const ensureBookingTypeAndNullableCoach = async () => {
   }
 };
 
+const ensureCoachStablesTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`coach_stables\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`coach_id\` INT NOT NULL,
+      \`stable_id\` INT NOT NULL,
+      \`is_primary\` BOOLEAN NOT NULL DEFAULT FALSE,
+      \`is_active\` BOOLEAN NOT NULL DEFAULT TRUE,
+      \`joined_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT \`fk_coach_stables_coach\` FOREIGN KEY (\`coach_id\`) REFERENCES \`user\`(\`id\`) ON DELETE CASCADE,
+      CONSTRAINT \`fk_coach_stables_stable\` FOREIGN KEY (\`stable_id\`) REFERENCES \`stables\`(\`id\`) ON DELETE CASCADE,
+      UNIQUE KEY \`uq_coach_stable\` (\`coach_id\`, \`stable_id\`),
+      INDEX \`idx_coach_stables_stable\` (\`stable_id\`, \`is_active\`)
+    )
+  `);
+};
+
+const ensureUserCoachTypeColumn = async () => {
+  await ensureColumnExists('user', 'coach_type', "ADD COLUMN `coach_type` ENUM('stable_employed','freelancer','independent') NULL AFTER `role`");
+};
+
+const backfillCoachStablesFromCourses = async () => {
+  const [existing] = await sequelize.query(`SELECT COUNT(*) AS count FROM coach_stables`);
+  if (Number(existing?.[0]?.count || 0) > 0) return;
+  await sequelize.query(`
+    INSERT IGNORE INTO coach_stables (coach_id, stable_id, is_primary)
+    SELECT DISTINCT coach_id, stable_id, TRUE
+    FROM courses
+    WHERE coach_id IS NOT NULL AND stable_id IS NOT NULL
+  `);
+};
+
+const ensureStableOperatingHoursColumn = async () => {
+  await ensureColumnExists('stables', 'operating_hours', 'ADD COLUMN `operating_hours` JSON NULL AFTER `admin_id`');
+};
+
+const ensureStableGooglePlacesColumns = async () => {
+  await ensureColumnExists('stables', 'google_place_id', 'ADD COLUMN `google_place_id` VARCHAR(255) NULL');
+  await ensureColumnExists('stables', 'formatted_address', 'ADD COLUMN `formatted_address` VARCHAR(500) NULL');
+  await ensureColumnExists('stables', 'phone_number', 'ADD COLUMN `phone_number` VARCHAR(30) NULL');
+  await ensureColumnExists('stables', 'website', 'ADD COLUMN `website` VARCHAR(500) NULL');
+  await ensureColumnExists('stables', 'google_rating', 'ADD COLUMN `google_rating` DECIMAL(2,1) NULL');
+  await ensureColumnExists('stables', 'google_photos', 'ADD COLUMN `google_photos` JSON NULL');
+  await ensureColumnExists('stables', 'opening_hours_text', 'ADD COLUMN `opening_hours_text` JSON NULL');
+};
+
+const ensureBookingNewColumns = async () => {
+  await ensureColumnExists('lesson_bookings', 'duration_minutes', 'ADD COLUMN `duration_minutes` INT NULL AFTER `booking_type`');
+  await ensureColumnExists('lesson_bookings', 'horse_assignment', "ADD COLUMN `horse_assignment` ENUM('rider_selected','stable_assigns') NOT NULL DEFAULT 'stable_assigns' AFTER `duration_minutes`");
+  await ensureColumnExists('lesson_bookings', 'decline_reason', 'ADD COLUMN `decline_reason` VARCHAR(500) NULL AFTER `status`');
+};
+
+const ensureBookingNewStatuses = async () => {
+  try {
+    await sequelize.query(`
+      ALTER TABLE \`lesson_bookings\`
+      MODIFY COLUMN \`status\` ENUM('pending_horse_approval','pending_payment','pending_review','confirmed','declined','in_progress','cancelled','completed') NOT NULL DEFAULT 'pending_review'
+    `);
+  } catch (e) {
+    // ENUM already has these values
+  }
+};
+
+const ensureNotificationNewTypes = async () => {
+  try {
+    await sequelize.query(`
+      ALTER TABLE \`notifications\`
+      MODIFY COLUMN \`type\` ENUM('lesson_booked','session_reminder','payment_confirmed','horse_assigned','horse_approved','feedback_posted','coach_verified','stable_approved','payout_processed','booking_approved','booking_declined','payment_reminder','general') NOT NULL
+    `);
+  } catch (e) {
+    // ENUM already has these values
+  }
+};
+
+const ensureCourseVisibilityColumns = async () => {
+  await ensureColumnExists('courses', 'visibility', "ADD COLUMN `visibility` ENUM('public','my_riders','private') NOT NULL DEFAULT 'public' AFTER `status`");
+  await ensureColumnExists('courses', 'allowed_rider_ids', 'ADD COLUMN `allowed_rider_ids` JSON NULL AFTER `visibility`');
+};
+
+const ensureObstacleTypesTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`obstacle_types\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`name\` VARCHAR(100) NOT NULL,
+      \`icon_key\` VARCHAR(50) NULL,
+      \`category\` ENUM('jump','combination','terrain') NOT NULL DEFAULT 'jump',
+      \`default_height_range\` VARCHAR(20) NULL,
+      \`is_active\` BOOLEAN NOT NULL DEFAULT TRUE,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -675,4 +768,26 @@ export const applySchemaUpdates = async () => {
   await ensureAdminRoleColumn();
   await ensureFeaturedColumns();
   await ensureBookingTypeAndNullableCoach();
+
+  // Phase A: Coach-Stable many-to-many
+  await ensureCoachStablesTable();
+  await ensureUserCoachTypeColumn();
+  await backfillCoachStablesFromCourses();
+
+  // Phase B: Redesigned booking
+  await ensureStableOperatingHoursColumn();
+  await ensureBookingNewColumns();
+  await ensureBookingNewStatuses();
+
+  // Phase B2: Payment reminders + booking notifications
+  await ensureNotificationNewTypes();
+
+  // Phase H: Google Places
+  await ensureStableGooglePlacesColumns();
+
+  // Phase D: Course visibility
+  await ensureCourseVisibilityColumns();
+
+  // Phase E: Obstacle types
+  await ensureObstacleTypesTable();
 };

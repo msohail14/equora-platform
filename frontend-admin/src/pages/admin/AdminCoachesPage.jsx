@@ -8,7 +8,7 @@ import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
-  createCoachApi, getCoachesApi, updateCoachApi,
+  createCoachApi, getCoachesApi, updateCoachApi, verifyCoachApi,
 } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
@@ -239,6 +239,7 @@ const AdminCoachesPage = () => {
                     { icon: Mail,        label: 'Email'  },
                     { icon: CheckCircle2,label: 'Rating' },
                     { icon: CheckCircle2,label: 'Status' },
+                    { icon: CheckCircle2,label: 'Verified'},
                     { icon: Star,        label: 'Featured'},
                     { icon: null,        label: 'Actions'},
                   ].map(({ icon: Icon, label }) => (
@@ -299,6 +300,32 @@ const AdminCoachesPage = () => {
                           <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
                             <span className="size-1.5 rounded-full bg-gray-400" /> Inactive
                           </span>
+                        )}
+                      </td>
+
+                      {/* verified */}
+                      <td className="px-5 py-3.5">
+                        {coach.is_verified ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-300">
+                            <CheckCircle2 size={11} /> Verified
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await verifyCoachApi(coach.id);
+                                toast.success('Coach verified');
+                                await fetchCoaches(page, debouncedSearch);
+                              } catch (err) {
+                                toast.error(err.message || 'Failed to verify coach');
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 transition hover:bg-sky-100 dark:border-sky-800/50 dark:bg-sky-900/20 dark:text-sky-400 dark:hover:bg-sky-900/40"
+                          >
+                            <CheckCircle2 size={11} /> Verify
+                          </button>
                         )}
                       </td>
 

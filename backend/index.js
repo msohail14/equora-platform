@@ -33,6 +33,8 @@ import notificationRoutes from './routes/notification.routes.js';
 import lessonPackageRoutes from './routes/lesson-package.routes.js';
 import stableDashboardRoutes from './routes/stable-dashboard.routes.js';
 import coachDashboardRoutes from './routes/coach-dashboard.routes.js';
+import placesRoutes from './routes/places.routes.js';
+import obstacleTypeRoutes from './routes/obstacle-type.routes.js';
 
 dotenv.config();
 
@@ -101,6 +103,8 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/packages', lessonPackageRoutes);
 app.use('/api/v1/stable-dashboard', stableDashboardRoutes);
 app.use('/api/v1/coach-dashboard', coachDashboardRoutes);
+app.use('/api/v1/places', placesRoutes);
+app.use('/api/v1/obstacle-types', obstacleTypeRoutes);
 
 app.get('/', (req, res) => {
   res.send('Equestrian Backend API is running.');

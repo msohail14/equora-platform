@@ -3,6 +3,11 @@ import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import superAdminOnly from '../middleware/super-admin.middleware.js';
 import { authRateLimiter } from '../middleware/rate-limit.middleware.js';
 import {
+  getStableCoachesAdminController,
+  linkStableCoachAdminController,
+  unlinkStableCoachAdminController,
+} from '../controllers/coachStable.controller.js';
+import {
   approveStableController,
   changeAdminPasswordController,
   changeAdminProfileController,
@@ -42,5 +47,8 @@ router.get('/settings', superAdminOnly, getAdminSettingsController);
 router.put('/settings', superAdminOnly, updateAdminSettingsController);
 router.get('/bookings', adminAuthMiddleware, getAdminBookingsController);
 router.post('/stables/:id/invite-owner', superAdminOnly, inviteStableOwnerController);
+router.get('/stables/:id/coaches', adminAuthMiddleware, getStableCoachesAdminController);
+router.post('/stables/:id/coaches', adminAuthMiddleware, linkStableCoachAdminController);
+router.delete('/stables/:id/coaches/:coachId', adminAuthMiddleware, unlinkStableCoachAdminController);
 
 export default router;

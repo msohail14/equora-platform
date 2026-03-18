@@ -326,6 +326,11 @@ const AdminCoachDetailsPage = () => {
                   <h2 className="text-2xl font-bold leading-tight tracking-tight text-white drop-shadow-sm">
                     {fullName}
                   </h2>
+                  {coach?.coach_type && (
+                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+                      {({ stable_employed: 'Stable Employed', freelancer: 'Freelancer', independent: 'Independent' })[coach.coach_type] || coach.coach_type}
+                    </span>
+                  )}
                   {coach?.email && (
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-white/70">
                       <Mail size={13} />

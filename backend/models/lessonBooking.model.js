@@ -46,6 +46,15 @@ const LessonBooking = sequelize.define(
       allowNull: false,
       defaultValue: 'lesson',
     },
+    duration_minutes: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    horse_assignment: {
+      type: DataTypes.ENUM('rider_selected', 'stable_assigns'),
+      allowNull: false,
+      defaultValue: 'stable_assigns',
+    },
     horse_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -83,12 +92,19 @@ const LessonBooking = sequelize.define(
       type: DataTypes.ENUM(
         'pending_horse_approval',
         'pending_payment',
+        'pending_review',
         'confirmed',
+        'declined',
+        'in_progress',
         'cancelled',
         'completed'
       ),
       allowNull: false,
-      defaultValue: 'pending_horse_approval',
+      defaultValue: 'pending_review',
+    },
+    decline_reason: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
     },
     payment_id: {
       type: DataTypes.INTEGER,

@@ -11,7 +11,8 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "seed": "node scripts/seed-reference-data.js"
+    "seed": "node scripts/seed-reference-data.js",
+    "seed:obstacles": "node scripts/seed-obstacle-types.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

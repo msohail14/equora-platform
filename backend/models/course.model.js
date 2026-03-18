@@ -107,6 +107,15 @@ const Course = sequelize.define(
       allowNull: false,
       defaultValue: 'draft',
     },
+    visibility: {
+      type: DataTypes.ENUM('public', 'my_riders', 'private'),
+      allowNull: false,
+      defaultValue: 'public',
+    },
+    allowed_rider_ids: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
     is_active: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

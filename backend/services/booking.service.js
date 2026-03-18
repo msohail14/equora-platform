@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 import {
-  Arena, CoachReview, Course, CourseSession, Discipline, Horse,
+  Arena, CoachReview, CoachStable, Course, CourseSession, Discipline, Horse,
   HorseAvailability, LessonBooking, Notification, Payment, Stable, User,
 } from '../models/index.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
@@ -108,6 +108,30 @@ export const getStableCoaches = async ({ stableId, search, page, limit }) => {
     throw new Error('Stable not found.');
   }
 
+  const coachMap = new Map();
+
+  // Primary source: CoachStable links
+  const coachLinks = await CoachStable.findAll({
+    where: { stable_id: stableId, is_active: true },
+    include: [
+      {
+        model: User,
+        as: 'coach',
+        attributes: [
+          'id', 'first_name', 'last_name', 'email', 'profile_picture_url',
+          'specialties', 'is_verified', 'bio',
+        ],
+      },
+    ],
+  });
+
+  for (const link of coachLinks) {
+    if (link.coach && !coachMap.has(link.coach.id)) {
+      coachMap.set(link.coach.id, link.coach);
+    }
+  }
+
+  // Backward compatibility: coaches from active courses
   const courses = await Course.findAll({
     where: { stable_id: stableId, is_active: true },
     include: [
@@ -122,7 +146,6 @@ export const getStableCoaches = async ({ stableId, search, page, limit }) => {
     ],
   });
 
-  const coachMap = new Map();
   for (const course of courses) {
     if (course.coach && !coachMap.has(course.coach.id)) {
       coachMap.set(course.coach.id, course.coach);
@@ -330,7 +353,7 @@ export const getStableHorses = async ({ stableId, discipline, level, date }) => 
 export const createBooking = async ({
   riderId, coachId, stableId, arenaId, horseId,
   bookingDate, startTime, endTime, lessonType, price, notes,
-  bookingType = 'lesson',
+  bookingType = 'lesson', durationMinutes, horseAssignment,
 }) => {
   if (!riderId || !stableId || !bookingDate || !startTime || !endTime) {
     throw new Error('riderId, stableId, bookingDate, startTime, and endTime are required.');
@@ -339,8 +362,6 @@ export const createBooking = async ({
   const isArenaOnly = bookingType === 'arena_only';
   if (isArenaOnly) {
     if (!arenaId) throw new Error('arenaId is required for arena-only booking.');
-  } else {
-    if (!coachId) throw new Error('coachId is required for lesson booking.');
   }
 
   const rider = await User.findByPk(riderId);
@@ -374,10 +395,12 @@ export const createBooking = async ({
     start_time: startTime,
     end_time: endTime,
     lesson_type: lessonType || 'private',
-    status: isArenaOnly ? 'confirmed' : 'pending_horse_approval',
+    status: 'pending_review',
     price: price || null,
     notes: notes || null,
     booking_type: isArenaOnly ? 'arena_only' : 'lesson',
+    duration_minutes: durationMinutes || null,
+    horse_assignment: horseAssignment || 'stable_assigns',
   });
 
   if (horseId) {
@@ -606,4 +629,169 @@ export const cancelBooking = async ({ bookingId, userId }) => {
   });
 
   return booking;
+};
+
+export const getAvailableSlots = async ({ stableId, date, duration = 60 }) => {
+  if (!stableId || !date) throw new Error('stableId and date are required.');
+
+  const stable = await Stable.findByPk(stableId);
+  if (!stable) throw new Error('Stable not found.');
+
+  const durationMins = Number(duration) || 60;
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dateObj = new Date(date);
+  const dayName = dayNames[dateObj.getDay()];
+
+  let openTime = '06:00';
+  let closeTime = '22:00';
+  let isClosed = false;
+
+  if (stable.operating_hours && stable.operating_hours[dayName]) {
+    const dayHours = stable.operating_hours[dayName];
+    if (dayHours.is_closed) isClosed = true;
+    if (dayHours.open) openTime = dayHours.open;
+    if (dayHours.close) closeTime = dayHours.close;
+  }
+
+  if (isClosed) return { data: [] };
+
+  const [openH, openM] = openTime.split(':').map(Number);
+  const [closeH, closeM] = closeTime.split(':').map(Number);
+  const openMins = openH * 60 + openM;
+  const closeMins = closeH * 60 + closeM;
+
+  const allSlots = [];
+  for (let m = openMins; m + durationMins <= closeMins; m += 30) {
+    const startStr = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00`;
+    const endMin = m + durationMins;
+    const endStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}:00`;
+    allSlots.push({ start_time: startStr, end_time: endStr, duration_minutes: durationMins });
+  }
+
+  const blockingBookings = await LessonBooking.findAll({
+    where: {
+      stable_id: stableId,
+      booking_date: date,
+      status: { [Op.in]: ['pending_review', 'confirmed', 'in_progress', 'pending_horse_approval', 'pending_payment'] },
+    },
+    attributes: ['start_time', 'end_time'],
+  });
+
+  const available = allSlots.filter(slot => {
+    return !blockingBookings.some(b => slot.start_time < b.end_time && slot.end_time > b.start_time);
+  });
+
+  return { data: available };
+};
+
+export const approveBooking = async ({ bookingId, adminId }) => {
+  const booking = await LessonBooking.findByPk(bookingId, {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
+
+  booking.status = 'confirmed';
+  await booking.save();
+
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'booking_approved',
+    title: 'Booking Confirmed',
+    body: `Your booking on ${booking.booking_date} has been approved.`,
+    data: { booking_id: booking.id },
+  });
+
+  return booking;
+};
+
+export const declineBooking = async ({ bookingId, adminId, reason }) => {
+  const booking = await LessonBooking.findByPk(bookingId, {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
+
+  booking.status = 'declined';
+  booking.decline_reason = reason || null;
+  await booking.save();
+
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'booking_declined',
+    title: 'Booking Declined',
+    body: reason ? `Your booking on ${booking.booking_date} was declined: ${reason}` : `Your booking on ${booking.booking_date} was declined.`,
+    data: { booking_id: booking.id },
+  });
+
+  return booking;
+};
+
+export const startBooking = async ({ bookingId, userId }) => {
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.status !== 'confirmed') throw new Error('Booking must be confirmed to start.');
+
+  booking.status = 'in_progress';
+  await booking.save();
+  return booking;
+};
+
+export const completeBooking = async ({ bookingId, userId }) => {
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.status !== 'in_progress' && booking.status !== 'confirmed') {
+    throw new Error('Booking must be in progress or confirmed to complete.');
+  }
+
+  booking.status = 'completed';
+  await booking.save();
+
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'general',
+    title: 'Session Completed',
+    body: `Your session on ${booking.booking_date} has been completed.`,
+    data: { booking_id: booking.id },
+  });
+
+  return booking;
+};
+
+export const sendPaymentReminder = async ({ bookingId, coachId }) => {
+  const booking = await LessonBooking.findByPk(bookingId, {
+    include: [
+      { model: Stable, as: 'stable' },
+      { model: User, as: 'coach' },
+      { model: User, as: 'rider' },
+    ],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can send reminders.');
+  if (booking.status !== 'completed') throw new Error('Can only send reminders for completed bookings.');
+
+  const coach = booking.coach;
+  const coachType = coach?.coach_type || 'freelancer';
+
+  if ((coachType === 'stable_employed' || booking.stable_id) && booking.stable?.admin_id) {
+    await Notification.create({
+      admin_id: booking.stable.admin_id,
+      type: 'payment_reminder',
+      title: 'Payment Reminder',
+      body: `Coach ${coach.first_name || ''} ${coach.last_name || ''} is requesting payment for session on ${booking.booking_date}.`,
+      data: { booking_id: booking.id, coach_id: coachId },
+    });
+  }
+
+  if (coachType === 'independent' || coachType === 'freelancer') {
+    await Notification.create({
+      user_id: booking.rider_id,
+      type: 'payment_reminder',
+      title: 'Payment Reminder',
+      body: `Coach ${coach.first_name || ''} ${coach.last_name || ''} is requesting payment for your session on ${booking.booking_date}.`,
+      data: { booking_id: booking.id, coach_id: coachId },
+    });
+  }
+
+  return { message: 'Payment reminder sent.' };
 };

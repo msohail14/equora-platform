@@ -6,6 +6,7 @@ import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
+  approveStableApi,
   createStableApi,
   getStablesApi,
   updateStableApi,
@@ -25,6 +26,11 @@ const emptyForm = {
   longitude: '',
 };
 
+const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const defaultOperatingHours = () =>
+  Object.fromEntries(DAYS_OF_WEEK.map((day) => [day, { open: '06:00', close: '22:00', is_closed: false }]));
+
 const AdminStablesPage = () => {
   const [stables, setStables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +41,7 @@ const AdminStablesPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [logoFile, setLogoFile] = useState(null);
   const [isStableModalOpen, setIsStableModalOpen] = useState(false);
+  const [operatingHours, setOperatingHours] = useState(defaultOperatingHours);
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const fetchStables = async (targetPage = page, targetSearch = debouncedSearch) => {
@@ -67,13 +74,22 @@ const AdminStablesPage = () => {
   const resetForm = () => {
     setForm(emptyForm);
     setLogoFile(null);
+    setOperatingHours(defaultOperatingHours());
     setIsStableModalOpen(false);
+  };
+
+  const updateDayHours = (day, field, value) => {
+    setOperatingHours((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value },
+    }));
   };
 
   const onSubmit = async (event) => {
     event.preventDefault();
     try {
-      await createStableApi({ payload: form, logoFile });
+      const payload = { ...form, operating_hours: JSON.stringify(operatingHours) };
+      await createStableApi({ payload, logoFile });
       toast.success('Stable created successfully.');
       resetForm();
       await fetchStables(page, debouncedSearch);
@@ -117,6 +133,7 @@ const AdminStablesPage = () => {
             <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Location</th>
+              <th className="px-3 py-2">Approval</th>
               <th className="px-3 py-2">Featured</th>
               <th className="px-3 py-2">Actions</th>
             </tr>
@@ -127,6 +144,30 @@ const AdminStablesPage = () => {
                 <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{stable.name}</td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
                   {[stable.city, stable.state, stable.country, stable.pincode].filter(Boolean).join(', ') || '-'}
+                </td>
+                <td className="px-3 py-2">
+                  {stable.is_approved ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-300">
+                      <span className="size-1.5 rounded-full bg-emerald-500" /> Approved
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await approveStableApi(stable.id);
+                          toast.success('Stable approved');
+                          await fetchStables(page, debouncedSearch);
+                        } catch (err) {
+                          toast.error(err.message || 'Failed to approve stable');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+                    >
+                      Approve
+                    </button>
+                  )}
                 </td>
                 <td className="px-3 py-2">
                   <button
@@ -208,6 +249,47 @@ const AdminStablesPage = () => {
               onChange={(e) => setLogoFile(e.target.files?.[0])}
             />
           </label>
+
+          {/* Operating Hours */}
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Operating Hours</h3>
+            <div className="space-y-2">
+              {DAYS_OF_WEEK.map((day) => {
+                const dayData = operatingHours[day];
+                return (
+                  <div key={day} className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/50">
+                    <span className="w-24 text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{day}</span>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={dayData.is_closed}
+                        onChange={(e) => updateDayHours(day, 'is_closed', e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                      />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Closed</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={dayData.open}
+                        disabled={dayData.is_closed}
+                        onChange={(e) => updateDayHours(day, 'open', e.target.value)}
+                        className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      />
+                      <span className="text-xs text-gray-400">to</span>
+                      <input
+                        type="time"
+                        value={dayData.close}
+                        disabled={dayData.is_closed}
+                        onChange={(e) => updateDayHours(day, 'close', e.target.value)}
+                        className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
             <AppButton type="submit">Create Stable</AppButton>

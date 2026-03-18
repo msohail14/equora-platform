@@ -101,6 +101,38 @@ const Stable = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    operating_hours: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    google_place_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    formatted_address: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    phone_number: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+    },
+    website: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    google_rating: {
+      type: DataTypes.DECIMAL(2, 1),
+      allowNull: true,
+    },
+    google_photos: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    opening_hours_text: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
   },
   {
     tableName: 'stables',

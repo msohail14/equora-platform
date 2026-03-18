@@ -22,10 +22,10 @@ export const createFeedbackController = async (req, res) => {
     const data = await createFeedback({
       sessionId: req.params.id,
       coachId: req.user.id,
-      riderId: req.body.riderId,
-      feedbackText: req.body.feedbackText,
-      performanceRating: req.body.performanceRating,
-      areasToImprove: req.body.areasToImprove,
+      riderId: req.body.riderId || req.body.rider_id,
+      feedbackText: req.body.feedbackText || req.body.feedback_text || req.body.performance_notes,
+      performanceRating: req.body.performanceRating || req.body.performance_rating || req.body.rating,
+      areasToImprove: req.body.areasToImprove || req.body.areas_to_improve,
     });
     return res.status(201).json(data);
   } catch (error) {

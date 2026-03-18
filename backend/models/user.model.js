@@ -29,6 +29,11 @@ const User = sequelize.define(
       type: DataTypes.ENUM('rider', 'coach'),
       allowNull: false,
     },
+    coach_type: {
+      type: DataTypes.ENUM('stable_employed', 'freelancer', 'independent'),
+      allowNull: true,
+      defaultValue: null,
+    },
     first_name: {
       type: DataTypes.STRING(100),
       allowNull: true,

@@ -75,6 +75,7 @@ const AdminCoursesPage = () => {
               <th className="px-3 py-2">Stable</th>
               <th className="px-3 py-2">Coach</th>
               <th className="px-3 py-2">Max Enroll</th>
+              <th className="px-3 py-2">Visibility</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">View</th>
             </tr>
@@ -89,6 +90,22 @@ const AdminCoursesPage = () => {
                   {course.coach?.first_name || '-'} {course.coach?.last_name || ''}
                 </td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{course.max_enrollment ?? '-'}</td>
+                <td className="px-3 py-2">
+                  {(() => {
+                    const v = course.visibility || 'public';
+                    const styles = {
+                      public: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+                      my_riders: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+                      private: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+                    };
+                    const labels = { public: 'Public', my_riders: 'My Riders', private: 'Private' };
+                    return (
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${styles[v] || styles.public}`}>
+                        {labels[v] || v}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-3 py-2">
                   <span
                     className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -114,7 +131,7 @@ const AdminCoursesPage = () => {
             ))}
             {!loading && !courses.length ? (
               <tr className="border-t border-gray-200 dark:border-gray-800">
-                <td colSpan={7} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={8} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   No courses found.
                 </td>
               </tr>

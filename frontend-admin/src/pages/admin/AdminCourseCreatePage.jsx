@@ -33,6 +33,7 @@ const emptyForm = {
   max_enrollment: '',
   price: '',
   status: 'draft',
+  visibility: 'public',
   is_active: true,
 };
 
@@ -53,6 +54,7 @@ const toCoursePayload = (form) => ({
   max_enrollment: form.max_enrollment === '' ? null : Number(form.max_enrollment),
   price: form.price === '' ? null : Number(form.price),
   status: form.status,
+  visibility: form.visibility || 'public',
   is_active: Boolean(form.is_active),
 });
 
@@ -384,7 +386,7 @@ const AdminCourseCreatePage = () => {
 
               {/* Publishing */}
               <SectionCard icon={Tag} title="Publishing">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-3">
                   <label className="grid gap-1.5">
                     <span className={labelClass}>Status</span>
                     <select
@@ -400,6 +402,19 @@ const AdminCourseCreatePage = () => {
 
                   <label className="grid gap-1.5">
                     <span className={labelClass}>Visibility</span>
+                    <select
+                      className={selectClass}
+                      value={form.visibility}
+                      onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                    >
+                      <option value="public">Public</option>
+                      <option value="my_riders">My Riders</option>
+                      <option value="private">Private</option>
+                    </select>
+                  </label>
+
+                  <label className="grid gap-1.5">
+                    <span className={labelClass}>Active</span>
                     <select
                       className={selectClass}
                       value={form.is_active ? 'true' : 'false'}

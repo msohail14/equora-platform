@@ -36,6 +36,9 @@ const Notification = sequelize.define(
         'coach_verified',
         'stable_approved',
         'payout_processed',
+        'booking_approved',
+        'booking_declined',
+        'payment_reminder',
         'general'
       ),
       allowNull: false,

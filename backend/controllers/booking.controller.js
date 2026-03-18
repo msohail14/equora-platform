@@ -4,10 +4,16 @@ import {
   getStableCoaches,
   getCoachSlots,
   getStableHorses,
+  getAvailableSlots,
   createBooking,
   approveHorseForBooking,
   confirmHorseAvailability,
   payForBooking,
+  approveBooking,
+  declineBooking,
+  startBooking,
+  completeBooking,
+  sendPaymentReminder,
   getMyBookings,
   cancelBooking,
 } from '../services/booking.service.js';
@@ -157,6 +163,80 @@ export const cancelBookingController = async (req, res) => {
     const data = await cancelBooking({
       bookingId: req.params.id,
       userId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getAvailableSlotsController = async (req, res) => {
+  try {
+    const data = await getAvailableSlots({
+      stableId: req.params.id,
+      date: req.query.date,
+      duration: req.query.duration,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const approveBookingController = async (req, res) => {
+  try {
+    const data = await approveBooking({
+      bookingId: req.params.id,
+      adminId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const declineBookingController = async (req, res) => {
+  try {
+    const data = await declineBooking({
+      bookingId: req.params.id,
+      adminId: req.user.id,
+      reason: req.body.reason,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const startBookingController = async (req, res) => {
+  try {
+    const data = await startBooking({
+      bookingId: req.params.id,
+      userId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const completeBookingController = async (req, res) => {
+  try {
+    const data = await completeBooking({
+      bookingId: req.params.id,
+      userId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const sendPaymentReminderController = async (req, res) => {
+  try {
+    const data = await sendPaymentReminder({
+      bookingId: req.params.id,
+      coachId: req.user.id,
     });
     return res.status(200).json(data);
   } catch (error) {

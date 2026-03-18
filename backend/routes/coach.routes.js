@@ -1,6 +1,12 @@
 import express from 'express';
 import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
+import coachAuthMiddleware from '../middleware/coach-auth.middleware.js';
+import {
+  getMyStablesController,
+  linkMyStableController,
+  unlinkMyStableController,
+} from '../controllers/coachStable.controller.js';
 import {
   createCoachWeeklyAvailabilityByAdminController,
   createCoachController,
@@ -18,6 +24,10 @@ import {
 } from '../controllers/coach.controller.js';
 
 const router = express.Router();
+
+router.get('/me/stables', coachAuthMiddleware, getMyStablesController);
+router.post('/me/stables', coachAuthMiddleware, linkMyStableController);
+router.delete('/me/stables/:stableId', coachAuthMiddleware, unlinkMyStableController);
 
 router.get('/public', getAllCoachesController);
 router.get('/public/:id', getCoachByIdController);

@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { CalendarDays } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
-import { getAdminBookingsApi } from '../../features/operations/operationsApi';
+import Modal from '../../components/ui/Modal';
+import {
+  getAdminBookingsApi,
+  approveBookingApi,
+  declineBookingApi,
+  startBookingApi,
+  completeBookingApi,
+} from '../../features/operations/operationsApi';
 
-const STATUS_OPTIONS = ['all', 'pending_horse_approval', 'pending_payment', 'confirmed', 'cancelled', 'completed'];
+const STATUS_OPTIONS = [
+  'all',
+  'pending_review',
+  'pending_horse_approval',
+  'pending_payment',
+  'confirmed',
+  'in_progress',
+  'declined',
+  'cancelled',
+  'completed',
+];
 
 const statusBadge = (status) => {
   const map = {
+    pending_review: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     pending_horse_approval: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
     pending_payment: 'bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-300',
     confirmed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    in_progress: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    declined: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
     cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   };
@@ -23,8 +43,13 @@ const AdminBookingsPage = () => {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchBookings = async (targetPage = page, targetStatus = status) => {
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [declineTarget, setDeclineTarget] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
+
+  const fetchBookings = useCallback(async (targetPage = page, targetStatus = status) => {
     setLoading(true);
     try {
       const response = await getAdminBookingsApi({
@@ -39,7 +64,7 @@ const AdminBookingsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, status]);
 
   useEffect(() => {
     fetchBookings(page, status);
@@ -48,6 +73,91 @@ const AdminBookingsPage = () => {
   useEffect(() => {
     setPage(1);
   }, [status]);
+
+  const handleAction = async (actionFn, id, successMsg) => {
+    setActionLoading(id);
+    try {
+      await actionFn(id);
+      toast.success(successMsg);
+      await fetchBookings(page, status);
+    } catch (err) {
+      toast.error(err.message || 'Action failed.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const openDeclineModal = (booking) => {
+    setDeclineTarget(booking);
+    setDeclineReason('');
+    setDeclineModalOpen(true);
+  };
+
+  const handleDeclineSubmit = async () => {
+    if (!declineTarget) return;
+    setActionLoading(declineTarget.id);
+    try {
+      await declineBookingApi(declineTarget.id, declineReason);
+      toast.success('Booking declined.');
+      setDeclineModalOpen(false);
+      setDeclineTarget(null);
+      setDeclineReason('');
+      await fetchBookings(page, status);
+    } catch (err) {
+      toast.error(err.message || 'Failed to decline booking.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const renderActions = (b) => {
+    const isLoading = actionLoading === b.id;
+    const btnBase = 'rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50';
+
+    switch (b.status) {
+      case 'pending_review':
+        return (
+          <div className="flex gap-1.5">
+            <button
+              className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
+              disabled={isLoading}
+              onClick={() => handleAction(approveBookingApi, b.id, 'Booking approved.')}
+            >
+              Approve
+            </button>
+            <button
+              className={`${btnBase} bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400`}
+              disabled={isLoading}
+              onClick={() => openDeclineModal(b)}
+            >
+              Decline
+            </button>
+          </div>
+        );
+      case 'confirmed':
+        return (
+          <button
+            className={`${btnBase} bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300`}
+            disabled={isLoading}
+            onClick={() => handleAction(startBookingApi, b.id, 'Session started.')}
+          >
+            Start Session
+          </button>
+        );
+      case 'in_progress':
+        return (
+          <button
+            className={`${btnBase} bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300`}
+            disabled={isLoading}
+            onClick={() => handleAction(completeBookingApi, b.id, 'Session completed.')}
+          >
+            Complete
+          </button>
+        );
+      default:
+        return <span className="text-xs text-gray-400">—</span>;
+    }
+  };
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -81,8 +191,11 @@ const AdminBookingsPage = () => {
               <th className="px-3 py-2">Stable</th>
               <th className="px-3 py-2">Date</th>
               <th className="px-3 py-2">Time</th>
+              <th className="px-3 py-2">Duration</th>
+              <th className="px-3 py-2">Horse</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Lesson Type</th>
+              <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -99,17 +212,24 @@ const AdminBookingsPage = () => {
                 </td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{b.date || b.booking_date || '-'}</td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{b.start_time || b.time || '-'}</td>
+                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
+                  {b.duration_minutes ? `${b.duration_minutes} min` : '-'}
+                </td>
+                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
+                  {b.horse_assignment || b.horse_name || b.horse?.name || '-'}
+                </td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(b.status)}`}>
                     {(b.status || '-').replace(/_/g, ' ')}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{b.lesson_type || b.type || '-'}</td>
+                <td className="px-3 py-2">{renderActions(b)}</td>
               </tr>
             ))}
             {!loading && !bookings.length && (
               <tr className="border-t border-gray-200 dark:border-gray-800">
-                <td colSpan={7} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={10} className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   No bookings found.
                 </td>
               </tr>
@@ -146,6 +266,37 @@ const AdminBookingsPage = () => {
           </AppButton>
         </div>
       </div>
+
+      {/* Decline Reason Modal */}
+      <Modal isOpen={declineModalOpen} title="Decline Booking" onClose={() => setDeclineModalOpen(false)}>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Provide a reason for declining this booking
+            {declineTarget && (
+              <> for <span className="font-medium">{`${declineTarget.rider_first_name || declineTarget.rider?.first_name || ''} ${declineTarget.rider_last_name || declineTarget.rider?.last_name || ''}`.trim()}</span></>
+            )}:
+          </p>
+          <textarea
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+            rows={3}
+            placeholder="Reason for declining..."
+            value={declineReason}
+            onChange={(e) => setDeclineReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <AppButton variant="secondary" onClick={() => setDeclineModalOpen(false)}>
+              Cancel
+            </AppButton>
+            <AppButton
+              onClick={handleDeclineSubmit}
+              disabled={actionLoading === declineTarget?.id}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Decline Booking
+            </AppButton>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 };
