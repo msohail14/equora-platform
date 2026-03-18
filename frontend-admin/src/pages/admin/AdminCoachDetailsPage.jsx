@@ -268,7 +268,7 @@ const AdminCoachDetailsPage = () => {
             }
           : prev
       );
-    } catch (_error) {
+    } catch {
       // Keep page usable even if review refresh fails.
     }
   }, [coachId]);
@@ -349,18 +349,18 @@ const AdminCoachDetailsPage = () => {
             {/* Floating stat strip — identical pattern to CourseOverviewCard */}
             <div className="relative z-10 mx-5 -mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md sm:grid-cols-4 dark:border-gray-800 dark:bg-gray-900">
               {[
-                { icon: GraduationCap, label: 'Courses',    value: summary?.total_courses             ?? 0, color: 'text-emerald-500'   },
-                { icon: Clock3,        label: 'Upcoming sessions',   value: summary?.upcoming_sessions          ?? 0, color: 'text-sky-500'     },
-                { icon: CheckCircle2,  label: 'Active courses',     value: summary?.active_courses             ?? 0, color: 'text-emerald-500' },
-                { icon: Star,       label: 'Rating',  value: `${Number(summary?.average_rating || 0).toFixed(1)} (${summary?.total_reviews || 0})`, color: 'text-violet-500'  },
-              ].map(({ icon: Icon, label, value, color }, i, arr) => (
+                { Icon: GraduationCap, label: 'Courses',    value: summary?.total_courses             ?? 0, color: 'text-emerald-500'   },
+                { Icon: Clock3,        label: 'Upcoming sessions',   value: summary?.upcoming_sessions          ?? 0, color: 'text-sky-500'     },
+                { Icon: CheckCircle2,  label: 'Active courses',     value: summary?.active_courses             ?? 0, color: 'text-emerald-500' },
+                { Icon: Star,       label: 'Rating',  value: `${Number(summary?.average_rating || 0).toFixed(1)} (${summary?.total_reviews || 0})`, color: 'text-violet-500'  },
+              ].map((stat, i, arr) => (
                 <div
-                  key={label}
+                  key={stat.label}
                   className={`flex flex-col items-center gap-1 py-4 ${i < arr.length - 1 ? 'border-r border-gray-100 dark:border-gray-800' : ''}`}
                 >
-                  <Icon size={15} className={color} />
-                  <p className="text-xl font-bold leading-none text-gray-900 dark:text-gray-100">{value}</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+                  <stat.Icon size={15} className={stat.color} />
+                  <p className="text-xl font-bold leading-none text-gray-900 dark:text-gray-100">{stat.value}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{stat.label}</p>
                 </div>
               ))}
             </div>

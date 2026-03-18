@@ -127,16 +127,16 @@ const CourseOverviewCard = ({ course }) => {
             color: 'text-violet-500',
             bg: 'bg-violet-50 dark:bg-violet-900/20',
           },
-        ].map(({ icon: Icon, label, value, unit, color, bg }) => (
-          <div key={label} className="flex flex-col items-center gap-1.5 px-2 py-4 text-center">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${bg}`}>
-              <Icon size={14} className={color} />
+        ].map((stat) => (
+          <div key={stat.label} className="flex flex-col items-center gap-1.5 px-2 py-4 text-center">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${stat.bg}`}>
+              <stat.icon size={14} className={stat.color} />
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black leading-none text-gray-900 dark:text-gray-100">{value}</span>
-              {unit && <span className="text-[10px] font-semibold text-gray-400">{unit}</span>}
+              <span className="text-xl font-black leading-none text-gray-900 dark:text-gray-100">{stat.value}</span>
+              {stat.unit && <span className="text-[10px] font-semibold text-gray-400">{stat.unit}</span>}
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{stat.label}</p>
           </div>
         ))}
       </div>

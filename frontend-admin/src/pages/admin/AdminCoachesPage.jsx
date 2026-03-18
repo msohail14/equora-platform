@@ -122,9 +122,6 @@ const AdminCoachesPage = () => {
     }
   };
 
-  const activeCount   = coaches.filter((c) => c.is_active).length;
-  const inactiveCount = coaches.length - activeCount;
-
   return (
     <div className="grid gap-4">
 
@@ -338,7 +335,7 @@ const AdminCoachesPage = () => {
                               await updateCoachApi({ coachId: coach.id, payload: { is_featured: !coach.is_featured } });
                               toast.success(coach.is_featured ? 'Removed from featured' : 'Marked as featured');
                               await fetchCoaches(page, debouncedSearch);
-                            } catch (err) {
+                            } catch {
                               toast.error('Failed to update featured status');
                             }
                           }}

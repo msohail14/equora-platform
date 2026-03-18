@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -128,10 +128,10 @@ const SidebarContent = ({ onNavigate, admin }) => {
               {section.label}
             </p>
             <div className="space-y-1">
-              {section.items.map(({ label, to, icon: NavIcon }) => (
+              {section.items.map((navItem) => (
                 <NavLink
-                  key={to}
-                  to={to}
+                  key={navItem.to}
+                  to={navItem.to}
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
@@ -148,9 +148,9 @@ const SidebarContent = ({ onNavigate, admin }) => {
                           isActive ? 'text-white' : 'text-equestrian-green-300/70 group-hover:text-white'
                         }`}
                       >
-                        <NavIcon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                        <navItem.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                       </span>
-                      <span className="flex-1">{label}</span>
+                      <span className="flex-1">{navItem.label}</span>
                       {isActive && (
                         <ChevronRight size={14} strokeWidth={3} className="text-white/80" />
                       )}

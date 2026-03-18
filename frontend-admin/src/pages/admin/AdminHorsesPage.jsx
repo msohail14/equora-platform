@@ -227,7 +227,7 @@ const AdminHorsesPage = () => {
                         await updateHorseApi({ horseId: horse.id, payload: { is_featured: !horse.is_featured } });
                         toast.success(horse.is_featured ? 'Removed from featured' : 'Marked as featured');
                         await fetchPageData(page, debouncedSearch);
-                      } catch (err) {
+                      } catch {
                         toast.error('Failed to update featured status');
                       }
                     }}

@@ -31,7 +31,7 @@ const AdminForgotPasswordPage = () => {
     await dispatch(forgotAdminPassword({ email }));
   };
 
-  const onResend = async () => {
+  const _onResend = async () => {
     if (!email) {
       toast.error('Please enter email first.');
       return;

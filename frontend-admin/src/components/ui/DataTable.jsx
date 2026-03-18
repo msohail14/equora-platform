@@ -22,7 +22,7 @@ const SkeletonRows = ({ columns, rows = 5 }) => (
   </tbody>
 );
 
-const MobileCardView = ({ table, columns, onRowClick }) =>
+const MobileCardView = ({ table, onRowClick }) =>
   table.getRowModel().rows.map((row) => (
     <div
       key={row.id}

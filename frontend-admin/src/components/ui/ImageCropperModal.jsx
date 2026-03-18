@@ -3,12 +3,14 @@ import Cropper from 'react-easy-crop';
 import AppButton from './AppButton';
 import Modal from './Modal';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_CROP_ASPECT_OPTIONS = [
   { key: 'square', label: 'Square (1:1)', aspect: 1 },
   { key: 'portrait', label: 'Portrait (9:16)', aspect: 9 / 16 },
   { key: 'landscape', label: 'Landscape (16:9)', aspect: 16 / 9 },
   { key: 'banner', label: 'Banner (3:1)', aspect: 3 / 1 },
 ];
+// eslint-disable-next-line react-refresh/only-export-components
 export const SQUARE_CROP_ASPECT_OPTIONS = [{ key: 'square', label: 'Square (1:1)', aspect: 1 }];
 
 const createImage = (url) =>

@@ -177,7 +177,7 @@ const AdminStablesPage = () => {
                         await updateStableApi({ stableId: stable.id, payload: { is_featured: !stable.is_featured } });
                         toast.success(stable.is_featured ? 'Removed from featured' : 'Marked as featured');
                         await fetchStables(page, debouncedSearch);
-                      } catch (err) {
+                      } catch {
                         toast.error('Failed to update featured status');
                       }
                     }}

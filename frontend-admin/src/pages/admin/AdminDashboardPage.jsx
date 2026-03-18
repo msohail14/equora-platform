@@ -70,7 +70,7 @@ const formatMonthLabel = (raw) => {
   return parsed.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
 };
 
-const getGreeting = () => {
+const _getGreeting = () => {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
@@ -122,7 +122,7 @@ const kpiCards = (stats) => [
 // --- Entity distribution pie data ---
 const DISTRIBUTION_COLORS = ['#166534', '#d97706', '#57534e', '#15803d'];
 
-const buildDistributionData = (stats) => [
+const _buildDistributionData = (stats) => [
   { name: 'Stables', value: Number(stats.total_stables || 0) },
   { name: 'Arenas', value: Number(stats.total_arenas || 0) },
   { name: 'Horses', value: Number(stats.total_horses || 0) },
@@ -304,8 +304,6 @@ const AdminDashboardPage = () => {
     fetchRecentBookings();
   }, [fetchRecentBookings]);
 
-  const greeting = getGreeting();
-
   const chartData = useMemo(
     () =>
       trendMode === 'daily'
@@ -316,11 +314,6 @@ const AdminDashboardPage = () => {
     [trendMode, dashboard.enrollment_trends],
   );
 
-  const distributionData = useMemo(() => buildDistributionData(dashboard.stats), [dashboard.stats]);
-
-  const pendingStables = dashboard.stats.pending_stables ?? 0;
-  const unverifiedCoaches = dashboard.stats.unverified_coaches ?? 0;
-  const hasPendingActions = pendingStables > 0 || unverifiedCoaches > 0;
 
 
   return (
@@ -396,7 +389,7 @@ const AdminDashboardPage = () => {
                     )}
                     <p className="text-3xl font-bold text-equestrian-green-950 dark:text-white">
                       {card.isCurrency
-                        ? (Number(card.value) ?? 0).toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        ? (Number(card.value) || 0).toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : (card.value?.toLocaleString() ?? 0)}
                     </p>
                     <p className="mt-1 text-sm font-medium text-equestrian-stone-500 dark:text-equestrian-stone-400">
