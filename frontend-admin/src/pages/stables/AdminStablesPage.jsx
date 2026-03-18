@@ -108,6 +108,11 @@ const AdminStablesPage = () => {
       latitude: place.latitude ?? prev.latitude,
       longitude: place.longitude ?? prev.longitude,
       contact_phone: place.contact_phone || prev.contact_phone,
+      google_place_id: place.google_place_id || prev.google_place_id || '',
+      formatted_address: place.formatted_address || prev.formatted_address || '',
+      google_rating: place.google_rating ?? prev.google_rating ?? '',
+      website: place.website || prev.website || '',
+      google_photos: place.google_photos ? JSON.stringify(place.google_photos) : prev.google_photos || '',
     }));
   };
 

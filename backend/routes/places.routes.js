@@ -26,7 +26,7 @@ router.get('/autocomplete', adminAuthMiddleware, async (req, res) => {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
       },
-      body: JSON.stringify({ input: query }),
+      body: JSON.stringify({ input: query, includedRegionCodes: ['SA'] }),
     });
     const data = await response.json();
 

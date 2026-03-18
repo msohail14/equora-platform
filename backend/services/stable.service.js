@@ -55,6 +55,11 @@ export const createStable = async ({ adminId, payload }) => {
     owner_password,
     owner_first_name,
     owner_last_name,
+    google_place_id,
+    formatted_address,
+    google_rating,
+    website,
+    google_photos,
   } =
     payload;
 
@@ -99,6 +104,11 @@ export const createStable = async ({ adminId, payload }) => {
     description: description || null,
     is_active: is_active ?? true,
     admin_id: stableAdminId,
+    google_place_id: google_place_id || null,
+    formatted_address: formatted_address || null,
+    google_rating: normalizeOptionalNumber(google_rating, 'google_rating'),
+    website: website || null,
+    google_photos: google_photos ? (typeof google_photos === 'string' ? JSON.parse(google_photos) : google_photos) : null,
   });
 
   return stable;

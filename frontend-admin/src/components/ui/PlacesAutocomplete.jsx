@@ -73,6 +73,7 @@ const PlacesAutocomplete = ({ onSelect, placeholder = 'Search for a place on Goo
         google_place_id: place.place_id || prediction.place_id,
         google_rating: place.rating ?? '',
         website: place.website || '',
+        google_photos: place.photos || [],
       });
     } catch (err) {
       console.error('Place details error:', err);
