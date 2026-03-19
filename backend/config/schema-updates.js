@@ -790,4 +790,21 @@ export const applySchemaUpdates = async () => {
 
   // Phase E: Obstacle types
   await ensureObstacleTypesTable();
+
+  // Phase F: Auto-approve existing stables created by admins
+  await approveExistingStables();
 };
+
+async function approveExistingStables() {
+  try {
+    const [results] = await sequelize.query(
+      `UPDATE stables SET is_approved = 1 WHERE is_approved = 0`
+    );
+    const changed = results?.affectedRows || results?.changedRows || 0;
+    if (changed > 0) {
+      console.log(`[schema] Approved ${changed} existing stables.`);
+    }
+  } catch (e) {
+    // Already done or column missing – safe to ignore
+  }
+}

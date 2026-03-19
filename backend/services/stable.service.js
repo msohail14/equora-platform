@@ -103,6 +103,7 @@ export const createStable = async ({ adminId, payload }) => {
     logo_url: logo_url || null,
     description: description || null,
     is_active: is_active ?? true,
+    is_approved: true,
     admin_id: stableAdminId,
     google_place_id: google_place_id || null,
     formatted_address: formatted_address || null,
