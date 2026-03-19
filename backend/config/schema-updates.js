@@ -793,7 +793,44 @@ export const applySchemaUpdates = async () => {
 
   // Phase F: Auto-approve existing stables created by admins
   await approveExistingStables();
+
+  // Phase G: Remove seeded test data (one-time cleanup)
+  await removeSeededTestData();
 };
+
+async function removeSeededTestData() {
+  const seededStableNames = [
+    'Elite Equestrian',
+    'Sawari Stables',
+    'Alma Stables',
+    'Ghazzawi Stables',
+    'Moka Academy',
+    'Trio Ranch',
+  ];
+
+  try {
+    for (const name of seededStableNames) {
+      const [stables] = await sequelize.query(
+        `SELECT id FROM stables WHERE name = :name AND admin_id IS NULL LIMIT 1`,
+        { replacements: { name } }
+      );
+      if (!stables || stables.length === 0) continue;
+      const stableId = stables[0].id;
+
+      await sequelize.query(
+        `DELETE FROM horses WHERE stable_id = :stableId`,
+        { replacements: { stableId } }
+      );
+      await sequelize.query(
+        `DELETE FROM stables WHERE id = :stableId`,
+        { replacements: { stableId } }
+      );
+      console.log(`[schema] Removed seeded stable: ${name} (id=${stableId})`);
+    }
+  } catch (e) {
+    console.warn('[schema] removeSeededTestData:', e.message);
+  }
+}
 
 async function approveExistingStables() {
   try {
