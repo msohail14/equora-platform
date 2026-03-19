@@ -58,6 +58,7 @@ const FRONTEND_URL = IS_PRODUCTION
 const allowedOrigins = [
   FRONTEND_URL,
   process.env.FRONTEND_URL_PROD,
+  'https://admin.equorariding.com',
   'https://equestrian-platform.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
