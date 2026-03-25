@@ -354,3 +354,16 @@ export const deleteCourse = async (courseId, coachId) => {
 
   return { message: 'Course deactivated successfully.' };
 };
+
+export const deleteCourseByAdmin = async (courseId) => {
+  const course = await Course.findByPk(courseId);
+  if (!course) {
+    throw new Error('Course not found.');
+  }
+
+  course.is_active = false;
+  course.status = 'archived';
+  await course.save();
+
+  return { message: 'Course deactivated successfully.' };
+};

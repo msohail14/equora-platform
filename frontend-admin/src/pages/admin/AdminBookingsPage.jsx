@@ -123,7 +123,10 @@ const AdminBookingsPage = () => {
             <button
               className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
               disabled={isLoading}
-              onClick={() => handleAction(approveBookingApi, b.id, 'Booking approved.')}
+              onClick={() => {
+                if (!window.confirm('Approve this booking?')) return;
+                handleAction(approveBookingApi, b.id, 'Booking approved.');
+              }}
             >
               Approve
             </button>
@@ -142,7 +145,10 @@ const AdminBookingsPage = () => {
             <button
               className={`${btnBase} bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300`}
               disabled={isLoading}
-              onClick={() => handleAction(confirmHorseApi, b.id, 'Horse confirmed.')}
+              onClick={() => {
+                if (!window.confirm('Confirm horse assignment for this booking?')) return;
+                handleAction(confirmHorseApi, b.id, 'Horse confirmed.');
+              }}
             >
               Confirm Horse
             </button>
@@ -160,7 +166,10 @@ const AdminBookingsPage = () => {
           <button
             className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
             disabled={isLoading}
-            onClick={() => handleAction(confirmBookingApi, b.id, 'Booking confirmed.')}
+            onClick={() => {
+              if (!window.confirm('Manually confirm this booking (bypasses online payment)?')) return;
+              handleAction(confirmBookingApi, b.id, 'Booking confirmed.');
+            }}
             title="Manually confirm (bypasses online payment)"
           >
             Confirm
@@ -171,7 +180,10 @@ const AdminBookingsPage = () => {
           <button
             className={`${btnBase} bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300`}
             disabled={isLoading}
-            onClick={() => handleAction(startBookingApi, b.id, 'Session started.')}
+            onClick={() => {
+              if (!window.confirm('Start this session?')) return;
+              handleAction(startBookingApi, b.id, 'Session started.');
+            }}
           >
             Start Session
           </button>
@@ -181,7 +193,10 @@ const AdminBookingsPage = () => {
           <button
             className={`${btnBase} bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300`}
             disabled={isLoading}
-            onClick={() => handleAction(completeBookingApi, b.id, 'Session completed.')}
+            onClick={() => {
+              if (!window.confirm('Mark this session as completed?')) return;
+              handleAction(completeBookingApi, b.id, 'Session completed.');
+            }}
           >
             Complete
           </button>

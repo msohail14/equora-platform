@@ -1,5 +1,6 @@
 import {
   createPackage,
+  deletePackage,
   getCoachPackages,
   getPackageById,
   updatePackage,
@@ -74,6 +75,18 @@ export const purchasePackageController = async (req, res) => {
       paymentId: req.body.payment_id,
     });
     return res.status(201).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const deletePackageController = async (req, res) => {
+  try {
+    const data = await deletePackage({
+      coachId: req.user.id,
+      packageId: req.params.id,
+    });
+    return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
   }

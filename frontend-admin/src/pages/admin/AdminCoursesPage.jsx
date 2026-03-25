@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
-import { getCoursesApi } from '../../features/operations/operationsApi';
+import { deleteCourseByAdminApi, getCoursesApi } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
 const AdminCoursesPage = () => {
@@ -77,7 +77,7 @@ const AdminCoursesPage = () => {
               <th className="px-3 py-2">Max Enroll</th>
               <th className="px-3 py-2">Visibility</th>
               <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">View</th>
+              <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -118,14 +118,33 @@ const AdminCoursesPage = () => {
                   </span>
                 </td>
                 <td className="px-3 py-2">
-                  <button
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                    type="button"
-                    onClick={() => navigate(`/admin/courses/${course.id}`)}
-                  >
-                    <Eye size={14} />
-                    View
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      type="button"
+                      onClick={() => navigate(`/admin/courses/${course.id}`)}
+                    >
+                      <Eye size={14} /> View
+                    </button>
+                    {course.is_active && (
+                      <button
+                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm(`Deactivate course "${course.title}"?`)) return;
+                          try {
+                            await deleteCourseByAdminApi(course.id);
+                            toast.success('Course deactivated.');
+                            await fetchCourses(page, debouncedSearch);
+                          } catch (err) {
+                            toast.error(err?.response?.data?.message || err.message || 'Failed to deactivate course.');
+                          }
+                        }}
+                      >
+                        <Trash2 size={12} /> Deactivate
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

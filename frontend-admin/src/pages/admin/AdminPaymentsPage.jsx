@@ -72,7 +72,10 @@ const AdminPaymentsPage = () => {
         <button
           className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
           disabled={isLoading}
-          onClick={() => handlePaymentAction(markManualPaymentApi, p.id, 'Marked as manual payment.')}
+          onClick={() => {
+            if (!window.confirm('Mark this payment as manually received?')) return;
+            handlePaymentAction(markManualPaymentApi, p.id, 'Marked as manual payment.');
+          }}
           title="Mark as cash/manual payment"
         >
           Mark Manual
@@ -84,7 +87,10 @@ const AdminPaymentsPage = () => {
         <button
           className={`${btnBase} bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400`}
           disabled={isLoading}
-          onClick={() => handlePaymentAction(refundPaymentApi, p.id, 'Payment refunded.')}
+          onClick={() => {
+            if (!window.confirm('Refund this payment? This cannot be undone.')) return;
+            handlePaymentAction(refundPaymentApi, p.id, 'Payment refunded.');
+          }}
         >
           Refund
         </button>

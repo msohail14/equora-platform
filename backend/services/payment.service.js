@@ -52,9 +52,19 @@ export const handleWebhook = async ({ transactionId, providerReference, status }
     throw new Error('transactionId and status are required.');
   }
 
+  const allowedStatuses = ['completed', 'failed', 'cancelled'];
+  if (!allowedStatuses.includes(status)) {
+    throw new Error(`Invalid status. Must be one of: ${allowedStatuses.join(', ')}`);
+  }
+
   const payment = await Payment.findOne({ where: { transaction_id: transactionId } });
   if (!payment) {
     throw new Error('Payment not found.');
+  }
+
+  // Prevent re-processing already finalized payments
+  if (['completed', 'refunded', 'failed', 'cancelled'].includes(payment.status)) {
+    throw new Error(`Payment already processed with status: ${payment.status}`);
   }
 
   payment.status = status;

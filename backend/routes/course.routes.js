@@ -11,6 +11,7 @@ import {
   updateCourseController,
   updateCourseByAdminController,
   deleteCourseController,
+  deleteCourseByAdminController,
 } from '../controllers/course.controller.js';
 
 const router = express.Router();
@@ -25,6 +26,7 @@ router.post('/admin', adminAuthMiddleware, uploadCourseThumbnail, createCourseBy
 router.put('/:id', coachAuthMiddleware, uploadCourseThumbnail, updateCourseController);
 router.delete('/:id', coachAuthMiddleware, deleteCourseController);
 router.put('/admin/:id', adminAuthMiddleware, uploadCourseThumbnail, updateCourseByAdminController);
+router.delete('/admin/:id', adminAuthMiddleware, deleteCourseByAdminController);
 router.get('/:id', getCourseByIdController);
 
 export default router;

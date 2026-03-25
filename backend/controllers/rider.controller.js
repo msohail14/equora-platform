@@ -1,6 +1,7 @@
 import {
   adminResetUserPassword,
   createRiderByAdmin,
+  deleteRider,
   getAllRiders,
   getRiderDetailsWithEnrollments,
   getRiderSessions,
@@ -86,6 +87,18 @@ export const updateRiderController = async (req, res) => {
     const data = await updateRider(req.params.id, req.body);
     return res.status(200).json(data);
   } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const deleteRiderController = async (req, res) => {
+  try {
+    const data = await deleteRider(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    if (error.message.includes('Cannot delete')) {
+      return res.status(409).json({ message: error.message });
+    }
     return handleError(res, error);
   }
 };

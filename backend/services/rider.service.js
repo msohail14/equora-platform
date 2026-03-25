@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
-import { Course, CourseEnrollment, CourseSession, Discipline, User } from '../models/index.js';
+import { Course, CourseEnrollment, CourseSession, Discipline, LessonBooking, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail } from './mail.service.js';
 
 /**
@@ -446,6 +446,28 @@ export const updateRiderActiveStatus = async (riderId, is_active) => {
       is_active: rider.is_active,
     },
   };
+};
+
+export const deleteRider = async (riderId) => {
+  const rider = await User.findOne({ where: { id: riderId, role: 'rider' } });
+  if (!rider) {
+    throw new Error('Rider not found.');
+  }
+
+  const activeBookings = await LessonBooking.count({
+    where: {
+      rider_id: riderId,
+      status: { [Op.in]: ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'] },
+    },
+  });
+  if (activeBookings > 0) {
+    throw new Error(`Cannot delete rider with ${activeBookings} active booking(s). Cancel or complete them first.`);
+  }
+
+  await CourseEnrollment.destroy({ where: { rider_id: riderId } });
+  await rider.destroy();
+
+  return { message: 'Rider deleted successfully.' };
 };
 
 export const updateRider = async (riderId, payload) => {

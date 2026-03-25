@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
-import { Course, CourseSession, User } from '../models/index.js';
+import { Course, CourseSession, LessonBooking, User } from '../models/index.js';
 import CoachStable from '../models/coachStable.model.js';
 import Stable from '../models/stable.model.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
@@ -420,4 +420,27 @@ export const getCoachWeeklyAvailabilityByAdmin = async (coachId, { include_inact
 export const deleteCoachWeeklyAvailabilityByAdmin = async (coachId, availabilityId) => {
   await ensureCoachExists(coachId);
   return deleteWeeklyAvailability(coachId, availabilityId);
+};
+
+export const deleteCoach = async (coachId) => {
+  const coach = await User.findOne({ where: { id: coachId, role: 'coach' } });
+  if (!coach) {
+    throw new Error('Coach not found.');
+  }
+
+  const activeBookings = await LessonBooking.count({
+    where: {
+      coach_id: coachId,
+      status: { [Op.in]: ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'] },
+    },
+  });
+  if (activeBookings > 0) {
+    throw new Error(`Cannot delete coach with ${activeBookings} active booking(s). Cancel or complete them first.`);
+  }
+
+  await CoachStable.destroy({ where: { coach_id: coachId } });
+  await CoachWeeklyAvailability.destroy({ where: { coach_id: coachId } });
+  await coach.destroy();
+
+  return { message: 'Coach deleted successfully.' };
 };

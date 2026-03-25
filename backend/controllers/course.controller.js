@@ -123,3 +123,12 @@ export const deleteCourseController = async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
 };
+
+export const deleteCourseByAdminController = async (req, res) => {
+  try {
+    const result = await courseService.deleteCourseByAdmin(req.params.id);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};

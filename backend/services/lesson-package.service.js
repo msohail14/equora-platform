@@ -138,6 +138,19 @@ export const purchasePackage = async ({ riderId, packageId, paymentId }) => {
   return balance;
 };
 
+export const deletePackage = async ({ coachId, packageId }) => {
+  const pkg = await LessonPackage.findByPk(packageId);
+  if (!pkg) {
+    throw new Error('Package not found.');
+  }
+  if (pkg.coach_id !== coachId) {
+    throw new Error('Access denied. You can only delete your own packages.');
+  }
+
+  await pkg.destroy();
+  return { message: 'Lesson package deleted successfully.' };
+};
+
 export const getMyPackages = async ({ riderId, page, limit }) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;

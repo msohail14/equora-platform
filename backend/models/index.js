@@ -25,13 +25,13 @@ import User from './user.model.js';
 Admin.hasMany(Stable, { foreignKey: 'admin_id', as: 'stables' });
 Stable.belongsTo(Admin, { foreignKey: 'admin_id', as: 'admin' });
 
-Stable.hasMany(Arena, { foreignKey: 'stable_id', as: 'arenas' });
+Stable.hasMany(Arena, { foreignKey: 'stable_id', as: 'arenas', onDelete: 'CASCADE' });
 Arena.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
 
 Discipline.hasMany(Arena, { foreignKey: 'discipline_id', as: 'arenas' });
 Arena.belongsTo(Discipline, { foreignKey: 'discipline_id', as: 'discipline' });
 
-Stable.hasMany(Horse, { foreignKey: 'stable_id', as: 'horses' });
+Stable.hasMany(Horse, { foreignKey: 'stable_id', as: 'horses', onDelete: 'CASCADE' });
 Horse.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
 
 Stable.hasMany(Course, { foreignKey: 'stable_id', as: 'courses' });
@@ -46,13 +46,13 @@ Course.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
 Discipline.hasMany(Course, { foreignKey: 'discipline_id', as: 'courses' });
 Course.belongsTo(Discipline, { foreignKey: 'discipline_id', as: 'discipline' });
 
-Course.hasMany(CourseEnrollment, { foreignKey: 'course_id', as: 'enrollments' });
+Course.hasMany(CourseEnrollment, { foreignKey: 'course_id', as: 'enrollments', onDelete: 'CASCADE' });
 CourseEnrollment.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
 
 User.hasMany(CourseEnrollment, { foreignKey: 'rider_id', as: 'course_enrollments' });
 CourseEnrollment.belongsTo(User, { foreignKey: 'rider_id', as: 'rider' });
 
-Course.hasMany(CourseSession, { foreignKey: 'course_id', as: 'sessions' });
+Course.hasMany(CourseSession, { foreignKey: 'course_id', as: 'sessions', onDelete: 'CASCADE' });
 CourseSession.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
 
 User.hasMany(CourseSession, { foreignKey: 'coach_id', as: 'coached_sessions' });
@@ -130,7 +130,7 @@ LessonBooking.belongsTo(CourseSession, { foreignKey: 'session_id', as: 'session'
 Payment.hasOne(LessonBooking, { foreignKey: 'payment_id', as: 'booking' });
 LessonBooking.belongsTo(Payment, { foreignKey: 'payment_id', as: 'payment' });
 
-Horse.hasMany(HorseAvailability, { foreignKey: 'horse_id', as: 'availability' });
+Horse.hasMany(HorseAvailability, { foreignKey: 'horse_id', as: 'availability', onDelete: 'CASCADE' });
 HorseAvailability.belongsTo(Horse, { foreignKey: 'horse_id', as: 'horse' });
 
 User.hasMany(LessonPackage, { foreignKey: 'coach_id', as: 'lesson_packages' });

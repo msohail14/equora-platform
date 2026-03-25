@@ -1,6 +1,7 @@
 import {
   createCoachWeeklyAvailabilityByAdmin,
   createCoach,
+  deleteCoach,
   deleteCoachWeeklyAvailabilityByAdmin,
   getCoachCourses,
   getCoachDetails,
@@ -154,6 +155,18 @@ export const getCoachWeeklyAvailabilityByAdminController = async (req, res) => {
     const data = await getCoachWeeklyAvailabilityByAdmin(req.params.id, { include_inactive });
     return res.status(200).json(data);
   } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const deleteCoachController = async (req, res) => {
+  try {
+    const data = await deleteCoach(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    if (error.message.includes('Cannot delete')) {
+      return res.status(409).json({ message: error.message });
+    }
     return handleError(res, error);
   }
 };

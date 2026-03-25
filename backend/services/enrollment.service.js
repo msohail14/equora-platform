@@ -264,3 +264,27 @@ export const updateEnrollmentStatus = async ({ user, enrollmentId, status }) => 
 
   return CourseEnrollment.findByPk(enrollment.id, { include: enrollmentInclude });
 };
+
+export const withdrawEnrollment = async ({ user, enrollmentId }) => {
+  const enrollment = await CourseEnrollment.findByPk(enrollmentId, {
+    include: [{ model: Course, as: 'course', attributes: ['id', 'title', 'coach_id'] }],
+  });
+  if (!enrollment) {
+    throw new Error('Enrollment not found.');
+  }
+
+  const isRiderOwner = user.role === 'rider' && enrollment.rider_id === user.id;
+  const isAdmin = user.type === 'admin';
+  if (!isRiderOwner && !isAdmin) {
+    throw new Error('Access denied.');
+  }
+
+  if (enrollment.status === 'cancelled') {
+    throw new Error('Enrollment already cancelled.');
+  }
+
+  enrollment.status = 'cancelled';
+  await enrollment.save();
+
+  return { message: 'Enrollment withdrawn successfully.' };
+};

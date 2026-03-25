@@ -5,6 +5,7 @@ import {
   getCourseEnrollments,
   getMyEnrollments,
   updateEnrollmentStatus,
+  withdrawEnrollment,
 } from '../services/enrollment.service.js';
 
 const handleError = (res, error) => {
@@ -71,6 +72,18 @@ export const getCourseEnrollmentsController = async (req, res) => {
 export const getAllEnrollmentsController = async (req, res) => {
   try {
     const data = await getAllEnrollments({ user: req.user });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const withdrawEnrollmentController = async (req, res) => {
+  try {
+    const data = await withdrawEnrollment({
+      user: req.user,
+      enrollmentId: req.params.id,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

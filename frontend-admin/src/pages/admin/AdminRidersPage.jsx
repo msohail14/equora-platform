@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
-import { createRiderApi, getRidersApi } from '../../features/operations/operationsApi';
+import { createRiderApi, deleteRiderApi, getRidersApi } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
 /** Modal when rider is created but email was not sent: show reset link and temp password to copy */
@@ -174,7 +174,7 @@ const AdminRidersPage = () => {
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2">Enrollments</th>
               <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">View</th>
+              <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -197,13 +197,31 @@ const AdminRidersPage = () => {
                   </span>
                 </td>
                 <td className="px-3 py-2">
-                  <button
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                    type="button"
-                    onClick={() => navigate(`/admin/rider/${rider.id}`)}
-                  >
-                    View Rider
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      className="inline-flex items-center rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      type="button"
+                      onClick={() => navigate(`/admin/rider/${rider.id}`)}
+                    >
+                      View
+                    </button>
+                    <button
+                      className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                      type="button"
+                      onClick={async () => {
+                        if (!window.confirm(`Delete rider ${rider.first_name || ''} ${rider.last_name || ''}? This cannot be undone.`)) return;
+                        try {
+                          await deleteRiderApi(rider.id);
+                          toast.success('Rider deleted.');
+                          await fetchRiders(page, debouncedSearch);
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || err.message || 'Failed to delete rider.');
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

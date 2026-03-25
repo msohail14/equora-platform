@@ -10,6 +10,7 @@ import {
 import {
   createCoachWeeklyAvailabilityByAdminController,
   createCoachController,
+  deleteCoachController,
   deleteCoachWeeklyAvailabilityByAdminController,
   getCoachCoursesController,
   getCoachDetailsController,
@@ -44,6 +45,7 @@ router.get('/:id/sessions', adminAuthMiddleware, getCoachSessionsController);
 router.get('/:id/weekly-availability', adminAuthMiddleware, getCoachWeeklyAvailabilityByAdminController);
 router.get('/:id', adminAuthMiddleware, getCoachByIdController);
 router.put('/:id', adminAuthMiddleware, updateCoachController);
+router.delete('/:id', adminAuthMiddleware, deleteCoachController);
 router.post('/:id/weekly-availability', adminAuthMiddleware, createCoachWeeklyAvailabilityByAdminController);
 router.put(
   '/:id/weekly-availability/:availabilityId',

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  Eye, Pencil, UserPlus, Users, CheckCircle2, XCircle, Loader2, Mail, User, Star,
+  Eye, Pencil, Trash2, UserPlus, Users, CheckCircle2, XCircle, Loader2, Mail, User, Star,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
-  createCoachApi, getCoachesApi, updateCoachApi, verifyCoachApi,
+  createCoachApi, deleteCoachApi, getCoachesApi, updateCoachApi, verifyCoachApi,
 } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
@@ -362,6 +362,23 @@ const AdminCoachesPage = () => {
                             className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
                           >
                             <Pencil size={12} /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Delete coach ${coach.first_name || ''} ${coach.last_name || ''}? This cannot be undone.`)) return;
+                              try {
+                                await deleteCoachApi(coach.id);
+                                toast.success('Coach deleted.');
+                                await fetchCoaches(page, debouncedSearch);
+                              } catch (err) {
+                                toast.error(err?.response?.data?.message || err.message || 'Failed to delete coach.');
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                          >
+                            <Trash2 size={12} /> Delete
                           </button>
                         </div>
                       </td>

@@ -108,6 +108,7 @@ export const getCoachUpcomingAvailabilityApi = (coachId, { days = 7, from_date }
 };
 export const createCoachApi = (payload) => axiosInstance.post('/coaches', payload);
 export const updateCoachApi = ({ coachId, payload }) => axiosInstance.put(`/coaches/${coachId}`, payload);
+export const deleteCoachApi = (coachId) => axiosInstance.delete(`/coaches/${coachId}`);
 export const createCoachWeeklyAvailabilityByAdminApi = ({ coachId, payload }) =>
   axiosInstance.post(`/coaches/${coachId}/weekly-availability`, payload);
 export const updateCoachWeeklyAvailabilityByAdminApi = ({ coachId, availabilityId, payload }) =>
@@ -133,6 +134,7 @@ export const updateCourseByAdminApi = ({ courseId, payload, imageFile }) =>
   axiosInstance.put(`/courses/admin/${courseId}`, toFormData(payload, 'thumbnail_image', imageFile), {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+export const deleteCourseByAdminApi = (courseId) => axiosInstance.delete(`/courses/admin/${courseId}`);
 export const getCourseEnrollmentsApi = (courseId) => axiosInstance.get(`/enrollments/course/${courseId}`);
 export const getAllEnrollmentsApi = () => axiosInstance.get('/enrollments/all');
 export const bulkEnrollRidersByAdminApi = ({ course_id, rider_ids }) =>
@@ -158,6 +160,7 @@ export const getRiderStatsApi = (riderId) => axiosInstance.get(`/riders/${riderI
 export const getRiderSessionsApi = (riderId, { page = 1, limit = 10 } = {}) =>
   axiosInstance.get(`/riders/${riderId}/sessions?page=${page}&limit=${limit}`);
 export const updateRiderApi = ({ riderId, payload }) => axiosInstance.put(`/riders/${riderId}`, payload);
+export const deleteRiderApi = (riderId) => axiosInstance.delete(`/riders/${riderId}`);
 export const updateRiderStatusApi = ({ riderId, is_active }) =>
   axiosInstance.put(`/riders/${riderId}/status`, { is_active });
 export const resetRiderPasswordApi = (riderId, method = 'email') =>

@@ -32,10 +32,29 @@ export const initiatePaymentController = async (req, res) => {
 };
 
 export const webhookController = async (req, res) => {
+  // Optional Tap signature verification
+  if (process.env.TAP_WEBHOOK_SECRET) {
+    const signature = req.headers['x-tap-signature'] || req.headers['x-webhook-signature'];
+    if (!signature) {
+      return res.status(401).json({ message: 'Missing webhook signature.' });
+    }
+    const crypto = await import('crypto');
+    const expected = crypto.default
+      .createHmac('sha256', process.env.TAP_WEBHOOK_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    if (signature !== expected) {
+      return res.status(401).json({ message: 'Invalid webhook signature.' });
+    }
+  }
+
   try {
     const data = await handleWebhook(req.body);
     return res.status(200).json(data);
   } catch (error) {
+    if (error.message.includes('already processed')) {
+      return res.status(409).json({ message: error.message });
+    }
     return handleError(res, error);
   }
 };
