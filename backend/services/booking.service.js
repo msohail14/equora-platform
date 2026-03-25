@@ -385,6 +385,59 @@ export const createBooking = async ({
     if (!horse) throw new Error('Horse not found.');
   }
 
+  // --- Availability conflict detection ---
+  // Only check against bookings that are not cancelled or declined
+  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+
+  if (coachId) {
+    const coachConflict = await LessonBooking.findOne({
+      where: {
+        coach_id: coachId,
+        booking_date: bookingDate,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [
+          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+        ],
+      },
+    });
+    if (coachConflict) {
+      throw new Error('This coach is already booked for the selected time slot.');
+    }
+  }
+
+  if (arenaId) {
+    const arenaConflict = await LessonBooking.findOne({
+      where: {
+        arena_id: arenaId,
+        booking_date: bookingDate,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [
+          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+        ],
+      },
+    });
+    if (arenaConflict) {
+      throw new Error('This arena is already booked for the selected time slot.');
+    }
+  }
+
+  if (horseId) {
+    const horseConflict = await LessonBooking.findOne({
+      where: {
+        horse_id: horseId,
+        booking_date: bookingDate,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [
+          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+        ],
+      },
+    });
+    if (horseConflict) {
+      throw new Error('This horse is already booked for the selected time slot.');
+    }
+  }
+  // --- End conflict detection ---
+
   const booking = await LessonBooking.create({
     rider_id: riderId,
     coach_id: coachId || null,
@@ -425,6 +478,21 @@ export const createBooking = async ({
       body: `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`,
       data: { booking_id: booking.id },
     });
+  }
+
+  // Notify stable admin about new booking
+  if (stable.admin_id) {
+    try {
+      await Notification.create({
+        admin_id: stable.admin_id,
+        type: 'lesson_booked',
+        title: 'New Booking at Your Stable',
+        body: `${rider.first_name || 'A rider'} booked a ${isArenaOnly ? 'arena session' : 'lesson'} on ${bookingDate}.`,
+        data: { booking_id: booking.id, stable_id: stableId },
+      });
+    } catch (_) {
+      // Non-critical
+    }
   }
 
   return booking;
@@ -691,6 +759,33 @@ export const approveBooking = async ({ bookingId, adminId }) => {
   if (!booking) throw new Error('Booking not found.');
   if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
 
+  // Transition to pending_payment so rider must pay before confirmation.
+  // When payment is not yet available (Coming Soon), admin can manually confirm
+  // via the separate confirmBooking endpoint.
+  booking.status = 'pending_payment';
+  await booking.save();
+
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'booking_approved',
+    title: 'Booking Approved — Payment Required',
+    body: `Your booking on ${booking.booking_date} has been approved. Please complete payment to confirm.`,
+    data: { booking_id: booking.id },
+  });
+
+  return booking;
+};
+
+// Allow admin to manually confirm a booking (bypasses payment requirement during Coming Soon phase)
+export const adminConfirmBooking = async ({ bookingId, adminId }) => {
+  const booking = await LessonBooking.findByPk(bookingId, {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (!['pending_payment', 'pending_review'].includes(booking.status)) {
+    throw new Error('Booking is not in a confirmable state.');
+  }
+
   booking.status = 'confirmed';
   await booking.save();
 
@@ -698,7 +793,7 @@ export const approveBooking = async ({ bookingId, adminId }) => {
     user_id: booking.rider_id,
     type: 'booking_approved',
     title: 'Booking Confirmed',
-    body: `Your booking on ${booking.booking_date} has been approved.`,
+    body: `Your booking on ${booking.booking_date} has been confirmed.`,
     data: { booking_id: booking.id },
   });
 

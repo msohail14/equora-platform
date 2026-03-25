@@ -14,6 +14,7 @@ import {
   confirmHorseController,
   payForBookingController,
   approveBookingController,
+  adminConfirmBookingController,
   declineBookingController,
   startBookingController,
   completeBookingController,
@@ -37,6 +38,7 @@ router.patch('/:id/confirm-horse', adminAuthMiddleware, confirmHorseController);
 router.post('/:id/pay', authMiddleware, payForBookingController);
 
 router.patch('/:id/approve', adminAuthMiddleware, approveBookingController);
+router.patch('/:id/confirm', adminAuthMiddleware, adminConfirmBookingController);
 router.patch('/:id/decline', adminAuthMiddleware, declineBookingController);
 router.patch('/:id/start', authMiddleware, startBookingController);
 router.patch('/:id/complete', authMiddleware, completeBookingController);

@@ -6,6 +6,8 @@ import Modal from '../../components/ui/Modal';
 import {
   getAdminBookingsApi,
   approveBookingApi,
+  confirmBookingApi,
+  confirmHorseApi,
   declineBookingApi,
   startBookingApi,
   completeBookingApi,
@@ -133,6 +135,36 @@ const AdminBookingsPage = () => {
               Decline
             </button>
           </div>
+        );
+      case 'pending_horse_approval':
+        return (
+          <div className="flex gap-1.5">
+            <button
+              className={`${btnBase} bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300`}
+              disabled={isLoading}
+              onClick={() => handleAction(confirmHorseApi, b.id, 'Horse confirmed.')}
+            >
+              Confirm Horse
+            </button>
+            <button
+              className={`${btnBase} bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400`}
+              disabled={isLoading}
+              onClick={() => openDeclineModal(b)}
+            >
+              Decline
+            </button>
+          </div>
+        );
+      case 'pending_payment':
+        return (
+          <button
+            className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
+            disabled={isLoading}
+            onClick={() => handleAction(confirmBookingApi, b.id, 'Booking confirmed.')}
+            title="Manually confirm (bypasses online payment)"
+          >
+            Confirm
+          </button>
         );
       case 'confirmed':
         return (

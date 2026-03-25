@@ -16,6 +16,7 @@ import {
   sendPaymentReminder,
   getMyBookings,
   cancelBooking,
+  adminConfirmBooking,
 } from '../services/booking.service.js';
 
 const handleError = (res, error) => {
@@ -209,6 +210,18 @@ export const getAvailableSlotsController = async (req, res) => {
 export const approveBookingController = async (req, res) => {
   try {
     const data = await approveBooking({
+      bookingId: req.params.id,
+      adminId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const adminConfirmBookingController = async (req, res) => {
+  try {
+    const data = await adminConfirmBooking({
       bookingId: req.params.id,
       adminId: req.user.id,
     });

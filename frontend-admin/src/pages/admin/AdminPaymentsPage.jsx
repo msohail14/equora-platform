@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { CreditCard } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
-import { getAdminPaymentsApi } from '../../features/operations/operationsApi';
+import { getAdminPaymentsApi, markManualPaymentApi, refundPaymentApi } from '../../features/operations/operationsApi';
 import { SaudiRiyalIcon } from '../../components/ui/SaudiRiyalIcon';
 
 const STATUS_OPTIONS = ['all', 'pending', 'completed', 'failed', 'refunded'];
@@ -23,6 +23,7 @@ const AdminPaymentsPage = () => {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
 
   const fetchPayments = async (targetPage = page, targetStatus = status) => {
     setLoading(true);
@@ -48,6 +49,49 @@ const AdminPaymentsPage = () => {
   useEffect(() => {
     setPage(1);
   }, [status]);
+
+  const handlePaymentAction = async (actionFn, paymentId, successMsg) => {
+    setActionLoading(paymentId);
+    try {
+      await actionFn(paymentId);
+      toast.success(successMsg);
+      await fetchPayments(page, status);
+    } catch (err) {
+      toast.error(err.message || 'Action failed.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const renderPaymentActions = (p) => {
+    const isLoading = actionLoading === p.id;
+    const btnBase = 'rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50';
+
+    if (p.status === 'pending') {
+      return (
+        <button
+          className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
+          disabled={isLoading}
+          onClick={() => handlePaymentAction(markManualPaymentApi, p.id, 'Marked as manual payment.')}
+          title="Mark as cash/manual payment"
+        >
+          Mark Manual
+        </button>
+      );
+    }
+    if (p.status === 'completed') {
+      return (
+        <button
+          className={`${btnBase} bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400`}
+          disabled={isLoading}
+          onClick={() => handlePaymentAction(refundPaymentApi, p.id, 'Payment refunded.')}
+        >
+          Refund
+        </button>
+      );
+    }
+    return <span className="text-xs text-gray-400">—</span>;
+  };
 
   const formatAmount = (amount) => {
     const num = Number(amount);
@@ -92,6 +136,7 @@ const AdminPaymentsPage = () => {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Provider</th>
               <th className="px-3 py-2">Date</th>
+              <th className="px-3 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -110,11 +155,12 @@ const AdminPaymentsPage = () => {
                 <td className="px-3 py-2 text-equestrian-stone-600 dark:text-equestrian-stone-300">
                   {p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}
                 </td>
+                <td className="px-3 py-2">{renderPaymentActions(p)}</td>
               </tr>
             ))}
             {!loading && !payments.length && (
               <tr className="border-t border-equestrian-stone-200 dark:border-equestrian-stone-800">
-                <td colSpan={5} className="px-3 py-4 text-center text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
+                <td colSpan={6} className="px-3 py-4 text-center text-sm text-equestrian-stone-500 dark:text-equestrian-stone-400">
                   No payments found.
                 </td>
               </tr>

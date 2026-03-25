@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Payment, Subscription, CoachPayout } from '../models/index.js';
+import { Payment, Subscription, CoachPayout, LessonBooking, Notification } from '../models/index.js';
 import { Op } from 'sequelize';
 
 const generateTransactionId = () => `TXN_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
@@ -61,8 +61,15 @@ export const handleWebhook = async ({ transactionId, providerReference, status }
   if (providerReference) payment.provider_reference = providerReference;
   await payment.save();
 
-  if (status === 'completed' && payment.payment_type === 'subscription') {
-    await createSubscriptionFromPayment(payment);
+  if (status === 'completed') {
+    if (payment.payment_type === 'subscription') {
+      await createSubscriptionFromPayment(payment);
+    }
+
+    // Auto-confirm booking when session payment completes
+    if (payment.payment_type === 'session' && payment.related_id) {
+      await confirmBookingFromPayment(payment);
+    }
   }
 
   return { message: 'Webhook processed successfully.', status: payment.status };
@@ -85,6 +92,36 @@ const createSubscriptionFromPayment = async (payment) => {
     auto_renew: true,
     payment_id: payment.id,
   });
+};
+
+const confirmBookingFromPayment = async (payment) => {
+  const booking = await LessonBooking.findByPk(payment.related_id);
+  if (!booking) return;
+  if (!['pending_payment', 'pending_review'].includes(booking.status)) return;
+
+  booking.status = 'confirmed';
+  booking.payment_id = payment.id;
+  await booking.save();
+
+  // Notify rider
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'payment_confirmed',
+    title: 'Payment Confirmed',
+    body: `Your payment for the booking on ${booking.booking_date} has been confirmed.`,
+    data: { booking_id: booking.id },
+  });
+
+  // Notify coach
+  if (booking.coach_id) {
+    await Notification.create({
+      user_id: booking.coach_id,
+      type: 'payment_confirmed',
+      title: 'Session Payment Received',
+      body: `Payment confirmed for the lesson on ${booking.booking_date}.`,
+      data: { booking_id: booking.id },
+    });
+  }
 };
 
 export const getPaymentStatus = async (transactionId) => {
@@ -154,4 +191,56 @@ export const getCoachPayouts = async (coachId, { page = 1, limit = 20 } = {}) =>
     page,
     totalPages: Math.ceil(count / limit),
   };
+};
+
+export const markPaymentAsManual = async (paymentId) => {
+  const payment = await Payment.findByPk(paymentId);
+  if (!payment) throw new Error('Payment not found.');
+  if (payment.status !== 'pending') throw new Error('Only pending payments can be marked as manual.');
+
+  payment.status = 'completed';
+  payment.provider = 'manual';
+  payment.provider_reference = `MANUAL_${Date.now()}`;
+  await payment.save();
+
+  // Auto-confirm booking if linked
+  if (payment.payment_type === 'session' && payment.related_id) {
+    const booking = await LessonBooking.findByPk(payment.related_id);
+    if (booking && ['pending_payment', 'pending_review'].includes(booking.status)) {
+      booking.status = 'confirmed';
+      booking.payment_id = payment.id;
+      await booking.save();
+
+      await Notification.create({
+        user_id: booking.rider_id,
+        type: 'payment_confirmed',
+        title: 'Payment Confirmed',
+        body: `Manual payment confirmed for your booking on ${booking.booking_date}.`,
+        data: { booking_id: booking.id, payment_id: payment.id },
+      });
+    }
+  }
+
+  return payment;
+};
+
+export const refundPayment = async (paymentId) => {
+  const payment = await Payment.findByPk(paymentId);
+  if (!payment) throw new Error('Payment not found.');
+  if (payment.status !== 'completed') throw new Error('Only completed payments can be refunded.');
+
+  payment.status = 'refunded';
+  await payment.save();
+
+  if (payment.user_id) {
+    await Notification.create({
+      user_id: payment.user_id,
+      type: 'payment_confirmed',
+      title: 'Payment Refunded',
+      body: `Your payment of ${payment.currency} ${payment.amount} has been refunded.`,
+      data: { payment_id: payment.id },
+    });
+  }
+
+  return payment;
 };

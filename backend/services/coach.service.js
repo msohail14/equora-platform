@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
 import { Course, CourseSession, User } from '../models/index.js';
+import CoachStable from '../models/coachStable.model.js';
+import Stable from '../models/stable.model.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
 import { getCoachReviewSummary, getCoachReviewSummaryMap, getCoachReviews } from './coach-review.service.js';
 import {
@@ -133,6 +135,24 @@ export const getAllCoaches = async ({ include_inactive, search, page, limit, fea
   const coachIds = rows.map((item) => Number(item.id));
   const reviewSummaryMap = await getCoachReviewSummaryMap(coachIds);
 
+  // Fetch stable associations for all coaches in this page
+  const stableLinks = coachIds.length > 0
+    ? await CoachStable.findAll({
+        where: { coach_id: { [Op.in]: coachIds }, is_active: true },
+        include: [{ model: Stable, as: 'stable', attributes: ['id', 'name'] }],
+      })
+    : [];
+  const stableMap = new Map();
+  for (const link of stableLinks) {
+    const cId = Number(link.coach_id);
+    if (!stableMap.has(cId)) stableMap.set(cId, []);
+    stableMap.get(cId).push({
+      stable_id: link.stable_id,
+      stable_name: link.stable?.name || null,
+      is_primary: link.is_primary,
+    });
+  }
+
   const meta = buildPaginationMeta({
     page: pagination.page,
     limit: pagination.limit,
@@ -142,10 +162,15 @@ export const getAllCoaches = async ({ include_inactive, search, page, limit, fea
   return {
     data: rows.map((coach) => {
       const summary = reviewSummaryMap.get(Number(coach.id)) || { average_rating: 0, total_reviews: 0 };
+      const stables = stableMap.get(Number(coach.id)) || [];
+      const primaryStable = stables.find((s) => s.is_primary) || stables[0] || null;
       return {
         ...coach.toJSON(),
         average_rating: summary.average_rating,
         total_reviews: summary.total_reviews,
+        stables,
+        primary_stable_id: primaryStable?.stable_id || null,
+        primary_stable_name: primaryStable?.stable_name || null,
       };
     }),
     pagination: {

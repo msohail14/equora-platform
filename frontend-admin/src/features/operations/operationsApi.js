@@ -220,11 +220,23 @@ export const updateCourseLayoutApi = ({ courseId, layoutImage, drawingData }) =>
 };
 export const deleteCourseLayoutApi = (courseId) => axiosInstance.delete(`/courses/${courseId}/layout`);
 
+export const markManualPaymentApi = (paymentId) =>
+  axiosInstance.patch(`/admin/payments/${paymentId}/manual`);
+
+export const refundPaymentApi = (paymentId) =>
+  axiosInstance.patch(`/admin/payments/${paymentId}/refund`);
+
 export const getAvailableSlotsApi = (stableId, date, duration) =>
   axiosInstance.get(`/bookings/stables/${stableId}/available-slots`, { params: { date, duration } });
 
 export const approveBookingApi = (id) =>
   axiosInstance.patch(`/bookings/${id}/approve`);
+
+export const confirmBookingApi = (id) =>
+  axiosInstance.patch(`/bookings/${id}/confirm`);
+
+export const confirmHorseApi = (id) =>
+  axiosInstance.patch(`/bookings/${id}/confirm-horse`);
 
 export const declineBookingApi = (id, reason) =>
   axiosInstance.patch(`/bookings/${id}/decline`, { reason });

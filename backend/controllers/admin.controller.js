@@ -17,6 +17,7 @@ import {
   updateAdminSettings,
   verifyCoach,
 } from '../services/admin.service.js';
+import { markPaymentAsManual, refundPayment } from '../services/payment.service.js';
 
 const handleError = (res, error) => {
   const isValidationError =
@@ -187,6 +188,24 @@ export const inviteStableOwnerController = async (req, res) => {
       req.user.id
     );
     return res.status(201).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const markManualPaymentController = async (req, res) => {
+  try {
+    const data = await markPaymentAsManual(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const refundPaymentController = async (req, res) => {
+  try {
+    const data = await refundPayment(req.params.id);
+    return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
   }

@@ -20,7 +20,9 @@ import {
   getAdminSettingsController,
   inviteStableOwnerController,
   loginAdminController,
+  markManualPaymentController,
   processAdminPayoutController,
+  refundPaymentController,
   resetAdminPasswordController,
   signupAdminController,
   updateAdminSettingsController,
@@ -52,6 +54,8 @@ router.patch('/coaches/:id/verify', superAdminOnly, verifyCoachController);
 router.get('/settings', superAdminOnly, getAdminSettingsController);
 router.put('/settings', superAdminOnly, updateAdminSettingsController);
 router.get('/bookings', adminAuthMiddleware, getAdminBookingsController);
+router.patch('/payments/:id/manual', adminAuthMiddleware, markManualPaymentController);
+router.patch('/payments/:id/refund', adminAuthMiddleware, refundPaymentController);
 router.post('/stables/:id/invite-owner', superAdminOnly, inviteStableOwnerController);
 router.get('/stables/:id/coaches', adminAuthMiddleware, getStableCoachesAdminController);
 router.post('/stables/:id/coaches', adminAuthMiddleware, linkStableCoachAdminController);

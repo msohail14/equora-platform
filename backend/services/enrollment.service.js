@@ -1,4 +1,4 @@
-import { Course, CourseEnrollment, User } from '../models/index.js';
+import { Course, CourseEnrollment, User, Notification } from '../models/index.js';
 
 const enrollmentInclude = [
   {
@@ -78,6 +78,31 @@ export const createEnrollment = async ({ user, course_id }) => {
     enrolled_by_type: 'rider',
     enrolled_by_id: user.id,
   });
+
+  // Notify rider of enrollment
+  try {
+    await Notification.create({
+      user_id: user.id,
+      type: 'course_enrolled',
+      title: 'Enrollment Confirmed',
+      body: `You have been enrolled in "${course.title}".`,
+      data: { course_id: course.id, enrollment_id: enrollment.id },
+    });
+    // Notify course coach
+    if (course.coach_id) {
+      const rider = await User.findByPk(user.id, { attributes: ['first_name', 'last_name'] });
+      const riderName = rider ? `${rider.first_name} ${rider.last_name}`.trim() : 'A rider';
+      await Notification.create({
+        user_id: course.coach_id,
+        type: 'course_enrolled',
+        title: 'New Enrollment',
+        body: `${riderName} enrolled in your course "${course.title}".`,
+        data: { course_id: course.id, enrollment_id: enrollment.id, rider_id: user.id },
+      });
+    }
+  } catch (_) {
+    // Non-critical — don't fail enrollment if notification fails
+  }
 
   return CourseEnrollment.findByPk(enrollment.id, { include: enrollmentInclude });
 };
