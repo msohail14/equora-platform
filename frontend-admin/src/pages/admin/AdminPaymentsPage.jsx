@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { CreditCard } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
