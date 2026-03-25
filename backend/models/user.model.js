@@ -118,6 +118,24 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    approval_mode: {
+      type: DataTypes.ENUM('auto', 'manual'),
+      allowNull: true,
+      defaultValue: 'manual',
+      comment: 'Coach-only: auto-approve bookings or require manual review',
+    },
+    default_duration: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 45,
+      comment: 'Coach-only: default lesson duration in minutes',
+    },
+    allowed_durations: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [30, 45, 60],
+      comment: 'Coach-only: array of allowed duration options in minutes',
+    },
     email_verification_otp: {
       type: DataTypes.STRING(10),
       allowNull: true,

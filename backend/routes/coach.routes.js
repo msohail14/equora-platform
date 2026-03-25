@@ -8,6 +8,14 @@ import {
   unlinkMyStableController,
 } from '../controllers/coachStable.controller.js';
 import {
+  adminCreateScheduleController,
+  adminGetSchedulesController,
+  adminUpdateScheduleController,
+  adminDeleteScheduleController,
+  coachCreateScheduleController,
+  coachGetSchedulesController,
+} from '../controllers/coach-stable-schedule.controller.js';
+import {
   createCoachWeeklyAvailabilityByAdminController,
   createCoachController,
   deleteCoachController,
@@ -29,6 +37,10 @@ const router = express.Router();
 router.get('/me/stables', coachAuthMiddleware, getMyStablesController);
 router.post('/me/stables', coachAuthMiddleware, linkMyStableController);
 router.delete('/me/stables/:stableId', coachAuthMiddleware, unlinkMyStableController);
+
+// Coach self-management: per-stable schedules
+router.post('/me/stables/:stableId/schedules', coachAuthMiddleware, coachCreateScheduleController);
+router.get('/me/stables/:stableId/schedules', coachAuthMiddleware, coachGetSchedulesController);
 
 router.get('/public', getAllCoachesController);
 router.get('/public/:id', getCoachByIdController);
@@ -57,5 +69,11 @@ router.delete(
   adminAuthMiddleware,
   deleteCoachWeeklyAvailabilityByAdminController
 );
+
+// Admin: per-stable schedule management
+router.post('/:coachId/stables/:stableId/schedules', adminAuthMiddleware, adminCreateScheduleController);
+router.get('/:coachId/stables/:stableId/schedules', adminAuthMiddleware, adminGetSchedulesController);
+router.put('/:coachId/stables/:stableId/schedules/:scheduleId', adminAuthMiddleware, adminUpdateScheduleController);
+router.delete('/:coachId/stables/:stableId/schedules/:scheduleId', adminAuthMiddleware, adminDeleteScheduleController);
 
 export default router;

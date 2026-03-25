@@ -135,7 +135,7 @@ const AdminCoursesPage = () => {
                           try {
                             await deleteCourseByAdminApi(course.id);
                             toast.success('Course deactivated.');
-                            await fetchCourses(page, debouncedSearch);
+                            await fetchData(page, debouncedSearch);
                           } catch (err) {
                             toast.error(err?.response?.data?.message || err.message || 'Failed to deactivate course.');
                           }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Star } from 'lucide-react';
+import { Star, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
@@ -9,6 +9,7 @@ import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import {
   approveStableApi,
   createStableApi,
+  deleteStableApi,
   getStablesApi,
   updateStableApi,
 } from '../../features/operations/operationsApi';
@@ -234,6 +235,23 @@ const AdminStablesPage = () => {
                     >
                       View
                     </Link>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!window.confirm(`Delete stable "${stable.name}"? This cannot be undone.`)) return;
+                        try {
+                          await deleteStableApi(stable.id);
+                          toast.success('Stable deleted.');
+                          await fetchStables(page, debouncedSearch);
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || err.message || 'Failed to delete stable.');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
                   </div>
                 </td>
               </tr>

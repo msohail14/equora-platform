@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Eye, Pencil, Star } from 'lucide-react';
+import { Eye, Pencil, Star, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import ImageCropperModal, { DEFAULT_CROP_ASPECT_OPTIONS } from '../../components/ui/ImageCropperModal';
 import Modal from '../../components/ui/Modal';
 import {
   createHorseApi,
+  deleteHorseApi,
   getAllHorsesApi,
   getDisciplinesApi,
   getStablesApi,
@@ -254,6 +255,23 @@ const AdminHorsesPage = () => {
                     >
                       <Pencil size={14} />
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!window.confirm(`Delete horse "${horse.name}"? This cannot be undone.`)) return;
+                        try {
+                          await deleteHorseApi(horse.id);
+                          toast.success('Horse deleted.');
+                          await fetchPageData(page, debouncedSearch);
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || err.message || 'Failed to delete horse.');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                    >
+                      <Trash2 size={14} /> Delete
                     </button>
                   </div>
                 </td>

@@ -4,6 +4,7 @@ import {
   Plus,
   Eye,
   Pencil,
+  Trash2,
   Loader2,
   Tag,
   UploadCloud,
@@ -18,6 +19,7 @@ import ImageCropperModal, {
 import Modal from "../../components/ui/Modal";
 import {
   createDisciplineApi,
+  deleteDisciplineApi,
   getDisciplineByIdApi,
   getDisciplinesApi,
   updateDisciplineApi,
@@ -510,6 +512,24 @@ const AdminDisciplinesPage = () => {
                         >
                           <Pencil className="w-3.5 h-3.5" />
                           Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!window.confirm(`Delete discipline "${d.name}"? This cannot be undone.`)) return;
+                            try {
+                              await deleteDisciplineApi(d.id);
+                              toast.success('Discipline deleted.');
+                              await fetchDisciplines(page, debouncedSearch);
+                            } catch (err) {
+                              toast.error(err?.response?.data?.message || err.message || 'Failed to delete discipline.');
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900/40 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:border-red-300 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
                         </button>
                       </div>
                     </td>

@@ -74,6 +74,7 @@ export const getCoachSlotsController = async (req, res) => {
     const data = await getCoachSlots({
       coachId: req.params.id,
       date: req.query.date,
+      stableId: req.query.stable_id || null,
     });
     return res.status(200).json(data);
   } catch (error) {
@@ -209,9 +210,11 @@ export const getAvailableSlotsController = async (req, res) => {
 
 export const approveBookingController = async (req, res) => {
   try {
+    const isAdmin = req.user.type === 'admin';
     const data = await approveBooking({
       bookingId: req.params.id,
-      adminId: req.user.id,
+      userId: req.user.id,
+      isAdmin,
     });
     return res.status(200).json(data);
   } catch (error) {
@@ -233,9 +236,11 @@ export const adminConfirmBookingController = async (req, res) => {
 
 export const declineBookingController = async (req, res) => {
   try {
+    const isAdmin = req.user.type === 'admin';
     const data = await declineBooking({
       bookingId: req.params.id,
-      adminId: req.user.id,
+      userId: req.user.id,
+      isAdmin,
       reason: req.body.reason,
     });
     return res.status(200).json(data);

@@ -37,9 +37,9 @@ router.patch('/:id/approve-horse', authMiddleware, approveHorseController);
 router.patch('/:id/confirm-horse', adminAuthMiddleware, confirmHorseController);
 router.post('/:id/pay', authMiddleware, payForBookingController);
 
-router.patch('/:id/approve', adminAuthMiddleware, approveBookingController);
+router.patch('/:id/approve', authMiddleware, approveBookingController);
 router.patch('/:id/confirm', adminAuthMiddleware, adminConfirmBookingController);
-router.patch('/:id/decline', adminAuthMiddleware, declineBookingController);
+router.patch('/:id/decline', authMiddleware, declineBookingController);
 router.patch('/:id/start', authMiddleware, startBookingController);
 router.patch('/:id/complete', authMiddleware, completeBookingController);
 router.post('/:id/payment-reminder', coachAuthMiddleware, sendPaymentReminderController);

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
   createArenaApi,
+  deleteArenaApi,
   getAllArenasApi,
   getDisciplinesApi,
   getStablesApi,
@@ -199,6 +200,23 @@ const AdminArenasPage = () => {
                     >
                       <Pencil size={14} />
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!window.confirm(`Delete arena "${arena.name}"? This cannot be undone.`)) return;
+                        try {
+                          await deleteArenaApi(arena.id);
+                          toast.success('Arena deleted.');
+                          await fetchPageData(page, debouncedSearch);
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || err.message || 'Failed to delete arena.');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                    >
+                      <Trash2 size={14} /> Delete
                     </button>
                   </div>
                 </td>

@@ -3,6 +3,7 @@ import Arena from './arena.model.js';
 import CoachPayout from './coachPayout.model.js';
 import CoachReview from './coachReview.model.js';
 import CoachStable from './coachStable.model.js';
+import CoachStableSchedule from './coachStableSchedule.model.js';
 import Course from './course.model.js';
 import CourseEnrollment from './courseEnrollment.model.js';
 import CourseSession from './courseSession.model.js';
@@ -163,12 +164,15 @@ Stable.belongsToMany(User, { through: CoachStable, foreignKey: 'stable_id', othe
 CoachStable.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
 CoachStable.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
 
+CoachStable.hasMany(CoachStableSchedule, { foreignKey: 'coach_stable_id', as: 'schedules', onDelete: 'CASCADE' });
+CoachStableSchedule.belongsTo(CoachStable, { foreignKey: 'coach_stable_id', as: 'coachStableLink' });
+
 Admin.hasMany(StableRegistration, { foreignKey: 'reviewed_by', as: 'reviewedRegistrations' });
 StableRegistration.belongsTo(Admin, { foreignKey: 'reviewed_by', as: 'reviewer' });
 
 export {
-  Admin, Arena, CoachPayout, CoachReview, CoachStable, Course, CourseEnrollment,
-  CourseSession, CourseTemplate, Discipline, Horse, HorseAvailability,
+  Admin, Arena, CoachPayout, CoachReview, CoachStable, CoachStableSchedule, Course,
+  CourseEnrollment, CourseSession, CourseTemplate, Discipline, Horse, HorseAvailability,
   LessonBooking, LessonPackage, Notification, Payment, PlatformSetting,
   RiderPackageBalance, SessionFeedback, Stable, StableRegistration, Subscription, User,
 };

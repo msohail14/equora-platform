@@ -12,6 +12,8 @@ import {
 } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
 
+const DURATION_OPTIONS = [30, 45, 60, 90, 120];
+
 const emptyCreateForm = {
   email: '',
   password: '',
@@ -24,6 +26,9 @@ const emptyCreateForm = {
   pincode: '',
   date_of_birth: '',
   gender: '',
+  approval_mode: 'manual',
+  default_duration: 45,
+  allowed_durations: [30, 45, 60],
 };
 const emptyEditForm   = {
   email: '',
@@ -37,6 +42,9 @@ const emptyEditForm   = {
   date_of_birth: '',
   gender: '',
   is_active: true,
+  approval_mode: 'manual',
+  default_duration: 45,
+  allowed_durations: [30, 45, 60],
 };
 
 const AdminCoachesPage = () => {
@@ -105,6 +113,9 @@ const AdminCoachesPage = () => {
       gender: coach.gender || '',
       is_active:  coach.is_active !== false,
       is_featured: !!coach.is_featured,
+      approval_mode: coach.approval_mode || 'manual',
+      default_duration: coach.default_duration || 45,
+      allowed_durations: Array.isArray(coach.allowed_durations) ? coach.allowed_durations : [30, 45, 60],
     });
     setIsEditModalOpen(true);
   };
@@ -476,6 +487,54 @@ const AdminCoachesPage = () => {
             onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
             required
           />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Approval Mode</span>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                value={createForm.approval_mode}
+                onChange={(e) => setCreateForm((p) => ({ ...p, approval_mode: e.target.value }))}
+              >
+                <option value="manual">Manual Review</option>
+                <option value="auto">Auto Approve</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Default Duration</span>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                value={createForm.default_duration}
+                onChange={(e) => setCreateForm((p) => ({ ...p, default_duration: Number(e.target.value) }))}
+              >
+                {DURATION_OPTIONS.map((d) => (
+                  <option key={d} value={d}>{d} minutes</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Allowed Durations</span>
+            <div className="flex flex-wrap gap-3">
+              {DURATION_OPTIONS.map((d) => (
+                <label key={d} className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={createForm.allowed_durations.includes(d)}
+                    onChange={(e) => {
+                      setCreateForm((p) => ({
+                        ...p,
+                        allowed_durations: e.target.checked
+                          ? [...p.allowed_durations, d].sort((a, b) => a - b)
+                          : p.allowed_durations.filter((v) => v !== d),
+                      }));
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{d} min</span>
+                </label>
+              ))}
+            </div>
+          </div>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -555,6 +614,54 @@ const AdminCoachesPage = () => {
               <option value="false">Inactive</option>
             </select>
           </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Approval Mode</span>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                value={editForm.approval_mode}
+                onChange={(e) => setEditForm((p) => ({ ...p, approval_mode: e.target.value }))}
+              >
+                <option value="manual">Manual Review</option>
+                <option value="auto">Auto Approve</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Default Duration</span>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                value={editForm.default_duration}
+                onChange={(e) => setEditForm((p) => ({ ...p, default_duration: Number(e.target.value) }))}
+              >
+                {DURATION_OPTIONS.map((d) => (
+                  <option key={d} value={d}>{d} minutes</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Allowed Durations</span>
+            <div className="flex flex-wrap gap-3">
+              {DURATION_OPTIONS.map((d) => (
+                <label key={d} className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={editForm.allowed_durations.includes(d)}
+                    onChange={(e) => {
+                      setEditForm((p) => ({
+                        ...p,
+                        allowed_durations: e.target.checked
+                          ? [...p.allowed_durations, d].sort((a, b) => a - b)
+                          : p.allowed_durations.filter((v) => v !== d),
+                      }));
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{d} min</span>
+                </label>
+              ))}
+            </div>
+          </div>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"

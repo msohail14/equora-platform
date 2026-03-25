@@ -1,8 +1,9 @@
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 import {
-  Arena, CoachReview, CoachStable, Course, CourseSession, Discipline, Horse,
-  HorseAvailability, LessonBooking, Notification, Payment, Stable, User,
+  Arena, CoachReview, CoachStable, CoachStableSchedule, Course, CourseSession,
+  Discipline, Horse, HorseAvailability, LessonBooking, Notification, Payment,
+  Stable, User,
 } from '../models/index.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
 import CoachAvailabilityException from '../models/coachAvailabilityException.model.js';
@@ -203,7 +204,7 @@ export const getStableCoaches = async ({ stableId, search, page, limit }) => {
   };
 };
 
-export const getCoachSlots = async ({ coachId, date }) => {
+export const getCoachSlots = async ({ coachId, date, stableId }) => {
   if (!coachId || !date) {
     throw new Error('coachId and date are required.');
   }
@@ -225,23 +226,49 @@ export const getCoachSlots = async ({ coachId, date }) => {
   });
 
   if (exception && !exception.start_time && !exception.end_time) {
-    return { data: [] };
+    return { data: [], allowed_durations: coach.allowed_durations || [30, 45, 60], default_duration: coach.default_duration || 45 };
   }
 
-  const weeklySlots = await CoachWeeklyAvailability.findAll({
-    where: {
-      coach_id: coachId,
-      day_of_week: dayOfWeek,
-      is_active: true,
-      [Op.and]: [
-        { [Op.or]: [{ valid_from: null }, { valid_from: { [Op.lte]: date } }] },
-        { [Op.or]: [{ valid_to: null }, { valid_to: { [Op.gte]: date } }] },
-      ],
-    },
-  });
+  // Try per-stable schedule first, then fall back to global weekly availability
+  let scheduleRows = [];
 
-  if (weeklySlots.length === 0) {
-    return { data: [] };
+  if (stableId) {
+    const coachStableLink = await CoachStable.findOne({
+      where: { coach_id: coachId, stable_id: stableId, is_active: true },
+    });
+
+    if (coachStableLink) {
+      scheduleRows = await CoachStableSchedule.findAll({
+        where: {
+          coach_stable_id: coachStableLink.id,
+          day_of_week: dayOfWeek,
+          is_active: true,
+          [Op.and]: [
+            { [Op.or]: [{ valid_from: null }, { valid_from: { [Op.lte]: date } }] },
+            { [Op.or]: [{ valid_to: null }, { valid_to: { [Op.gte]: date } }] },
+          ],
+        },
+      });
+    }
+  }
+
+  // Fallback to global CoachWeeklyAvailability if no per-stable schedules found
+  if (scheduleRows.length === 0) {
+    scheduleRows = await CoachWeeklyAvailability.findAll({
+      where: {
+        coach_id: coachId,
+        day_of_week: dayOfWeek,
+        is_active: true,
+        [Op.and]: [
+          { [Op.or]: [{ valid_from: null }, { valid_from: { [Op.lte]: date } }] },
+          { [Op.or]: [{ valid_to: null }, { valid_to: { [Op.gte]: date } }] },
+        ],
+      },
+    });
+  }
+
+  if (scheduleRows.length === 0) {
+    return { data: [], allowed_durations: coach.allowed_durations || [30, 45, 60], default_duration: coach.default_duration || 45 };
   }
 
   const existingSessions = await LessonBooking.findAll({
@@ -267,12 +294,13 @@ export const getCoachSlots = async ({ coachId, date }) => {
     ...courseSessions.map((s) => ({ start: s.start_time, end: s.end_time })),
   ];
 
+  const bufferMinutes = Number(process.env.BOOKING_BUFFER_MINUTES) || 0;
   const slots = [];
 
-  for (const weekly of weeklySlots) {
-    const slotDuration = weekly.slot_duration_minutes || 60;
-    const [startH, startM] = weekly.start_time.split(':').map(Number);
-    const [endH, endM] = weekly.end_time.split(':').map(Number);
+  for (const row of scheduleRows) {
+    const slotDuration = row.slot_duration_minutes || 45;
+    const [startH, startM] = row.start_time.split(':').map(Number);
+    const [endH, endM] = row.end_time.split(':').map(Number);
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
 
@@ -287,14 +315,31 @@ export const getCoachSlots = async ({ coachId, date }) => {
         }
       }
 
-      const conflict = booked.some((b) => slotStart < b.end && slotEnd > b.start);
+      const conflict = booked.some((b) => {
+        const bStart = b.start;
+        const bEnd = b.end;
+        if (bufferMinutes > 0) {
+          // Extend booked range by buffer on both sides
+          const bStartMins = parseInt(bStart.split(':')[0]) * 60 + parseInt(bStart.split(':')[1]) - bufferMinutes;
+          const bEndMins = parseInt(bEnd.split(':')[0]) * 60 + parseInt(bEnd.split(':')[1]) + bufferMinutes;
+          const bufferedStart = `${String(Math.floor(Math.max(0, bStartMins) / 60)).padStart(2, '0')}:${String(Math.max(0, bStartMins) % 60).padStart(2, '0')}:00`;
+          const bufferedEnd = `${String(Math.floor(bEndMins / 60)).padStart(2, '0')}:${String(bEndMins % 60).padStart(2, '0')}:00`;
+          return slotStart < bufferedEnd && slotEnd > bufferedStart;
+        }
+        return slotStart < bEnd && slotEnd > bStart;
+      });
       if (!conflict) {
         slots.push({ start_time: slotStart, end_time: slotEnd, duration_minutes: slotDuration });
       }
     }
   }
 
-  return { data: slots };
+  return {
+    data: slots,
+    allowed_durations: coach.allowed_durations || [30, 45, 60],
+    default_duration: coach.default_duration || 45,
+    approval_mode: coach.approval_mode || 'manual',
+  };
 };
 
 export const getStableHorses = async ({ stableId, discipline, level, date }) => {
@@ -367,13 +412,24 @@ export const createBooking = async ({
   const rider = await User.findByPk(riderId);
   if (!rider) throw new Error('Rider not found.');
 
+  let coachRecord = null;
   if (coachId) {
-    const coach = await User.findByPk(coachId);
-    if (!coach || coach.role !== 'coach') throw new Error('Coach not found.');
+    coachRecord = await User.findByPk(coachId);
+    if (!coachRecord || coachRecord.role !== 'coach') throw new Error('Coach not found.');
   }
 
   const stable = await Stable.findByPk(stableId);
   if (!stable) throw new Error('Stable not found.');
+
+  // Validate coach is linked to this stable
+  if (coachId) {
+    const coachStableLink = await CoachStable.findOne({
+      where: { coach_id: coachId, stable_id: stableId, is_active: true },
+    });
+    if (!coachStableLink) {
+      throw new Error('This coach is not available at the selected stable.');
+    }
+  }
 
   if (arenaId) {
     const arena = await Arena.findByPk(arenaId);
@@ -436,7 +492,29 @@ export const createBooking = async ({
       throw new Error('This horse is already booked for the selected time slot.');
     }
   }
+
+  // Rider double-booking prevention
+  const riderConflict = await LessonBooking.findOne({
+    where: {
+      rider_id: riderId,
+      booking_date: bookingDate,
+      status: { [Op.in]: activeStatuses },
+      [Op.or]: [
+        { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+      ],
+    },
+  });
+  if (riderConflict) {
+    throw new Error('You already have a booking during the selected time slot.');
+  }
   // --- End conflict detection ---
+
+  // Determine initial status based on coach approval mode
+  const approvalMode = coachRecord?.approval_mode || 'manual';
+  let initialStatus = 'pending_review';
+  if (coachId && approvalMode === 'auto') {
+    initialStatus = 'pending_payment';
+  }
 
   const booking = await LessonBooking.create({
     rider_id: riderId,
@@ -448,7 +526,7 @@ export const createBooking = async ({
     start_time: startTime,
     end_time: endTime,
     lesson_type: lessonType || 'private',
-    status: 'pending_review',
+    status: initialStatus,
     price: price || null,
     notes: notes || null,
     booking_type: isArenaOnly ? 'arena_only' : 'lesson',
@@ -471,13 +549,29 @@ export const createBooking = async ({
   }
 
   if (coachId) {
+    const notifTitle = approvalMode === 'auto' ? 'New Booking (Auto-Approved)' : 'New Booking Request';
+    const notifBody = approvalMode === 'auto'
+      ? `${rider.first_name || 'A rider'} has booked a lesson on ${bookingDate}. Auto-approved per your settings.`
+      : `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`;
+
     await Notification.create({
       user_id: coachId,
       type: 'lesson_booked',
-      title: 'New Booking Request',
-      body: `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`,
+      title: notifTitle,
+      body: notifBody,
       data: { booking_id: booking.id },
     });
+
+    // If auto-approved, also notify rider
+    if (approvalMode === 'auto') {
+      await Notification.create({
+        user_id: riderId,
+        type: 'booking_approved',
+        title: 'Booking Auto-Approved',
+        body: `Your booking on ${bookingDate} has been auto-approved. Please complete payment to confirm.`,
+        data: { booking_id: booking.id },
+      });
+    }
   }
 
   // Notify stable admin about new booking
@@ -752,16 +846,18 @@ export const getAvailableSlots = async ({ stableId, date, duration = 60 }) => {
   return { data: available };
 };
 
-export const approveBooking = async ({ bookingId, adminId }) => {
+export const approveBooking = async ({ bookingId, userId, isAdmin = false }) => {
   const booking = await LessonBooking.findByPk(bookingId, {
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
   if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
 
-  // Transition to pending_payment so rider must pay before confirmation.
-  // When payment is not yet available (Coming Soon), admin can manually confirm
-  // via the separate confirmBooking endpoint.
+  // Allow if admin or if the coach assigned to this booking
+  if (!isAdmin && booking.coach_id !== userId) {
+    throw new Error('Only the assigned coach or an admin can approve this booking.');
+  }
+
   booking.status = 'pending_payment';
   await booking.save();
 
@@ -800,12 +896,16 @@ export const adminConfirmBooking = async ({ bookingId, adminId }) => {
   return booking;
 };
 
-export const declineBooking = async ({ bookingId, adminId, reason }) => {
+export const declineBooking = async ({ bookingId, userId, isAdmin = false, reason }) => {
   const booking = await LessonBooking.findByPk(bookingId, {
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
   if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
+
+  if (!isAdmin && booking.coach_id !== userId) {
+    throw new Error('Only the assigned coach or an admin can decline this booking.');
+  }
 
   booking.status = 'declined';
   booking.decline_reason = reason || null;
