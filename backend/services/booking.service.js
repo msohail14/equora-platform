@@ -29,11 +29,25 @@ const buildPaginationMeta = ({ currentPage, limit, totalRecords }) => {
   };
 };
 
-export const getBookingStables = async ({ search, page, limit }) => {
+export const getBookingStables = async ({ search, page, limit, coachId }) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
 
   const where = { is_active: true, is_approved: true };
+
+  // Filter by coach's linked stables if coachId provided
+  if (coachId) {
+    const coachLinks = await CoachStable.findAll({
+      where: { coach_id: coachId, is_active: true },
+      attributes: ['stable_id'],
+      raw: true,
+    });
+    const stableIds = coachLinks.map((l) => l.stable_id);
+    if (stableIds.length === 0) {
+      return { data: [], pagination: buildPaginationMeta({ currentPage: 1, limit: pagination.limit, totalRecords: 0 }) };
+    }
+    where.id = { [Op.in]: stableIds };
+  }
   const keyword = String(search || '').trim();
   if (keyword) {
     where[Op.or] = [

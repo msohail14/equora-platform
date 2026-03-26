@@ -37,6 +37,7 @@ export const getBookingStablesController = async (req, res) => {
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
+      coachId: req.query.coach_id,
     });
     return res.status(200).json(data);
   } catch (error) {
