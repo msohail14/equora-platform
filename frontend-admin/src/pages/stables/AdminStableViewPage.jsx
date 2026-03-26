@@ -18,6 +18,9 @@ import {
   getHorsesByStableApi,
   getStableByIdApi,
   getStableLinkedCoachesApi,
+  getPendingCoachRequestsApi,
+  approveCoachRequestApi,
+  rejectCoachRequestApi,
   inviteStableOwnerApi,
   linkCoachToStableApi,
   unlinkCoachFromStableApi,
@@ -110,6 +113,8 @@ const AdminStableViewPage = () => {
 
   const [linkedCoaches, setLinkedCoaches] = useState([]);
   const [coachesLoading, setCoachesLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
   const [isAddCoachModalOpen, setIsAddCoachModalOpen] = useState(false);
   const [allCoaches, setAllCoaches] = useState([]);
   const [coachSearch, setCoachSearch] = useState('');
@@ -170,6 +175,41 @@ const AdminStableViewPage = () => {
     }
   }, [stableId]);
 
+  const fetchPendingRequests = useCallback(async () => {
+    setPendingLoading(true);
+    try {
+      const res = await getPendingCoachRequestsApi(stableId);
+      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      setPendingRequests(list);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load pending requests.');
+    } finally {
+      setPendingLoading(false);
+    }
+  }, [stableId]);
+
+  const handleApproveRequest = async (coachId) => {
+    try {
+      await approveCoachRequestApi(stableId, coachId);
+      toast.success('Coach request approved.');
+      fetchPendingRequests();
+      fetchLinkedCoaches();
+    } catch (err) {
+      toast.error(err.message || 'Failed to approve request.');
+    }
+  };
+
+  const handleRejectRequest = async (coachId) => {
+    if (!window.confirm('Reject this coach request?')) return;
+    try {
+      await rejectCoachRequestApi(stableId, coachId);
+      toast.success('Coach request rejected.');
+      fetchPendingRequests();
+    } catch (err) {
+      toast.error(err.message || 'Failed to reject request.');
+    }
+  };
+
   useEffect(() => {
     refreshStableData();
   }, [stableId]);
@@ -177,8 +217,9 @@ const AdminStableViewPage = () => {
   useEffect(() => {
     if (activeTab === 'Linked Coaches') {
       fetchLinkedCoaches();
+      fetchPendingRequests();
     }
-  }, [activeTab, fetchLinkedCoaches]);
+  }, [activeTab, fetchLinkedCoaches, fetchPendingRequests]);
 
   const resetArenaForm = () => {
     setArenaForm(emptyArenaForm);
@@ -817,6 +858,72 @@ const AdminStableViewPage = () => {
               </button>
             </div>
 
+            {/* Pending Requests Section */}
+            {pendingLoading ? (
+              <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Loading pending requests...</p>
+            ) : pendingRequests.length > 0 && (
+              <div className="mb-6">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                    {pendingRequests.length}
+                  </span>
+                  Pending Requests
+                </h3>
+                <div className="overflow-x-auto rounded-xl border border-amber-200 dark:border-amber-900/40">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-amber-50 dark:bg-amber-900/20">
+                      <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <th className="px-3 py-2">Name</th>
+                        <th className="px-3 py-2">Email</th>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">Message</th>
+                        <th className="px-3 py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingRequests.map((link) => {
+                        const coachId = link.coach_id || link.coach?.id;
+                        const coach = link.coach || {};
+                        return (
+                          <tr key={coachId} className="border-t border-amber-100 dark:border-amber-900/30">
+                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
+                              {`${coach.first_name || ''} ${coach.last_name || ''}`.trim() || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{coach.email || '-'}</td>
+                            <td className="px-3 py-2">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${coachTypeBadge[coach.coach_type] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                {coach.coach_type || '-'}
+                              </span>
+                            </td>
+                            <td className="max-w-[200px] truncate px-3 py-2 text-gray-500 dark:text-gray-400">
+                              {link.request_message || '-'}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleApproveRequest(coachId)}
+                                  className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleRejectRequest(coachId)}
+                                  className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Linked Coaches Table */}
             {coachesLoading ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">Loading coaches...</p>
             ) : linkedCoaches.length === 0 ? (

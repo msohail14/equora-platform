@@ -29,6 +29,28 @@ const CoachStable = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    status: {
+      type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+      allowNull: false,
+      defaultValue: 'pending',
+    },
+    visibility: {
+      type: DataTypes.ENUM('public', 'featured_riders_only'),
+      allowNull: false,
+      defaultValue: 'public',
+    },
+    request_message: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    reviewed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    reviewed_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     joined_at: {
       type: DataTypes.DATE,
       allowNull: false,

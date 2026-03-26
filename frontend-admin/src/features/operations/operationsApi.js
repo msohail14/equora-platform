@@ -259,6 +259,15 @@ export const linkCoachToStableApi = (stableId, coachId, isPrimary = false) =>
 export const unlinkCoachFromStableApi = (stableId, coachId) =>
   axiosInstance.delete(`/admin/stables/${stableId}/coaches/${coachId}`);
 
+export const getPendingCoachRequestsApi = (stableId) =>
+  axiosInstance.get(`/coaches/stables/${stableId}/coach-requests`);
+
+export const approveCoachRequestApi = (stableId, coachId) =>
+  axiosInstance.patch(`/coaches/stables/${stableId}/coach-requests/${coachId}/approve`);
+
+export const rejectCoachRequestApi = (stableId, coachId) =>
+  axiosInstance.patch(`/coaches/stables/${stableId}/coach-requests/${coachId}/reject`);
+
 export const searchPlacesApi = (query) =>
   axiosInstance.get('/places/autocomplete', { params: { query } });
 

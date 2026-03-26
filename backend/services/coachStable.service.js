@@ -54,13 +54,14 @@ export const unlinkCoachFromStable = async ({ coachId, stableId }) => {
   const link = await CoachStable.findOne({ where: { coach_id: coachId, stable_id: stableId } });
   if (!link) throw new Error('Coach-stable link not found.');
   link.is_active = false;
+  link.status = 'rejected';
   await link.save();
   return link;
 };
 
 export const getStableLinkedCoaches = async ({ stableId }) => {
   const links = await CoachStable.findAll({
-    where: { stable_id: stableId, status: 'approved' },
+    where: { stable_id: stableId, status: 'approved', is_active: true },
     include: [{ model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name', 'email', 'profile_picture_url', 'specialties', 'coach_type', 'is_verified'] }],
     order: [['is_primary', 'DESC'], ['joined_at', 'ASC']],
   });
@@ -91,6 +92,7 @@ export const adminUnlinkCoachFromStable = async ({ stableId, coachId }) => {
   const link = await CoachStable.findOne({ where: { coach_id: coachId, stable_id: stableId } });
   if (!link) throw new Error('Coach-stable link not found.');
   link.is_active = false;
+  link.status = 'rejected';
   await link.save();
   return link;
 };

@@ -6,6 +6,10 @@ import {
   getMyStablesController,
   linkMyStableController,
   unlinkMyStableController,
+  updateVisibilityController,
+  getPendingRequestsController,
+  approveRequestController,
+  rejectRequestController,
 } from '../controllers/coachStable.controller.js';
 import {
   adminCreateScheduleController,
@@ -37,6 +41,14 @@ const router = express.Router();
 router.get('/me/stables', coachAuthMiddleware, getMyStablesController);
 router.post('/me/stables', coachAuthMiddleware, linkMyStableController);
 router.delete('/me/stables/:stableId', coachAuthMiddleware, unlinkMyStableController);
+
+// Coach self-management: visibility
+router.patch('/me/stables/:stableId/visibility', coachAuthMiddleware, updateVisibilityController);
+
+// Routes accessible by admin AND stable owner
+router.get('/stables/:stableId/coach-requests', authMiddleware, getPendingRequestsController);
+router.patch('/stables/:stableId/coach-requests/:coachId/approve', authMiddleware, approveRequestController);
+router.patch('/stables/:stableId/coach-requests/:coachId/reject', authMiddleware, rejectRequestController);
 
 // Coach self-management: per-stable schedules
 router.post('/me/stables/:stableId/schedules', coachAuthMiddleware, coachCreateScheduleController);
