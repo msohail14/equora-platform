@@ -669,13 +669,15 @@ export const payForBooking = async ({ bookingId, riderId, paymentId }) => {
     }
   }
 
-  await Notification.create({
-    user_id: booking.coach_id,
-    type: 'payment_confirmed',
-    title: 'Payment Confirmed',
-    body: `Payment has been confirmed for the lesson on ${booking.booking_date}.`,
-    data: { booking_id: booking.id },
-  });
+  if (booking.coach_id) {
+    await Notification.create({
+      user_id: booking.coach_id,
+      type: 'payment_confirmed',
+      title: 'Payment Confirmed',
+      body: `Payment has been confirmed for the lesson on ${booking.booking_date}.`,
+      data: { booking_id: booking.id },
+    });
+  }
 
   await Notification.create({
     user_id: booking.rider_id,
@@ -782,13 +784,15 @@ export const cancelBooking = async ({ bookingId, userId }) => {
   const notifyUserId = booking.rider_id === userId ? booking.coach_id : booking.rider_id;
   const cancelledByRole = booking.rider_id === userId ? 'rider' : 'coach';
 
-  await Notification.create({
-    user_id: notifyUserId,
-    type: 'general',
-    title: 'Booking Cancelled',
-    body: `The lesson on ${booking.booking_date} has been cancelled by the ${cancelledByRole}.`,
-    data: { booking_id: booking.id },
-  });
+  if (notifyUserId) {
+    await Notification.create({
+      user_id: notifyUserId,
+      type: 'general',
+      title: 'Booking Cancelled',
+      body: `The lesson on ${booking.booking_date} has been cancelled by the ${cancelledByRole}.`,
+      data: { booking_id: booking.id },
+    });
+  }
 
   return booking;
 };
@@ -925,6 +929,7 @@ export const declineBooking = async ({ bookingId, userId, isAdmin = false, reaso
 export const startBooking = async ({ bookingId, userId }) => {
   const booking = await LessonBooking.findByPk(bookingId);
   if (!booking) throw new Error('Booking not found.');
+  if (userId !== booking.coach_id) throw new Error('Only the assigned coach can start a session.');
   if (booking.status !== 'confirmed') throw new Error('Booking must be confirmed to start.');
 
   booking.status = 'in_progress';
@@ -935,6 +940,7 @@ export const startBooking = async ({ bookingId, userId }) => {
 export const completeBooking = async ({ bookingId, userId }) => {
   const booking = await LessonBooking.findByPk(bookingId);
   if (!booking) throw new Error('Booking not found.');
+  if (userId !== booking.coach_id) throw new Error('Only the assigned coach can complete a session.');
   if (booking.status !== 'in_progress' && booking.status !== 'confirmed') {
     throw new Error('Booking must be in progress or confirmed to complete.');
   }

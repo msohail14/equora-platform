@@ -13,10 +13,8 @@ const placesRateLimiter = rateLimit({
 });
 
 router.get('/health', (_req, res) => {
-  const keySet = !!process.env.GOOGLE_PLACES_API_KEY;
   return res.status(200).json({
-    configured: keySet,
-    key_prefix: keySet ? process.env.GOOGLE_PLACES_API_KEY.substring(0, 8) + '...' : null,
+    key_configured: !!process.env.GOOGLE_PLACES_API_KEY,
   });
 });
 

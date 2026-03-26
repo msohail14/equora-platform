@@ -1,7 +1,6 @@
 import express from 'express';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import superAdminOnly from '../middleware/super-admin.middleware.js';
-import { authRateLimiter } from '../middleware/rate-limit.middleware.js';
 import {
   getStableCoachesAdminController,
   linkStableCoachAdminController,
@@ -37,11 +36,12 @@ import {
 
 const router = express.Router();
 
-router.post('/signup', authRateLimiter, signupAdminController);
-router.post('/login', authRateLimiter, loginAdminController);
-router.post('/forgot-password', authRateLimiter, forgotAdminPasswordController);
-router.post('/resend-reset-token', authRateLimiter, forgotAdminPasswordController);
-router.post('/reset-password', authRateLimiter, resetAdminPasswordController);
+// Note: per-route rate limiters removed — they conflict with Railway's proxy
+router.post('/signup', signupAdminController);
+router.post('/login', loginAdminController);
+router.post('/forgot-password', forgotAdminPasswordController);
+router.post('/resend-reset-token', forgotAdminPasswordController);
+router.post('/reset-password', resetAdminPasswordController);
 router.post('/change-password', adminAuthMiddleware, changeAdminPasswordController);
 router.put('/change-profile', adminAuthMiddleware, changeAdminProfileController);
 router.get('/dashboard', adminAuthMiddleware, getAdminDashboardController);
@@ -61,7 +61,7 @@ router.get('/stables/:id/coaches', adminAuthMiddleware, getStableCoachesAdminCon
 router.post('/stables/:id/coaches', adminAuthMiddleware, linkStableCoachAdminController);
 router.delete('/stables/:id/coaches/:coachId', adminAuthMiddleware, unlinkStableCoachAdminController);
 
-router.post('/stable-registrations', authRateLimiter, submitRegistrationController);
+router.post('/stable-registrations', submitRegistrationController);
 router.get('/stable-registrations', superAdminOnly, getRegistrationsController);
 router.patch('/stable-registrations/:id/approve', superAdminOnly, approveRegistrationController);
 router.patch('/stable-registrations/:id/reject', superAdminOnly, rejectRegistrationController);
