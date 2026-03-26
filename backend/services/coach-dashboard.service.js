@@ -5,50 +5,78 @@ import sequelize from '../config/database.js';
 export const getCoachDashboard = async ({ coachId }) => {
   const today = new Date().toISOString().split('T')[0];
 
-  const todaySessions = await CourseSession.findAll({
-    where: {
-      coach_id: coachId,
-      session_date: today,
-    },
-    include: [
-      { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'profile_image'] },
-      { model: Course, as: 'course', attributes: ['id', 'name'] },
-      { model: Horse, as: 'horse', attributes: ['id', 'name'] },
-    ],
-    order: [['start_time', 'ASC']],
-  });
+  let todaySessions = [];
+  let upcomingSessionsCount = 0;
+  let totalEarnings = 0;
+  let pendingPayouts = 0;
+  let totalRiders = 0;
 
-  const upcomingSessionsCount = await CourseSession.count({
-    where: {
-      coach_id: coachId,
-      status: 'scheduled',
-      session_date: { [Op.gt]: today },
-    },
-  });
+  try {
+    todaySessions = await CourseSession.findAll({
+      where: {
+        coach_id: coachId,
+        session_date: today,
+      },
+      include: [
+        { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'profile_picture_url'] },
+        { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: Horse, as: 'horse', attributes: ['id', 'name'] },
+      ],
+      order: [['start_time', 'ASC']],
+    });
+  } catch (e) {
+    console.error('Coach dashboard - todaySessions error:', e.message);
+  }
 
-  const totalEarningsResult = await CoachPayout.findOne({
-    attributes: [[sequelize.fn('SUM', sequelize.col('amount')), 'total']],
-    where: { coach_id: coachId, status: 'paid' },
-    raw: true,
-  });
+  try {
+    upcomingSessionsCount = await CourseSession.count({
+      where: {
+        coach_id: coachId,
+        status: 'scheduled',
+        session_date: { [Op.gt]: today },
+      },
+    });
+  } catch (e) {
+    console.error('Coach dashboard - upcomingCount error:', e.message);
+  }
 
-  const pendingPayoutsResult = await CoachPayout.findOne({
-    attributes: [[sequelize.fn('SUM', sequelize.col('amount')), 'total']],
-    where: { coach_id: coachId, status: 'pending' },
-    raw: true,
-  });
+  try {
+    const totalEarningsResult = await CoachPayout.findOne({
+      attributes: [[sequelize.fn('SUM', sequelize.col('amount')), 'total']],
+      where: { coach_id: coachId, status: 'paid' },
+      raw: true,
+    });
+    totalEarnings = parseFloat(totalEarningsResult?.total || 0);
+  } catch (e) {
+    console.error('Coach dashboard - totalEarnings error:', e.message);
+  }
 
-  const totalRiders = await CourseSession.count({
-    where: { coach_id: coachId, rider_id: { [Op.ne]: null } },
-    distinct: true,
-    col: 'rider_id',
-  });
+  try {
+    const pendingPayoutsResult = await CoachPayout.findOne({
+      attributes: [[sequelize.fn('SUM', sequelize.col('amount')), 'total']],
+      where: { coach_id: coachId, status: 'pending' },
+      raw: true,
+    });
+    pendingPayouts = parseFloat(pendingPayoutsResult?.total || 0);
+  } catch (e) {
+    console.error('Coach dashboard - pendingPayouts error:', e.message);
+  }
+
+  try {
+    totalRiders = await CourseSession.count({
+      where: { coach_id: coachId, rider_id: { [Op.ne]: null } },
+      distinct: true,
+      col: 'rider_id',
+    });
+  } catch (e) {
+    console.error('Coach dashboard - totalRiders error:', e.message);
+  }
 
   return {
     todaySessions,
     upcomingSessionsCount,
-    totalEarnings: parseFloat(totalEarningsResult?.total || 0),
-    pendingPayouts: parseFloat(pendingPayoutsResult?.total || 0),
+    totalEarnings,
+    pendingPayouts,
     totalRiders,
   };
 };
