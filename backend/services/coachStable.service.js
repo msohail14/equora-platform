@@ -3,7 +3,13 @@ import { CoachStable, Stable, User } from '../models/index.js';
 
 export const getCoachStables = async ({ coachId }) => {
   const links = await CoachStable.findAll({
-    where: { coach_id: coachId },
+    where: {
+      coach_id: coachId,
+      [Op.or]: [
+        { is_active: true },
+        { status: 'pending' },
+      ],
+    },
     include: [{ model: Stable, as: 'stable', attributes: ['id', 'name', 'city', 'country', 'logo_url', 'rating'] }],
     order: [['is_primary', 'DESC'], ['joined_at', 'ASC']],
   });
