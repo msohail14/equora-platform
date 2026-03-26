@@ -122,7 +122,7 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connected successfully.');
-    await sequelize.sync({ force: false });
+    await sequelize.sync({ alter: true });
     console.log('Database tables synced.');
     await applySchemaUpdates();
     console.log('Schema updates applied successfully.');
