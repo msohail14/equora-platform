@@ -451,7 +451,7 @@ const AdminStableViewPage = () => {
   };
 
   const linkedCoachIds = useMemo(
-    () => new Set(linkedCoaches.map((c) => c.id || c.coach_id)),
+    () => new Set(linkedCoaches.map((c) => c.coach_id || c.coach?.id)),
     [linkedCoaches]
   );
 
@@ -836,8 +836,9 @@ const AdminStableViewPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {linkedCoaches.map((coach) => {
-                      const coachId = coach.id || coach.coach_id;
+                    {linkedCoaches.map((link) => {
+                      const coachId = link.coach_id || link.coach?.id;
+                      const coach = link.coach || {};
                       return (
                         <tr key={coachId} className="border-t border-gray-200 dark:border-gray-800">
                           <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
