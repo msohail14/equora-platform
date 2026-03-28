@@ -22,7 +22,7 @@ export const adminResetUserPassword = async (userId, options = {}) => {
   const frontendBaseUrl = process.env.FRONTEND_URL_PROD || process.env.FRONTEND_URL || 'http://localhost:5173';
 
   if (method === 'manual') {
-    const temporaryPassword = crypto.randomBytes(12).toString('hex');
+    const temporaryPassword = options.customPassword || crypto.randomBytes(12).toString('hex');
     const password_hash = await bcrypt.hash(temporaryPassword, 10);
     user.password_hash = password_hash;
     user.reset_password_token = null;

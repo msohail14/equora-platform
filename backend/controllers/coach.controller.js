@@ -183,7 +183,11 @@ export const deleteCoachWeeklyAvailabilityByAdminController = async (req, res) =
 
 export const resetCoachPasswordController = async (req, res) => {
   try {
-    const data = await adminResetUserPassword(req.params.id, { method: 'manual' });
+    const { password } = req.body || {};
+    const data = await adminResetUserPassword(req.params.id, {
+      method: 'manual',
+      customPassword: password || undefined,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

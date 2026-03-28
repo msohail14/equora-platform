@@ -64,23 +64,25 @@ const AdminCoachDetailsPage = () => {
   const [deletingReviewId, setDeletingReviewId] = useState(null);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [resetPasswordResult, setResetPasswordResult] = useState(null);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [customPassword, setCustomPassword] = useState('');
 
   const onResetPassword = useCallback(async () => {
     if (!coachDetails?.coach) return;
-    const email = coachDetails.coach.email || 'this coach';
-    if (!window.confirm(`Set a new temporary password for ${email}? They will need to use it to sign in.`)) return;
     setResettingPassword(true);
     setResetPasswordResult(null);
     try {
-      const response = await resetCoachPasswordApi(coachId);
-      toast.success(response?.message || 'Temporary password set.');
+      const response = await resetCoachPasswordApi(coachId, customPassword.trim() || undefined);
+      toast.success(response?.message || 'Password set.');
       setResetPasswordResult(response);
+      setShowResetPasswordModal(false);
+      setCustomPassword('');
     } catch (error) {
       toast.error(error.message || 'Failed to reset password.');
     } finally {
       setResettingPassword(false);
     }
-  }, [coachDetails, coachId]);
+  }, [coachDetails, coachId, customPassword]);
 
   const fetchCoachDetails = async (page = 1) => {
     setLoading(true);
@@ -312,7 +314,7 @@ const AdminCoachDetailsPage = () => {
           <AppButton
             type="button"
             variant="secondary"
-            onClick={onResetPassword}
+            onClick={() => { setCustomPassword(''); setShowResetPasswordModal(true); }}
             disabled={resettingPassword}
           >
             <KeyRound size={14} className="mr-1" />
@@ -672,6 +674,34 @@ const AdminCoachDetailsPage = () => {
             </AppButton>
           </div>
         </form>
+      </Modal>
+
+      {/* Reset password: choose password modal */}
+      <Modal
+        isOpen={showResetPasswordModal}
+        title="Reset Coach Password"
+        onClose={() => setShowResetPasswordModal(false)}
+      >
+        <div className="grid gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Enter a custom password or leave blank to auto-generate one.
+          </p>
+          <input
+            type="text"
+            placeholder="Enter custom password (optional)"
+            value={customPassword}
+            onChange={(e) => setCustomPassword(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          />
+          <div className="flex flex-wrap gap-2">
+            <AppButton type="button" onClick={onResetPassword} disabled={resettingPassword}>
+              {resettingPassword ? 'Setting…' : customPassword.trim() ? 'Set Password' : 'Generate Random Password'}
+            </AppButton>
+            <AppButton type="button" variant="secondary" onClick={() => setShowResetPasswordModal(false)}>
+              Cancel
+            </AppButton>
+          </div>
+        </div>
       </Modal>
 
       {/* Reset password result modal */}
