@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock3,
   GraduationCap,
+  KeyRound,
   Loader2,
   Mail,
   Pencil,
@@ -23,6 +24,7 @@ import {
   getCoachReviewsApi,
   getCoachSessionsApi,
   getCoachSummaryApi,
+  resetCoachPasswordApi,
   updateCoachReviewApi,
   updateCourseSessionApi,
 } from '../../features/operations/operationsApi';
@@ -60,6 +62,25 @@ const AdminCoachDetailsPage = () => {
   });
   const [savingReview, setSavingReview] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetPasswordResult, setResetPasswordResult] = useState(null);
+
+  const onResetPassword = useCallback(async () => {
+    if (!coachDetails?.coach) return;
+    const email = coachDetails.coach.email || 'this coach';
+    if (!window.confirm(`Set a new temporary password for ${email}? They will need to use it to sign in.`)) return;
+    setResettingPassword(true);
+    setResetPasswordResult(null);
+    try {
+      const response = await resetCoachPasswordApi(coachId);
+      toast.success(response?.message || 'Temporary password set.');
+      setResetPasswordResult(response);
+    } catch (error) {
+      toast.error(error.message || 'Failed to reset password.');
+    } finally {
+      setResettingPassword(false);
+    }
+  }, [coachDetails, coachId]);
 
   const fetchCoachDetails = async (page = 1) => {
     setLoading(true);
@@ -287,10 +308,21 @@ const AdminCoachDetailsPage = () => {
           Back to Coaches
         </AppButton>
         {!loading && coachDetails && (
+          <div className="flex gap-2">
+          <AppButton
+            type="button"
+            variant="secondary"
+            onClick={onResetPassword}
+            disabled={resettingPassword}
+          >
+            <KeyRound size={14} className="mr-1" />
+            {resettingPassword ? 'Resetting…' : 'Reset Password'}
+          </AppButton>
           <AppButton type="button" onClick={openCreateReview}>
             <Plus size={14} className="mr-1" />
             Add Review
           </AppButton>
+          </div>
         )}
       </div>
 
@@ -640,6 +672,42 @@ const AdminCoachDetailsPage = () => {
             </AppButton>
           </div>
         </form>
+      </Modal>
+
+      {/* Reset password result modal */}
+      <Modal
+        isOpen={!!resetPasswordResult?.temporary_password}
+        title="Share with coach"
+        onClose={() => setResetPasswordResult(null)}
+      >
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Temporary password
+            </label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-mono dark:border-gray-700 dark:bg-gray-800">
+                {resetPasswordResult?.temporary_password}
+              </code>
+              <AppButton
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  navigator.clipboard?.writeText(resetPasswordResult?.temporary_password);
+                  toast.success('Copied to clipboard.');
+                }}
+              >
+                Copy
+              </AppButton>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Send this password to the coach. They should change it after first login.
+          </p>
+          <AppButton type="button" onClick={() => setResetPasswordResult(null)}>
+            Done
+          </AppButton>
+        </div>
       </Modal>
     </div>
   );

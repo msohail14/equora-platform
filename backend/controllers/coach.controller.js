@@ -14,6 +14,7 @@ import {
   updateCoach,
 } from '../services/coach.service.js';
 import { getCoachUpcomingAvailability } from '../services/auth.service.js';
+import { adminResetUserPassword } from '../services/rider.service.js';
 
 const handleError = (res, error) => {
   const isValidationError =
@@ -174,6 +175,15 @@ export const deleteCoachController = async (req, res) => {
 export const deleteCoachWeeklyAvailabilityByAdminController = async (req, res) => {
   try {
     const data = await deleteCoachWeeklyAvailabilityByAdmin(req.params.id, req.params.availabilityId);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const resetCoachPasswordController = async (req, res) => {
+  try {
+    const data = await adminResetUserPassword(req.params.id, { method: 'manual' });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

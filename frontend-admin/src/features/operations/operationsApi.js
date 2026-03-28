@@ -166,6 +166,9 @@ export const updateRiderStatusApi = ({ riderId, is_active }) =>
 export const resetRiderPasswordApi = (riderId, method = 'email') =>
   axiosInstance.post(`/riders/${riderId}/reset-password`, { method });
 
+export const resetCoachPasswordApi = (coachId) =>
+  axiosInstance.post(`/coaches/${coachId}/reset-password`);
+
 export const getAdminDashboardApi = () => axiosInstance.get('/admin/dashboard');
 
 export const getAdminAnalyticsApi = ({ startDate, endDate } = {}) => {
