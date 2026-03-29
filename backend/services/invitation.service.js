@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { Admin, CoachStable, Invitation, Stable, User } from '../models/index.js';
-import { sendMail } from '../config/mailer.config.js';
+import { sendMail } from './mail.service.js';
 
 const INVITATION_EXPIRES_DAYS = Number(process.env.INVITATION_EXPIRES_DAYS || 7);
 

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Admin, MagicLinkToken, Stable, User } from '../models/index.js';
-import { sendMail } from '../config/mailer.config.js';
+import { sendMail } from './mail.service.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
