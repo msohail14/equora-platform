@@ -266,10 +266,13 @@ const AdminRidersPage = () => {
       </div>
 
       <Modal isOpen={isCreateModalOpen} title="Create Rider" onClose={resetCreateForm}>
-        <form className="grid gap-3 sm:grid-cols-2" onSubmit={onCreateRider}>
-          <FormInput label="First Name" name="create_rider_first_name" value={createForm.first_name} onChange={(e) => setCreateForm((p) => ({ ...p, first_name: e.target.value }))} />
-          <FormInput label="Last Name" name="create_rider_last_name" value={createForm.last_name} onChange={(e) => setCreateForm((p) => ({ ...p, last_name: e.target.value }))} />
+        <form className="grid gap-3" onSubmit={onCreateRider}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormInput label="First Name" name="create_rider_first_name" value={createForm.first_name} onChange={(e) => setCreateForm((p) => ({ ...p, first_name: e.target.value }))} />
+            <FormInput label="Last Name" name="create_rider_last_name" value={createForm.last_name} onChange={(e) => setCreateForm((p) => ({ ...p, last_name: e.target.value }))} />
+          </div>
           <PhoneInput label="Mobile Number" name="create_rider_mobile_number" value={createForm.mobile_number} onChange={(val) => setCreateForm((p) => ({ ...p, mobile_number: val }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
           <FormInput label="City" name="create_rider_city" value={createForm.city} onChange={(e) => setCreateForm((p) => ({ ...p, city: e.target.value }))} />
           <FormInput label="State" name="create_rider_state" value={createForm.state} onChange={(e) => setCreateForm((p) => ({ ...p, state: e.target.value }))} />
           <FormInput label="Country" name="create_rider_country" value={createForm.country} onChange={(e) => setCreateForm((p) => ({ ...p, country: e.target.value }))} />
@@ -289,7 +292,8 @@ const AdminRidersPage = () => {
               <option value="prefer_not_to_say">Prefer Not To Say</option>
             </select>
           </label>
-          <div className="sm:col-span-2">
+          </div>
+          <div>
             <FormInput
               label="Email *"
               name="create_rider_email"
@@ -299,7 +303,7 @@ const AdminRidersPage = () => {
               required
             />
           </div>
-          <div className="sm:col-span-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <AppButton type="submit" disabled={creatingRider}>
               {creatingRider ? 'Creating…' : 'Create Rider'}
             </AppButton>

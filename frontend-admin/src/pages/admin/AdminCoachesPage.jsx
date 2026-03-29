@@ -444,13 +444,13 @@ const AdminCoachesPage = () => {
               value={createForm.last_name}
               onChange={(e) => setCreateForm((p) => ({ ...p, last_name: e.target.value }))}
             />
-            <PhoneInput
-              label="Mobile Number"
-              name="create_mobile_number"
-              value={createForm.mobile_number}
-              onChange={(val) => setCreateForm((p) => ({ ...p, mobile_number: val }))}
-            />
           </div>
+          <PhoneInput
+            label="Mobile Number"
+            name="create_mobile_number"
+            value={createForm.mobile_number}
+            onChange={(val) => setCreateForm((p) => ({ ...p, mobile_number: val }))}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <FormInput label="City" name="create_city" value={createForm.city} onChange={(e) => setCreateForm((p) => ({ ...p, city: e.target.value }))} />
             <FormInput label="State" name="create_state" value={createForm.state} onChange={(e) => setCreateForm((p) => ({ ...p, state: e.target.value }))} />
@@ -555,13 +555,13 @@ const AdminCoachesPage = () => {
       {/* ── Edit modal ── */}
       <Modal isOpen={isEditModalOpen} title="Update Coach" onClose={resetEditForm}>
         <form className="grid gap-4" onSubmit={onUpdateCoach}>
+          <PhoneInput
+            label="Mobile Number"
+            name="edit_mobile_number"
+            value={editForm.mobile_number}
+            onChange={(val) => setEditForm((p) => ({ ...p, mobile_number: val }))}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
-            <PhoneInput
-              label="Mobile Number"
-              name="edit_mobile_number"
-              value={editForm.mobile_number}
-              onChange={(val) => setEditForm((p) => ({ ...p, mobile_number: val }))}
-            />
             <FormInput
               label="First Name"
               name="edit_first_name"

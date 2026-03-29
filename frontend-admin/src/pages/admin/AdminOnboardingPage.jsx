@@ -116,10 +116,8 @@ const AdminOnboardingPage = () => {
             <Field label="City" value={city} onChange={setCity} placeholder="Riyadh" />
             <Field label="Country" value={country} onChange={setCountry} placeholder="Saudi Arabia" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <PhoneInput label="Phone" value={contactPhone} onChange={setContactPhone} />
-            <Field label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@stable.com" />
-          </div>
+          <PhoneInput label="Phone" value={contactPhone} onChange={setContactPhone} />
+          <Field label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@stable.com" />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea

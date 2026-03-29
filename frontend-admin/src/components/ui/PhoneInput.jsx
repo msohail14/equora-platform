@@ -14,6 +14,8 @@ const COUNTRY_CODES = [
   { code: '+91',  country: 'IN', label: 'India', maxDigits: 10 },
 ];
 
+const baseCls = 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
+
 const PhoneInput = ({ value, onChange, label, name, disabled = false }) => {
   const [codeIdx, setCodeIdx] = useState(() => {
     if (!value) return 0;
@@ -47,8 +49,6 @@ const PhoneInput = ({ value, onChange, label, name, disabled = false }) => {
     onChange(selectedCode.code + digits);
   };
 
-  const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
-
   return (
     <div>
       {label && <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>}
@@ -58,7 +58,8 @@ const PhoneInput = ({ value, onChange, label, name, disabled = false }) => {
           onChange={handleCodeChange}
           disabled={disabled}
           name={name ? `${name}_code` : undefined}
-          className={`w-[110px] flex-shrink-0 ${inputCls} cursor-pointer`}
+          style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}
+          className={`${baseCls} cursor-pointer text-xs`}
         >
           {COUNTRY_CODES.map(c => (
             <option key={c.code} value={c.code}>
@@ -75,7 +76,7 @@ const PhoneInput = ({ value, onChange, label, name, disabled = false }) => {
           disabled={disabled}
           maxLength={selectedCode.maxDigits}
           name={name}
-          className={`flex-1 ${inputCls}`}
+          className={`flex-1 min-w-0 ${baseCls}`}
         />
       </div>
     </div>

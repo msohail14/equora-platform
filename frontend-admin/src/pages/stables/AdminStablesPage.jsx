@@ -284,7 +284,9 @@ const AdminStablesPage = () => {
             <FormInput label="State *" name="state" value={form.state} onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))} required />
             <FormInput label="Country *" name="country" value={form.country} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} required />
             <FormInput label="Pincode *" name="pincode" value={form.pincode} onChange={(e) => setForm((prev) => ({ ...prev, pincode: e.target.value }))} required />
-            <PhoneInput label="Contact Phone" name="contact_phone" value={form.contact_phone} onChange={(val) => setForm((prev) => ({ ...prev, contact_phone: val }))} />
+          </div>
+          <PhoneInput label="Contact Phone" name="contact_phone" value={form.contact_phone} onChange={(val) => setForm((prev) => ({ ...prev, contact_phone: val }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
             <FormInput label="Contact Email" name="contact_email" type="email" value={form.contact_email} onChange={(e) => setForm((prev) => ({ ...prev, contact_email: e.target.value }))} />
             <FormInput label="Latitude" name="latitude" value={form.latitude} onChange={(e) => setForm((prev) => ({ ...prev, latitude: e.target.value }))} />
             <FormInput label="Longitude" name="longitude" value={form.longitude} onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))} />
