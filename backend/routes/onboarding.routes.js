@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { onboardStableController, stableSetupWizardController, onboardCoachController, getSetupStatusController } from '../controllers/onboarding.controller.js';
+import { onboardStableController, stableSetupWizardController, onboardCoachController, getSetupStatusController, setCredentialsController } from '../controllers/onboarding.controller.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import authMiddleware from '../middleware/auth.middleware.js';
 
@@ -16,5 +16,8 @@ router.get('/stable/status', adminAuthMiddleware, getSetupStatusController);
 
 // User auth — coach profile setup after onboarding auth
 router.post('/coach', authMiddleware, onboardCoachController);
+
+// User auth — set email + password (for phone-only users during onboarding)
+router.post('/set-credentials', authMiddleware, setCredentialsController);
 
 export default router;

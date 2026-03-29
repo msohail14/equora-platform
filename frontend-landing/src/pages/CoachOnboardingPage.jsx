@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase';
-import { verifyFirebaseToken, bypassOtp, sendMagicLink, onboardCoach } from '../lib/api';
+import { verifyFirebaseToken, bypassOtp, sendMagicLink, onboardCoach, setCredentials } from '../lib/api';
 import PhoneInput from '../components/PhoneInput';
 
-const ADMIN_URL = 'https://admin.equorariding.com';
-const STEPS = ['Account', 'Profile', 'Done'];
+const APP_STORE_URL = '#';
+const PLAY_STORE_URL = '#';
+const STEPS = ['Account', 'Profile', 'Set Password', 'Get the App'];
 
 const CoachOnboardingPage = () => {
   const [step, setStep] = useState(0);
@@ -24,6 +25,11 @@ const CoachOnboardingPage = () => {
   const [defaultDuration, setDefaultDuration] = useState('45');
   const [approvalMode, setApprovalMode] = useState('manual');
   const [coachType, setCoachType] = useState('freelancer');
+
+  // Credentials
+  const [credEmail, setCredEmail] = useState('');
+  const [credPassword, setCredPassword] = useState('');
+  const [credConfirm, setCredConfirm] = useState('');
 
   const recaptchaRef = useRef(null);
 
@@ -95,6 +101,30 @@ const CoachOnboardingPage = () => {
     }
     setLoading(false);
   }, [token, bio, defaultDuration, approvalMode, coachType]);
+
+  const handleSetCredentials = useCallback(async () => {
+    if (!credEmail.trim() || !credPassword) {
+      setError('Email and password are required.');
+      return;
+    }
+    if (credPassword !== credConfirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (credPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      await setCredentials(token, { email: credEmail.trim(), password: credPassword });
+      setStep(3);
+    } catch (e) {
+      setError(e?.response?.data?.error || e.message || 'Failed to set credentials.');
+    }
+    setLoading(false);
+  }, [token, credEmail, credPassword, credConfirm]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -326,35 +356,88 @@ const CoachOnboardingPage = () => {
         )}
 
         {/* Step 2: Done */}
+        {/* Step 2: Set Password */}
         {step === 2 && (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Set your login credentials</h1>
+            <p className="text-gray-600 mb-8">Choose an email and password to log into the Equora app.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={credEmail}
+                  onChange={(e) => setCredEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={credPassword}
+                  onChange={(e) => setCredPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={credConfirm}
+                  onChange={(e) => setCredConfirm(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={handleSetCredentials}
+                disabled={loading}
+                className="flex-1 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save & Continue'}
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                className="rounded-lg bg-gray-100 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Download App */}
+        {step === 3 && (
           <div className="text-center py-8">
             <div className="mx-auto mb-6 h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center">
               <svg className="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Equora!</h1>
-            <p className="text-gray-600 mb-4">Your coach account is ready. You can now:</p>
-            <ul className="text-left max-w-xs mx-auto space-y-2 mb-8">
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <span className="text-emerald-600">✓</span> Set your weekly availability
-              </li>
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <span className="text-emerald-600">✓</span> Link to a stable
-              </li>
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <span className="text-emerald-600">✓</span> Start receiving bookings from riders
-              </li>
-            </ul>
-            <a
-              href={`${ADMIN_URL}/admin/login`}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-10 py-4 text-base font-semibold text-white shadow-lg hover:bg-emerald-700 transition"
-            >
-              Go to Dashboard
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </a>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">You're all set!</h1>
+            <p className="text-gray-600 mb-8">Download the Equora app to manage your schedule, accept bookings, and track your earnings.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <a
+                href={APP_STORE_URL}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 py-4 text-base font-semibold text-white shadow-lg hover:bg-gray-800 transition"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                App Store
+              </a>
+              <a
+                href={PLAY_STORE_URL}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 py-4 text-base font-semibold text-white shadow-lg hover:bg-gray-800 transition"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.48c-.45-.29-.73-.77-.73-1.3V1.82c0-.53.28-1.01.73-1.3l11.07 11.48L3.18 23.48zm1.34-23.16L16.19 11 13.27 13.92 4.52.32zm16.54 10.13l-3.33 1.94-3.23-3.35 3.23-3.35 3.33 1.94c.95.55.95 2.27 0 2.82zm-4.67 2.72L13.27 16.1l-8.75 8.06 12.87-7.49z"/></svg>
+                Google Play
+              </a>
+            </div>
+            <p className="text-sm text-gray-500">Already have the app? Log in with the email and password you just set.</p>
           </div>
         )}
       </div>

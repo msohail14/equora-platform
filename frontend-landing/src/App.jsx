@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const StableOnboardingPage = lazy(() => import('./pages/StableOnboardingPage'));
 const CoachOnboardingPage = lazy(() => import('./pages/CoachOnboardingPage'));
+const RiderOnboardingPage = lazy(() => import('./pages/RiderOnboardingPage'));
 
 const Loading = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/onboarding/stable" element={<StableOnboardingPage />} />
           <Route path="/onboarding/coach" element={<CoachOnboardingPage />} />
+          <Route path="/onboarding/rider" element={<RiderOnboardingPage />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>
       </Suspense>

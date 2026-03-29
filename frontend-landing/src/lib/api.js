@@ -17,6 +17,9 @@ export const stableSetupWizard = (token, data) =>
 export const onboardCoach = (token, data) =>
   api.post('/onboarding/coach', data, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.data);
 
+export const setCredentials = (token, data) =>
+  api.post('/onboarding/set-credentials', data, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.data);
+
 // Invitations
 export const acceptInvitation = (token, data) => api.post(`/invitations/accept/${token}`, data).then(r => r.data);
 

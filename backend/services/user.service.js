@@ -423,3 +423,32 @@ export const getMyProfile = async (userId) => {
   }
   return user;
 };
+
+/**
+ * Set email + password for a user who signed up via phone OTP.
+ * Used during onboarding so coaches/riders can log into the mobile app.
+ */
+export const setUserCredentials = async (userId, { email, password }) => {
+  const user = await User.findByPk(userId);
+  if (!user) throw new Error('User not found.');
+
+  if (!email && !password) throw new Error('Email or password is required.');
+
+  if (email) {
+    const existing = await User.findOne({ where: { email, id: { [Op.ne]: userId } } });
+    if (existing) throw new Error('This email is already in use.');
+    user.email = email;
+    user.is_email_verified = true;
+  }
+
+  if (password) {
+    if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+    user.password_hash = await bcrypt.hash(password, 10);
+    user.auth_method = 'email_password';
+  }
+
+  await user.save();
+
+  const safeUser = await User.findByPk(user.id, { attributes: publicUserFields });
+  return { message: 'Credentials set successfully.', user: safeUser };
+};

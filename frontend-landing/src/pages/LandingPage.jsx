@@ -87,7 +87,7 @@ const LandingPage = () => {
                 Join as a Coach
               </a>
               <a
-                href={APP_STORE_URL}
+                href="/onboarding/rider"
                 className="rounded-xl bg-white/10 backdrop-blur-sm px-8 py-4 text-base font-semibold text-white shadow-lg ring-1 ring-white/20 hover:bg-white/20 transition text-center"
               >
                 Join as a Rider
@@ -311,7 +311,7 @@ const LandingPage = () => {
               <ul className="space-y-3">
                 <li><a href="/onboarding/stable" className="text-sm text-gray-400 hover:text-emerald-400 transition">For Stables</a></li>
                 <li><a href="/onboarding/coach" className="text-sm text-gray-400 hover:text-emerald-400 transition">For Coaches</a></li>
-                <li><a href={APP_STORE_URL} className="text-sm text-gray-400 hover:text-emerald-400 transition">For Riders</a></li>
+                <li><a href="/onboarding/rider" className="text-sm text-gray-400 hover:text-emerald-400 transition">For Riders</a></li>
               </ul>
             </div>
             <div>
