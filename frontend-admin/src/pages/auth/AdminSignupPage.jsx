@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import AuthLayout from '../../components/layout/AuthLayout';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
+import PhoneInput from '../../components/ui/PhoneInput';
 import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import { submitStableRegistrationApi } from '../../features/auth/authApi';
 
@@ -140,13 +141,11 @@ const AdminSignupPage = () => {
           This will be your login email once approved.
         </p>
 
-        <FormInput
+        <PhoneInput
           label="Phone Number"
           name="phone"
-          type="tel"
           value={form.phone}
-          onChange={onChange}
-          placeholder="+966 50 123 4567"
+          onChange={(val) => setForm((p) => ({ ...p, phone: val }))}
         />
 
         <div className="grid grid-cols-2 gap-3">

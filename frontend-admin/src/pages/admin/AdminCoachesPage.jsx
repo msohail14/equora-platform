@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
+import PhoneInput from '../../components/ui/PhoneInput';
 import {
   createCoachApi, deleteCoachApi, getCoachesApi, getCoachDeletionPreviewApi, updateCoachApi, verifyCoachApi,
 } from '../../features/operations/operationsApi';
@@ -443,11 +444,11 @@ const AdminCoachesPage = () => {
               value={createForm.last_name}
               onChange={(e) => setCreateForm((p) => ({ ...p, last_name: e.target.value }))}
             />
-            <FormInput
+            <PhoneInput
               label="Mobile Number"
               name="create_mobile_number"
               value={createForm.mobile_number}
-              onChange={(e) => setCreateForm((p) => ({ ...p, mobile_number: e.target.value }))}
+              onChange={(val) => setCreateForm((p) => ({ ...p, mobile_number: val }))}
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -555,11 +556,11 @@ const AdminCoachesPage = () => {
       <Modal isOpen={isEditModalOpen} title="Update Coach" onClose={resetEditForm}>
         <form className="grid gap-4" onSubmit={onUpdateCoach}>
           <div className="grid gap-3 sm:grid-cols-2">
-            <FormInput
+            <PhoneInput
               label="Mobile Number"
               name="edit_mobile_number"
               value={editForm.mobile_number}
-              onChange={(e) => setEditForm((p) => ({ ...p, mobile_number: e.target.value }))}
+              onChange={(val) => setEditForm((p) => ({ ...p, mobile_number: val }))}
             />
             <FormInput
               label="First Name"

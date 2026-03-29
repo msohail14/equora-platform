@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
+import PhoneInput from '../../components/ui/PhoneInput';
 import Modal from '../../components/ui/Modal';
 import { createRiderApi, deleteRiderApi, getRidersApi } from '../../features/operations/operationsApi';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
@@ -268,7 +269,7 @@ const AdminRidersPage = () => {
         <form className="grid gap-3 sm:grid-cols-2" onSubmit={onCreateRider}>
           <FormInput label="First Name" name="create_rider_first_name" value={createForm.first_name} onChange={(e) => setCreateForm((p) => ({ ...p, first_name: e.target.value }))} />
           <FormInput label="Last Name" name="create_rider_last_name" value={createForm.last_name} onChange={(e) => setCreateForm((p) => ({ ...p, last_name: e.target.value }))} />
-          <FormInput label="Mobile Number" name="create_rider_mobile_number" value={createForm.mobile_number} onChange={(e) => setCreateForm((p) => ({ ...p, mobile_number: e.target.value }))} />
+          <PhoneInput label="Mobile Number" name="create_rider_mobile_number" value={createForm.mobile_number} onChange={(val) => setCreateForm((p) => ({ ...p, mobile_number: val }))} />
           <FormInput label="City" name="create_rider_city" value={createForm.city} onChange={(e) => setCreateForm((p) => ({ ...p, city: e.target.value }))} />
           <FormInput label="State" name="create_rider_state" value={createForm.state} onChange={(e) => setCreateForm((p) => ({ ...p, state: e.target.value }))} />
           <FormInput label="Country" name="create_rider_country" value={createForm.country} onChange={(e) => setCreateForm((p) => ({ ...p, country: e.target.value }))} />

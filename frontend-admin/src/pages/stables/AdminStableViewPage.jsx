@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
+import PhoneInput from '../../components/ui/PhoneInput';
 import Modal from '../../components/ui/Modal';
 import { API_BASE_URL } from '../../lib/axiosInstance';
 import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
@@ -1020,7 +1021,7 @@ const AdminStableViewPage = () => {
               </div>
               <div>
                 <label className={labelCls}>Contact Phone</label>
-                <FormInput value={stableForm.contact_phone} onChange={(e) => setStableForm((p) => ({ ...p, contact_phone: e.target.value }))} className={inputCls} />
+                <PhoneInput value={stableForm.contact_phone} onChange={(val) => setStableForm((p) => ({ ...p, contact_phone: val }))} />
               </div>
               <div>
                 <label className={labelCls}>Contact Email</label>

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { Star, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
 import FormInput from '../../components/ui/FormInput';
+import PhoneInput from '../../components/ui/PhoneInput';
 import Modal from '../../components/ui/Modal';
 import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import {
@@ -283,7 +284,7 @@ const AdminStablesPage = () => {
             <FormInput label="State *" name="state" value={form.state} onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))} required />
             <FormInput label="Country *" name="country" value={form.country} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} required />
             <FormInput label="Pincode *" name="pincode" value={form.pincode} onChange={(e) => setForm((prev) => ({ ...prev, pincode: e.target.value }))} required />
-            <FormInput label="Contact Phone" name="contact_phone" value={form.contact_phone} onChange={(e) => setForm((prev) => ({ ...prev, contact_phone: e.target.value }))} />
+            <PhoneInput label="Contact Phone" name="contact_phone" value={form.contact_phone} onChange={(val) => setForm((prev) => ({ ...prev, contact_phone: val }))} />
             <FormInput label="Contact Email" name="contact_email" type="email" value={form.contact_email} onChange={(e) => setForm((prev) => ({ ...prev, contact_email: e.target.value }))} />
             <FormInput label="Latitude" name="latitude" value={form.latitude} onChange={(e) => setForm((prev) => ({ ...prev, latitude: e.target.value }))} />
             <FormInput label="Longitude" name="longitude" value={form.longitude} onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))} />

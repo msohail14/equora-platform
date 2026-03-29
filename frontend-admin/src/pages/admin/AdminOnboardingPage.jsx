@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { onboardStableApi, stableSetupWizardApi, sendInvitationApi } from '../../features/operations/operationsApi';
 import AppButton from '../../components/ui/AppButton';
+import PhoneInput from '../../components/ui/PhoneInput';
 
 const STEPS = ['Stable Info', 'Add Coaches', 'Add Horses', 'Done'];
 
@@ -116,7 +117,7 @@ const AdminOnboardingPage = () => {
             <Field label="Country" value={country} onChange={setCountry} placeholder="Saudi Arabia" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Phone" value={contactPhone} onChange={setContactPhone} placeholder="+966..." />
+            <PhoneInput label="Phone" value={contactPhone} onChange={setContactPhone} />
             <Field label="Email" value={contactEmail} onChange={setContactEmail} placeholder="info@stable.com" />
           </div>
           <div>
