@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
-import { Course, CourseSession, LessonBooking, User } from '../models/index.js';
+import { CoachPayout, CoachReview, Course, CourseSession, CourseTemplate, LessonBooking, LessonPackage, Notification, SessionFeedback, User } from '../models/index.js';
 import CoachStable from '../models/coachStable.model.js';
 import Stable from '../models/stable.model.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
+import CoachAvailabilityException from '../models/coachAvailabilityException.model.js';
 import { getCoachReviewSummary, getCoachReviewSummaryMap, getCoachReviews } from './coach-review.service.js';
 import {
   createWeeklyAvailability,
@@ -422,25 +423,88 @@ export const deleteCoachWeeklyAvailabilityByAdmin = async (coachId, availability
   return deleteWeeklyAvailability(coachId, availabilityId);
 };
 
-export const deleteCoach = async (coachId) => {
+/**
+ * Get a preview of what will be deleted when a coach is removed.
+ */
+export const getCoachDeletionPreview = async (coachId) => {
+  const coach = await User.findOne({ where: { id: coachId, role: 'coach' } });
+  if (!coach) throw new Error('Coach not found.');
+
+  const activeStatuses = ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'];
+
+  const [activeBookings, totalBookings, courses, reviews, packages, payouts] = await Promise.all([
+    LessonBooking.count({ where: { coach_id: coachId, status: { [Op.in]: activeStatuses } } }),
+    LessonBooking.count({ where: { coach_id: coachId } }),
+    Course.count({ where: { coach_id: coachId } }),
+    CoachReview.count({ where: { coach_id: coachId } }),
+    LessonPackage.count({ where: { coach_id: coachId } }),
+    CoachPayout.count({ where: { coach_id: coachId } }),
+  ]);
+
+  return {
+    coach: { id: coach.id, name: `${coach.first_name || ''} ${coach.last_name || ''}`.trim(), email: coach.email },
+    activeBookings,
+    totalBookings,
+    courses,
+    reviews,
+    packages,
+    payouts,
+    canDelete: true, // We allow deletion now — active bookings get cancelled
+  };
+};
+
+/**
+ * Delete a coach and cascade-delete all related data.
+ * Active bookings are automatically cancelled with a system reason.
+ */
+export const deleteCoach = async (coachId, { force = false } = {}) => {
   const coach = await User.findOne({ where: { id: coachId, role: 'coach' } });
   if (!coach) {
     throw new Error('Coach not found.');
   }
 
-  const activeBookings = await LessonBooking.count({
-    where: {
-      coach_id: coachId,
-      status: { [Op.in]: ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'] },
-    },
-  });
-  if (activeBookings > 0) {
-    throw new Error(`Cannot delete coach with ${activeBookings} active booking(s). Cancel or complete them first.`);
-  }
+  const activeStatuses = ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'];
 
+  // Cancel all active bookings
+  const [cancelledCount] = await LessonBooking.update(
+    { status: 'cancelled', decline_reason: 'Coach account was deleted by admin.' },
+    { where: { coach_id: coachId, status: { [Op.in]: activeStatuses } } }
+  );
+
+  // Nullify coach_id on historical bookings (keep booking records for riders)
+  await LessonBooking.update(
+    { coach_id: null },
+    { where: { coach_id: coachId } }
+  );
+
+  // Cascade delete coach-specific data
   await CoachStable.destroy({ where: { coach_id: coachId } });
   await CoachWeeklyAvailability.destroy({ where: { coach_id: coachId } });
+  await CoachAvailabilityException.destroy({ where: { coach_id: coachId } });
+  await CoachReview.destroy({ where: { coach_id: coachId } });
+  await LessonPackage.destroy({ where: { coach_id: coachId } });
+  await CourseTemplate.destroy({ where: { coach_id: coachId } });
+  await SessionFeedback.destroy({ where: { coach_id: coachId } });
+  await CoachPayout.destroy({ where: { coach_id: coachId } });
+  await Notification.destroy({ where: { user_id: coachId } });
+
+  // Archive courses (set inactive instead of deleting — preserves enrollment history)
+  await Course.update(
+    { status: 'archived', is_active: false },
+    { where: { coach_id: coachId } }
+  );
+
+  // Nullify coach references in course sessions
+  await CourseSession.update(
+    { coach_id: null },
+    { where: { coach_id: coachId } }
+  );
+
+  // Delete the coach user record
   await coach.destroy();
 
-  return { message: 'Coach deleted successfully.' };
+  return {
+    message: 'Coach deleted successfully.',
+    cancelledBookings: cancelledCount,
+  };
 };

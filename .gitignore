@@ -5,6 +5,7 @@
 backend/.env
 backend/.env.production
 frontend-admin/.env
+frontend-landing/.env
 
 # OS files
 .DS_Store

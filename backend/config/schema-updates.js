@@ -736,6 +736,91 @@ const ensureObstacleTypesTable = async () => {
   `);
 };
 
+const ensureFirebaseAuthColumns = async () => {
+  // User table: make password_hash nullable, add firebase_uid, auth_method
+  try {
+    const [pwResults] = await sequelize.query(`
+      SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user' AND COLUMN_NAME = 'password_hash'
+    `);
+    if (pwResults?.[0]?.IS_NULLABLE === 'NO') {
+      await sequelize.query(`ALTER TABLE \`user\` MODIFY COLUMN \`password_hash\` VARCHAR(255) NULL`);
+      console.log('[schema] Made user.password_hash nullable');
+    }
+  } catch (e) { console.warn('[schema] user.password_hash:', e.message); }
+
+  try {
+    const [emailResults] = await sequelize.query(`
+      SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user' AND COLUMN_NAME = 'email'
+    `);
+    if (emailResults?.[0]?.IS_NULLABLE === 'NO') {
+      await sequelize.query(`ALTER TABLE \`user\` MODIFY COLUMN \`email\` VARCHAR(255) NULL`);
+      console.log('[schema] Made user.email nullable');
+    }
+  } catch (e) { console.warn('[schema] user.email:', e.message); }
+
+  await ensureColumnExists('user', 'firebase_uid', 'ADD COLUMN `firebase_uid` VARCHAR(128) NULL UNIQUE AFTER `password_hash`');
+  await ensureColumnExists('user', 'auth_method', "ADD COLUMN `auth_method` ENUM('email_password','firebase_phone','firebase_email','magic_link') NOT NULL DEFAULT 'email_password' AFTER `firebase_uid`");
+
+  // Admin table: make password_hash nullable, add firebase_uid, auth_method, mobile_number, is_email_verified
+  try {
+    const [pwResults] = await sequelize.query(`
+      SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin' AND COLUMN_NAME = 'password_hash'
+    `);
+    if (pwResults?.[0]?.IS_NULLABLE === 'NO') {
+      await sequelize.query(`ALTER TABLE \`admin\` MODIFY COLUMN \`password_hash\` VARCHAR(255) NULL`);
+      console.log('[schema] Made admin.password_hash nullable');
+    }
+  } catch (e) { console.warn('[schema] admin.password_hash:', e.message); }
+
+  await ensureColumnExists('admin', 'firebase_uid', 'ADD COLUMN `firebase_uid` VARCHAR(128) NULL UNIQUE AFTER `password_hash`');
+  await ensureColumnExists('admin', 'auth_method', "ADD COLUMN `auth_method` ENUM('email_password','firebase_phone','firebase_email','magic_link') NOT NULL DEFAULT 'email_password' AFTER `firebase_uid`");
+  await ensureColumnExists('admin', 'mobile_number', 'ADD COLUMN `mobile_number` VARCHAR(20) NULL AFTER `auth_method`');
+  await ensureColumnExists('admin', 'is_email_verified', 'ADD COLUMN `is_email_verified` BOOLEAN NOT NULL DEFAULT FALSE AFTER `mobile_number`');
+};
+
+const ensureInvitationsTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`invitation\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`inviter_id\` INT NOT NULL,
+      \`stable_id\` INT NOT NULL,
+      \`email\` VARCHAR(255) NULL,
+      \`phone\` VARCHAR(20) NULL,
+      \`role\` ENUM('coach') NOT NULL DEFAULT 'coach',
+      \`status\` ENUM('pending','accepted','rejected','expired') NOT NULL DEFAULT 'pending',
+      \`token\` VARCHAR(255) NOT NULL UNIQUE,
+      \`expires_at\` DATETIME NOT NULL,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT \`fk_invitation_inviter\` FOREIGN KEY (\`inviter_id\`) REFERENCES \`admin\`(\`id\`) ON DELETE CASCADE,
+      CONSTRAINT \`fk_invitation_stable\` FOREIGN KEY (\`stable_id\`) REFERENCES \`stables\`(\`id\`) ON DELETE CASCADE,
+      INDEX \`idx_invitation_token\` (\`token\`),
+      INDEX \`idx_invitation_stable\` (\`stable_id\`, \`status\`)
+    )
+  `);
+};
+
+const ensureMagicLinkTokensTable = async () => {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`magic_link_token\` (
+      \`id\` INT PRIMARY KEY AUTO_INCREMENT,
+      \`email\` VARCHAR(255) NOT NULL,
+      \`token\` VARCHAR(255) NOT NULL UNIQUE,
+      \`purpose\` ENUM('login','signup') NOT NULL,
+      \`role\` ENUM('stable_owner','coach','rider') NULL,
+      \`user_id\` INT NULL,
+      \`admin_id\` INT NULL,
+      \`expires_at\` DATETIME NOT NULL,
+      \`is_used\` BOOLEAN NOT NULL DEFAULT FALSE,
+      \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX \`idx_magic_link_token\` (\`token\`),
+      INDEX \`idx_magic_link_email\` (\`email\`, \`is_used\`)
+    )
+  `);
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -796,6 +881,11 @@ export const applySchemaUpdates = async () => {
 
   // Phase G: Remove seeded test data (one-time cleanup)
   await removeSeededTestData();
+
+  // Phase H: Firebase auth + passwordless onboarding
+  await ensureFirebaseAuthColumns();
+  await ensureInvitationsTable();
+  await ensureMagicLinkTokensTable();
 };
 
 async function removeSeededTestData() {

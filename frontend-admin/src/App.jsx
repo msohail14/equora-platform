@@ -32,6 +32,7 @@ const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage'));
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'));
+const AdminOnboardingPage = lazy(() => import('./pages/admin/AdminOnboardingPage'));
 import { Toaster } from 'react-hot-toast';
 
 const AppRoutes = () => {
@@ -102,6 +103,7 @@ const AppRoutes = () => {
               <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="notifications" element={<AdminNotificationsPage />} />
               <Route path="profile" element={<AdminProfilePage />} />
+              <Route path="onboarding" element={<AdminOnboardingPage />} />
             </Route>
           </Route>
 

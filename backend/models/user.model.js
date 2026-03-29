@@ -11,7 +11,7 @@ const User = sequelize.define(
     },
     email: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
       unique: true,
       validate: {
         isEmail: true,
@@ -23,7 +23,17 @@ const User = sequelize.define(
     },
     password_hash: {
       type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    firebase_uid: {
+      type: DataTypes.STRING(128),
+      allowNull: true,
+      unique: true,
+    },
+    auth_method: {
+      type: DataTypes.ENUM('email_password', 'firebase_phone', 'firebase_email', 'magic_link'),
       allowNull: false,
+      defaultValue: 'email_password',
     },
     role: {
       type: DataTypes.ENUM('rider', 'coach'),

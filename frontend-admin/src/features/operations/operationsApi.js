@@ -294,3 +294,49 @@ export const approveStableRegistrationApi = (registrationId, { password }) =>
 
 export const rejectStableRegistrationApi = (registrationId, { admin_notes } = {}) =>
   axiosInstance.patch(`/admin/stable-registrations/${registrationId}/reject`, { admin_notes });
+
+// Firebase / Passwordless Auth
+export const verifyFirebaseTokenApi = (data) =>
+  axiosInstance.post('/auth/firebase/verify', data);
+export const bypassOtpApi = (data) =>
+  axiosInstance.post('/auth/firebase/bypass-otp', data);
+export const sendMagicLinkApi = (data) =>
+  axiosInstance.post('/auth/magic-link/send', data);
+
+// Onboarding
+export const onboardStableApi = (data) =>
+  axiosInstance.post('/onboarding/stable', data);
+export const stableSetupWizardApi = (data) =>
+  axiosInstance.put('/onboarding/stable/setup', data);
+export const getSetupStatusApi = () =>
+  axiosInstance.get('/onboarding/stable/status');
+export const onboardCoachApi = (data) =>
+  axiosInstance.post('/onboarding/coach', data);
+
+// Invitations
+export const sendInvitationApi = (data) =>
+  axiosInstance.post('/invitations', data);
+export const getInvitationsApi = (stableId) =>
+  axiosInstance.get(`/invitations/stable/${stableId}`);
+export const cancelInvitationApi = (id) =>
+  axiosInstance.delete(`/invitations/${id}`);
+
+// Booking extras
+export const getReturningRiderDefaultsApi = () =>
+  axiosInstance.get('/bookings/returning-rider-defaults');
+
+// Coach deletion preview
+export const getCoachDeletionPreviewApi = (coachId) =>
+  axiosInstance.get(`/coaches/${coachId}/deletion-preview`);
+
+// Admin account management (super admin)
+export const listAdminAccountsApi = (params = {}) => {
+  const query = buildListQuery(params);
+  return axiosInstance.get(`/admin/accounts?${query}`);
+};
+export const resetStableOwnerPasswordApi = (adminId, data = {}) =>
+  axiosInstance.post(`/admin/accounts/${adminId}/reset-password`, data);
+export const updateStableOwnerProfileApi = (adminId, data) =>
+  axiosInstance.put(`/admin/accounts/${adminId}`, data);
+export const deleteStableOwnerApi = (adminId) =>
+  axiosInstance.delete(`/admin/accounts/${adminId}`);

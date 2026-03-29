@@ -73,6 +73,10 @@ export const loginAdmin = async ({ email, password }) => {
     throw new Error('Invalid email or password.');
   }
 
+  if (!admin.password_hash) {
+    throw new Error('This account uses passwordless login. Please sign in with your phone or magic link.');
+  }
+
   const isPasswordValid = await bcrypt.compare(password, admin.password_hash);
   if (!isPasswordValid) {
     throw new Error('Invalid email or password.');
@@ -168,6 +172,10 @@ export const changeAdminPassword = async ({ adminId, current_password, new_passw
     throw new Error('Admin not found.');
   }
 
+  if (!admin.password_hash) {
+    throw new Error('This account uses passwordless login. Set a password first in your profile settings.');
+  }
+
   const isPasswordValid = await bcrypt.compare(current_password, admin.password_hash);
   if (!isPasswordValid) {
     throw new Error('Current password is incorrect.');
@@ -191,6 +199,98 @@ export const changeAdminProfile = async ({ adminId, first_name, last_name }) => 
 
   const safeAdmin = await Admin.findByPk(admin.id, { attributes: publicAdminFields });
   return { message: 'Profile updated successfully.', admin: safeAdmin };
+};
+
+/**
+ * Super admin: reset a stable owner's password.
+ */
+export const resetStableOwnerPassword = async (adminId, { password } = {}) => {
+  const admin = await Admin.findByPk(adminId);
+  if (!admin) throw new Error('Admin account not found.');
+
+  const temporaryPassword = password || crypto.randomBytes(12).toString('hex');
+  admin.password_hash = await bcrypt.hash(temporaryPassword, 10);
+  admin.auth_method = 'email_password';
+  await admin.save();
+
+  return {
+    message: 'Password reset successfully.',
+    temporary_password: temporaryPassword,
+  };
+};
+
+/**
+ * Super admin: update a stable owner's email and profile.
+ */
+export const updateStableOwnerProfile = async (adminId, { email, first_name, last_name, mobile_number }) => {
+  const admin = await Admin.findByPk(adminId);
+  if (!admin) throw new Error('Admin account not found.');
+
+  if (email && email !== admin.email) {
+    const existing = await Admin.findOne({ where: { email, id: { [Op.ne]: adminId } } });
+    if (existing) throw new Error('This email is already in use by another admin.');
+    admin.email = email;
+  }
+  if (first_name !== undefined) admin.first_name = first_name;
+  if (last_name !== undefined) admin.last_name = last_name;
+  if (mobile_number !== undefined) admin.mobile_number = mobile_number;
+  await admin.save();
+
+  const safeAdmin = await Admin.findByPk(admin.id, { attributes: [...publicAdminFields, 'mobile_number'] });
+  return { message: 'Profile updated.', admin: safeAdmin };
+};
+
+/**
+ * Super admin: delete a stable owner account.
+ */
+export const deleteStableOwner = async (adminId) => {
+  const admin = await Admin.findByPk(adminId);
+  if (!admin) throw new Error('Admin account not found.');
+  if (admin.role === 'super_admin') throw new Error('Cannot delete a super admin.');
+
+  // Unlink stables (set admin_id to null, keep stable data)
+  await Stable.update({ admin_id: null }, { where: { admin_id: adminId } });
+
+  await admin.destroy();
+  return { message: 'Stable owner account deleted.' };
+};
+
+/**
+ * Super admin: list all admin accounts (for management).
+ */
+export const listAdminAccounts = async ({ role, page, limit } = {}) => {
+  const pagination = normalizePagination({ page, limit });
+  const where = {};
+  if (role) where.role = role;
+
+  const { count, rows } = await Admin.findAndCountAll({
+    where,
+    attributes: [...publicAdminFields, 'mobile_number', 'is_email_verified', 'auth_method'],
+    order: [['created_at', 'DESC']],
+    limit: pagination.limit,
+    offset: pagination.offset,
+  });
+
+  // Attach stable info for each stable_owner
+  const adminsWithStables = await Promise.all(
+    rows.map(async (admin) => {
+      const data = admin.toJSON();
+      if (data.role === 'stable_owner') {
+        const stable = await Stable.findOne({ where: { admin_id: admin.id }, attributes: ['id', 'name'] });
+        data.stable = stable ? { id: stable.id, name: stable.name } : null;
+      }
+      return data;
+    })
+  );
+
+  return {
+    data: adminsWithStables,
+    pagination: {
+      totalRecords: count,
+      currentPage: pagination.page,
+      totalPages: Math.ceil(count / pagination.limit),
+    },
+  };
 };
 
 const toNumber = (value) => Number(value || 0);

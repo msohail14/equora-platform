@@ -414,8 +414,21 @@ export const createBooking = async ({
   bookingDate, startTime, endTime, lessonType, price, notes,
   bookingType = 'lesson', durationMinutes, horseAssignment,
 }) => {
-  if (!riderId || !stableId || !bookingDate || !startTime || !endTime) {
-    throw new Error('riderId, stableId, bookingDate, startTime, and endTime are required.');
+  if (!riderId || !bookingDate || !startTime || !endTime) {
+    throw new Error('riderId, bookingDate, startTime, and endTime are required.');
+  }
+
+  // Coach-first flow: auto-resolve stable from coach if not provided
+  if (!stableId && coachId) {
+    stableId = await resolveStableForCoach(coachId);
+  }
+  if (!stableId) {
+    throw new Error('stableId is required (or provide coachId to auto-resolve).');
+  }
+
+  // Auto-assign horse if requested
+  if (horseAssignment === 'auto' && !horseId) {
+    horseId = await autoAssignHorse(stableId, bookingDate, startTime, endTime);
   }
 
   const isArenaOnly = bookingType === 'arena_only';
@@ -1009,4 +1022,161 @@ export const sendPaymentReminder = async ({ bookingId, coachId }) => {
   }
 
   return { message: 'Payment reminder sent.' };
+};
+
+// ──────────────────────────────────────────────────
+// Coach-first booking helpers
+// ──────────────────────────────────────────────────
+
+/**
+ * Resolve the stable for a coach based on their primary link or any active link.
+ */
+export const resolveStableForCoach = async (coachId) => {
+  // Try primary stable first
+  const primary = await CoachStable.findOne({
+    where: { coach_id: coachId, is_active: true, is_primary: true, status: 'approved' },
+    attributes: ['stable_id'],
+  });
+  if (primary) return primary.stable_id;
+
+  // Fall back to any active approved link
+  const anyLink = await CoachStable.findOne({
+    where: { coach_id: coachId, is_active: true, status: 'approved' },
+    attributes: ['stable_id'],
+    order: [['joined_at', 'ASC']],
+  });
+  if (anyLink) return anyLink.stable_id;
+
+  return null;
+};
+
+/**
+ * Auto-assign an available horse at the stable for the given time slot.
+ */
+export const autoAssignHorse = async (stableId, bookingDate, startTime, endTime) => {
+  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+
+  // Get all active horses at this stable
+  const horses = await Horse.findAll({
+    where: { stable_id: stableId, status: 'available' },
+    attributes: ['id', 'name', 'max_daily_sessions'],
+  });
+
+  for (const horse of horses) {
+    // Check daily session limit
+    const availability = await HorseAvailability.findOne({
+      where: { horse_id: horse.id, date: bookingDate },
+    });
+    if (availability && (!availability.is_available || availability.sessions_booked >= availability.max_sessions_per_day)) {
+      continue;
+    }
+
+    // Check time slot conflict
+    const conflict = await LessonBooking.findOne({
+      where: {
+        horse_id: horse.id,
+        booking_date: bookingDate,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [
+          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+        ],
+      },
+    });
+    if (!conflict) {
+      return horse.id; // Found an available horse
+    }
+  }
+
+  return null; // No horse available — will be assigned by stable later
+};
+
+/**
+ * Get returning rider defaults — last coach, horse, and next available slot.
+ */
+export const getReturningRiderDefaults = async (riderId) => {
+  const lastBooking = await LessonBooking.findOne({
+    where: {
+      rider_id: riderId,
+      coach_id: { [Op.not]: null },
+      status: { [Op.in]: ['confirmed', 'completed', 'in_progress'] },
+    },
+    order: [['booking_date', 'DESC'], ['start_time', 'DESC']],
+    include: [
+      { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name', 'profile_picture_url', 'default_duration', 'allowed_durations'] },
+      { model: Horse, as: 'horse', attributes: ['id', 'name', 'profile_picture_url'] },
+      { model: Stable, as: 'stable', attributes: ['id', 'name'] },
+    ],
+  });
+
+  if (!lastBooking) {
+    return { hasDefaults: false };
+  }
+
+  return {
+    hasDefaults: true,
+    coach: lastBooking.coach ? {
+      id: lastBooking.coach.id,
+      name: `${lastBooking.coach.first_name || ''} ${lastBooking.coach.last_name || ''}`.trim(),
+      profile_picture_url: lastBooking.coach.profile_picture_url,
+      default_duration: lastBooking.coach.default_duration,
+      allowed_durations: lastBooking.coach.allowed_durations,
+    } : null,
+    horse: lastBooking.horse ? {
+      id: lastBooking.horse.id,
+      name: lastBooking.horse.name,
+      profile_picture_url: lastBooking.horse.profile_picture_url,
+    } : null,
+    stable: lastBooking.stable ? {
+      id: lastBooking.stable.id,
+      name: lastBooking.stable.name,
+    } : null,
+    lastDuration: lastBooking.duration_minutes,
+  };
+};
+
+/**
+ * Coach can modify a pending booking (change horse, stable, or time).
+ */
+export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId: newStableId, startTime: newStartTime, endTime: newEndTime, notes: newNotes }) => {
+  const booking = await LessonBooking.findByPk(bookingId, {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can modify this booking.');
+
+  const modifiableStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment'];
+  if (!modifiableStatuses.includes(booking.status)) {
+    throw new Error('This booking can no longer be modified.');
+  }
+
+  if (horseId !== undefined) {
+    if (horseId) {
+      const horse = await Horse.findByPk(horseId);
+      if (!horse) throw new Error('Horse not found.');
+    }
+    booking.horse_id = horseId || null;
+  }
+
+  if (newStableId !== undefined) {
+    const stable = await Stable.findByPk(newStableId);
+    if (!stable) throw new Error('Stable not found.');
+    booking.stable_id = newStableId;
+  }
+
+  if (newStartTime !== undefined) booking.start_time = newStartTime;
+  if (newEndTime !== undefined) booking.end_time = newEndTime;
+  if (newNotes !== undefined) booking.notes = newNotes;
+
+  await booking.save();
+
+  // Notify rider about the modification
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'general',
+    title: 'Booking Modified',
+    body: 'Your coach has modified your upcoming booking. Please review the changes.',
+    data: { booking_id: booking.id },
+  });
+
+  return booking;
 };

@@ -18,13 +18,17 @@ import {
   getAdminPayoutsController,
   getAdminSettingsController,
   inviteStableOwnerController,
+  listAdminAccountsController,
   loginAdminController,
   markManualPaymentController,
   processAdminPayoutController,
   refundPaymentController,
   resetAdminPasswordController,
   signupAdminController,
+  resetStableOwnerPasswordController,
   updateAdminSettingsController,
+  updateStableOwnerProfileController,
+  deleteStableOwnerController,
   verifyCoachController,
 } from '../controllers/admin.controller.js';
 import {
@@ -57,6 +61,12 @@ router.get('/bookings', adminAuthMiddleware, getAdminBookingsController);
 router.patch('/payments/:id/manual', adminAuthMiddleware, markManualPaymentController);
 router.patch('/payments/:id/refund', adminAuthMiddleware, refundPaymentController);
 router.post('/stables/:id/invite-owner', superAdminOnly, inviteStableOwnerController);
+
+// Stable owner management (super admin only)
+router.get('/accounts', superAdminOnly, listAdminAccountsController);
+router.post('/accounts/:id/reset-password', superAdminOnly, resetStableOwnerPasswordController);
+router.put('/accounts/:id', superAdminOnly, updateStableOwnerProfileController);
+router.delete('/accounts/:id', superAdminOnly, deleteStableOwnerController);
 router.get('/stables/:id/coaches', adminAuthMiddleware, getStableCoachesAdminController);
 router.post('/stables/:id/coaches', adminAuthMiddleware, linkStableCoachAdminController);
 router.delete('/stables/:id/coaches/:coachId', adminAuthMiddleware, unlinkStableCoachAdminController);

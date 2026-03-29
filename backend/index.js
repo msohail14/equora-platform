@@ -35,6 +35,11 @@ import stableDashboardRoutes from './routes/stable-dashboard.routes.js';
 import coachDashboardRoutes from './routes/coach-dashboard.routes.js';
 import placesRoutes from './routes/places.routes.js';
 import obstacleTypeRoutes from './routes/obstacle-type.routes.js';
+import firebaseAuthRoutes from './routes/firebase-auth.routes.js';
+import magicLinkRoutes from './routes/magic-link.routes.js';
+import invitationRoutes from './routes/invitation.routes.js';
+import onboardingRoutes from './routes/onboarding.routes.js';
+import initializeFirebase from './config/firebase.js';
 
 dotenv.config();
 
@@ -58,10 +63,14 @@ const FRONTEND_URL = IS_PRODUCTION
 const allowedOrigins = [
   FRONTEND_URL,
   process.env.FRONTEND_URL_PROD,
+  process.env.LANDING_URL,
   'https://admin.equorariding.com',
+  'https://equorariding.com',
+  'https://www.equorariding.com',
   'https://equestrian-platform.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:5175',
 ].filter(Boolean);
 const uniqueOrigins = [...new Set(allowedOrigins)];
 
@@ -106,6 +115,10 @@ app.use('/api/v1/stable-dashboard', stableDashboardRoutes);
 app.use('/api/v1/coach-dashboard', coachDashboardRoutes);
 app.use('/api/v1/places', placesRoutes);
 app.use('/api/v1/obstacle-types', obstacleTypeRoutes);
+app.use('/api/v1/auth/firebase', firebaseAuthRoutes);
+app.use('/api/v1/auth/magic-link', magicLinkRoutes);
+app.use('/api/v1/invitations', invitationRoutes);
+app.use('/api/v1/onboarding', onboardingRoutes);
 
 app.get('/', (req, res) => {
   res.send('Equestrian Backend API is running.');
@@ -126,6 +139,15 @@ const startServer = async () => {
     console.log('Database tables synced.');
     await applySchemaUpdates();
     console.log('Schema updates applied successfully.');
+
+    // Initialize Firebase Admin SDK (non-blocking — logs warning if no credentials)
+    try {
+      initializeFirebase();
+      console.log('Firebase Admin SDK initialized.');
+    } catch (e) {
+      console.warn('Firebase Admin SDK not initialized:', e.message);
+      console.warn('Firebase auth endpoints will not work until credentials are configured.');
+    }
 
     if (USE_HTTPS) {
       const options = {

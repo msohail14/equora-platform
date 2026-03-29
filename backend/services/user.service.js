@@ -149,6 +149,7 @@ export const signupUser = async ({
   const user = await User.create({
     email,
     password_hash: hashedPassword,
+    auth_method: 'email_password',
     role,
     first_name: first_name || null,
     last_name: last_name || null,
@@ -184,6 +185,10 @@ export const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ where: { email } });
   if (!user) {
     throw new Error('Invalid email or password.');
+  }
+
+  if (!user.password_hash) {
+    throw new Error('This account uses passwordless login. Please sign in with your phone or magic link.');
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);

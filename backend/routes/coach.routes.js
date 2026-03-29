@@ -23,6 +23,7 @@ import {
   createCoachWeeklyAvailabilityByAdminController,
   createCoachController,
   deleteCoachController,
+  getCoachDeletionPreviewController,
   deleteCoachWeeklyAvailabilityByAdminController,
   getCoachCoursesController,
   getCoachDetailsController,
@@ -71,6 +72,7 @@ router.get('/:id/weekly-availability', adminAuthMiddleware, getCoachWeeklyAvaila
 router.get('/:id', adminAuthMiddleware, getCoachByIdController);
 router.put('/:id', adminAuthMiddleware, updateCoachController);
 router.post('/:id/reset-password', adminAuthMiddleware, resetCoachPasswordController);
+router.get('/:id/deletion-preview', adminAuthMiddleware, getCoachDeletionPreviewController);
 router.delete('/:id', adminAuthMiddleware, deleteCoachController);
 router.post('/:id/weekly-availability', adminAuthMiddleware, createCoachWeeklyAvailabilityByAdminController);
 router.put(

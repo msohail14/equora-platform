@@ -5,6 +5,7 @@ import {
   deleteCoachWeeklyAvailabilityByAdmin,
   getCoachCourses,
   getCoachDetails,
+  getCoachDeletionPreview,
   getCoachSessions,
   getCoachSummary,
   getCoachWeeklyAvailabilityByAdmin,
@@ -160,14 +161,20 @@ export const getCoachWeeklyAvailabilityByAdminController = async (req, res) => {
   }
 };
 
+export const getCoachDeletionPreviewController = async (req, res) => {
+  try {
+    const data = await getCoachDeletionPreview(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 export const deleteCoachController = async (req, res) => {
   try {
     const data = await deleteCoach(req.params.id);
     return res.status(200).json(data);
   } catch (error) {
-    if (error.message.includes('Cannot delete')) {
-      return res.status(409).json({ message: error.message });
-    }
     return handleError(res, error);
   }
 };

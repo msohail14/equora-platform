@@ -21,6 +21,8 @@ import {
   sendPaymentReminderController,
   getMyBookingsController,
   cancelBookingController,
+  getReturningRiderDefaultsController,
+  coachModifyBookingController,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
@@ -44,7 +46,9 @@ router.patch('/:id/start', authMiddleware, startBookingController);
 router.patch('/:id/complete', authMiddleware, completeBookingController);
 router.post('/:id/payment-reminder', coachAuthMiddleware, sendPaymentReminderController);
 
+router.get('/returning-rider-defaults', authMiddleware, getReturningRiderDefaultsController);
 router.get('/my', authMiddleware, getMyBookingsController);
+router.patch('/:id/modify', coachAuthMiddleware, coachModifyBookingController);
 router.patch('/:id/cancel', authMiddleware, cancelBookingController);
 
 export default router;

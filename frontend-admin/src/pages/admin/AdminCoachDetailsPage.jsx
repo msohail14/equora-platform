@@ -18,9 +18,11 @@ import {
 import {
   cancelCourseSessionApi,
   createCoachReviewApi,
+  deleteCoachApi,
   deleteCoachReviewApi,
   getCoachByIdApi,
   getCoachCoursesApi,
+  getCoachDeletionPreviewApi,
   getCoachReviewsApi,
   getCoachSessionsApi,
   getCoachSummaryApi,
@@ -66,6 +68,8 @@ const AdminCoachDetailsPage = () => {
   const [resetPasswordResult, setResetPasswordResult] = useState(null);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [customPassword, setCustomPassword] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, preview: null });
+  const [deleting, setDeleting] = useState(false);
 
   const onResetPassword = useCallback(async () => {
     if (!coachDetails?.coach) return;
@@ -323,6 +327,21 @@ const AdminCoachDetailsPage = () => {
           <AppButton type="button" onClick={openCreateReview}>
             <Plus size={14} className="mr-1" />
             Add Review
+          </AppButton>
+          <AppButton
+            type="button"
+            variant="danger"
+            onClick={async () => {
+              try {
+                const preview = await getCoachDeletionPreviewApi(coachId);
+                setDeleteModal({ isOpen: true, preview });
+              } catch (err) {
+                toast.error('Failed to load deletion info.');
+              }
+            }}
+          >
+            <Trash2 size={14} className="mr-1" />
+            Delete Coach
           </AppButton>
           </div>
         )}
@@ -737,6 +756,82 @@ const AdminCoachDetailsPage = () => {
           <AppButton type="button" onClick={() => setResetPasswordResult(null)}>
             Done
           </AppButton>
+        </div>
+      </Modal>
+
+      {/* Delete Coach Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        title="Delete Coach"
+        onClose={() => setDeleteModal({ isOpen: false, preview: null })}
+      >
+        <div className="grid gap-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            You are about to permanently delete{' '}
+            <strong className="text-gray-900 dark:text-white">
+              {coachDetails?.coach?.first_name} {coachDetails?.coach?.last_name}
+            </strong>
+          </p>
+
+          {deleteModal.preview && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 dark:bg-red-900/20 dark:border-red-800/50">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">
+                This action will also:
+              </p>
+              <ul className="space-y-1 text-sm text-red-600 dark:text-red-300">
+                {deleteModal.preview.activeBookings > 0 && (
+                  <li>Cancel <strong>{deleteModal.preview.activeBookings}</strong> active booking(s)</li>
+                )}
+                {deleteModal.preview.totalBookings > 0 && (
+                  <li>Remove coach from <strong>{deleteModal.preview.totalBookings}</strong> booking record(s)</li>
+                )}
+                {deleteModal.preview.courses > 0 && (
+                  <li>Archive <strong>{deleteModal.preview.courses}</strong> course(s)</li>
+                )}
+                {deleteModal.preview.reviews > 0 && (
+                  <li>Delete <strong>{deleteModal.preview.reviews}</strong> review(s)</li>
+                )}
+                {deleteModal.preview.packages > 0 && (
+                  <li>Delete <strong>{deleteModal.preview.packages}</strong> lesson package(s)</li>
+                )}
+                <li>Delete all availability schedules</li>
+              </ul>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            This action cannot be undone. Riders with active bookings will be notified.
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <AppButton
+              type="button"
+              variant="danger"
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  const result = await deleteCoachApi(coachId);
+                  toast.success(result?.message || 'Coach deleted.');
+                  setDeleteModal({ isOpen: false, preview: null });
+                  navigate('/admin/coaches');
+                } catch (err) {
+                  toast.error(err?.message || 'Failed to delete coach.');
+                }
+                setDeleting(false);
+              }}
+              disabled={deleting}
+            >
+              <Trash2 size={13} className="mr-1" />
+              {deleting ? 'Deleting...' : 'Yes, Delete Coach'}
+            </AppButton>
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => setDeleteModal({ isOpen: false, preview: null })}
+            >
+              Cancel
+            </AppButton>
+          </div>
         </div>
       </Modal>
     </div>

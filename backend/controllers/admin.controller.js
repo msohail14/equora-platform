@@ -2,6 +2,7 @@ import {
   approveStable,
   changeAdminPassword,
   changeAdminProfile,
+  deleteStableOwner,
   forgotAdminPassword,
   getAdminAnalytics,
   getAdminBookings,
@@ -10,11 +11,14 @@ import {
   getAdminPayouts,
   getAdminSettings,
   inviteStableOwner,
+  listAdminAccounts,
   loginAdmin,
   processAdminPayout,
   resetAdminPassword,
+  resetStableOwnerPassword,
   signupAdmin,
   updateAdminSettings,
+  updateStableOwnerProfile,
   verifyCoach,
 } from '../services/admin.service.js';
 import { markPaymentAsManual, refundPayment } from '../services/payment.service.js';
@@ -205,6 +209,42 @@ export const markManualPaymentController = async (req, res) => {
 export const refundPaymentController = async (req, res) => {
   try {
     const data = await refundPayment(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const resetStableOwnerPasswordController = async (req, res) => {
+  try {
+    const data = await resetStableOwnerPassword(req.params.id, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const updateStableOwnerProfileController = async (req, res) => {
+  try {
+    const data = await updateStableOwnerProfile(req.params.id, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const deleteStableOwnerController = async (req, res) => {
+  try {
+    const data = await deleteStableOwner(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const listAdminAccountsController = async (req, res) => {
+  try {
+    const data = await listAdminAccounts(req.query);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

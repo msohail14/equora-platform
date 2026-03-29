@@ -17,6 +17,8 @@ import {
   getMyBookings,
   cancelBooking,
   adminConfirmBooking,
+  getReturningRiderDefaults,
+  coachModifyBooking,
 } from '../services/booking.service.js';
 
 const handleError = (res, error) => {
@@ -280,6 +282,24 @@ export const sendPaymentReminderController = async (req, res) => {
       bookingId: req.params.id,
       coachId: req.user.id,
     });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getReturningRiderDefaultsController = async (req, res) => {
+  try {
+    const data = await getReturningRiderDefaults(req.user.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const coachModifyBookingController = async (req, res) => {
+  try {
+    const data = await coachModifyBooking(req.params.id, req.user.id, req.body);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
