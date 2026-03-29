@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://equorariding-backend-production.up.railway.app/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://equestrian-platform-production.up.railway.app/api/v1';
 
 const api = axios.create({ baseURL: API_BASE });
 

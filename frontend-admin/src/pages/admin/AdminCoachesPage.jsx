@@ -383,7 +383,7 @@ const AdminCoachesPage = () => {
                               try {
                                 const preview = await getCoachDeletionPreviewApi(coach.id);
                                 setDeleteModal({ isOpen: true, coach, preview });
-                              } catch (err) {
+                              } catch {
                                 toast.error('Failed to load deletion preview.');
                               }
                             }}
