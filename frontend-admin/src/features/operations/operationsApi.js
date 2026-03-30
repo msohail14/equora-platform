@@ -329,6 +329,12 @@ export const getReturningRiderDefaultsApi = () =>
 export const getCoachDeletionPreviewApi = (coachId) =>
   axiosInstance.get(`/coaches/${coachId}/deletion-preview`);
 
+// Horse workload
+export const getHorseWorkloadApi = (horseId, params = {}) => {
+  const query = buildListQuery(params);
+  return axiosInstance.get(`/horses/${horseId}/workload?${query}`);
+};
+
 // Admin account management (super admin)
 export const listAdminAccountsApi = (params = {}) => {
   const query = buildListQuery(params);
