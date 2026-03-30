@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { onboardStableApi, stableSetupWizardApi, sendInvitationApi } from '../../features/operations/operationsApi';
 import AppButton from '../../components/ui/AppButton';
 import PhoneInput from '../../components/ui/PhoneInput';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 
 const STEPS = ['Stable Info', 'Add Coaches', 'Add Horses', 'Done'];
 
@@ -111,6 +112,14 @@ const AdminOnboardingPage = () => {
       {/* Step 0: Stable Info */}
       {step === 0 && (
         <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+          <PlacesAutocomplete onSelect={(place) => {
+            if (place.name) setStableName(place.name);
+            if (place.city) setCity(place.city);
+            if (place.country) setCountry(place.country);
+            if (place.contact_phone) setContactPhone(place.contact_phone);
+            if (place.formatted_address) setContactEmail(prev => prev || '');
+          }} />
+          <p className="text-xs text-gray-400 dark:text-gray-500">Search above to auto-fill, or enter details manually.</p>
           <Field label="Stable Name *" value={stableName} onChange={setStableName} placeholder="e.g. Desert Riders Stable" />
           <div className="grid grid-cols-2 gap-4">
             <Field label="City" value={city} onChange={setCity} placeholder="Riyadh" />
