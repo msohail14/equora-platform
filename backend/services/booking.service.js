@@ -8,6 +8,35 @@ import {
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
 import CoachAvailabilityException from '../models/coachAvailabilityException.model.js';
 
+// Shared includes for booking queries — ensures rider/coach/stable/horse/arena are always loaded
+const BOOKING_DETAIL_INCLUDES = [
+  {
+    model: User,
+    as: 'rider',
+    attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'phone', 'profile_picture_url'],
+  },
+  {
+    model: User,
+    as: 'coach',
+    attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'profile_picture_url'],
+  },
+  {
+    model: Stable,
+    as: 'stable',
+    attributes: ['id', 'name', 'city', 'country', 'admin_id'],
+  },
+  {
+    model: Horse,
+    as: 'horse',
+    attributes: ['id', 'name', 'breed', 'profile_picture_url'],
+  },
+  {
+    model: Arena,
+    as: 'arena',
+    attributes: ['id', 'name'],
+  },
+];
+
 const normalizePagination = ({ page, limit }) => {
   const parsedPage = Number(page);
   const parsedLimit = Number(limit);
@@ -644,12 +673,13 @@ export const approveHorseForBooking = async ({ bookingId, userId }) => {
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  // Reload with full associations so the response always has rider/coach/stable data
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const confirmHorseAvailability = async ({ bookingId, adminId }) => {
   const booking = await LessonBooking.findByPk(bookingId, {
-    include: [{ model: Stable, as: 'stable' }],
+    include: BOOKING_DETAIL_INCLUDES,
   });
 
   if (!booking) {
@@ -714,7 +744,7 @@ export const payForBooking = async ({ bookingId, riderId, paymentId }) => {
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const getMyBookings = async ({ userId, role, status, page, limit }) => {
@@ -734,33 +764,7 @@ export const getMyBookings = async ({ userId, role, status, page, limit }) => {
 
   const { rows, count } = await LessonBooking.findAndCountAll({
     where,
-    include: [
-      {
-        model: User,
-        as: 'rider',
-        attributes: ['id', 'first_name', 'last_name', 'email', 'profile_picture_url'],
-      },
-      {
-        model: User,
-        as: 'coach',
-        attributes: ['id', 'first_name', 'last_name', 'email', 'profile_picture_url'],
-      },
-      {
-        model: Stable,
-        as: 'stable',
-        attributes: ['id', 'name', 'city', 'country'],
-      },
-      {
-        model: Horse,
-        as: 'horse',
-        attributes: ['id', 'name', 'breed', 'profile_picture_url'],
-      },
-      {
-        model: Arena,
-        as: 'arena',
-        attributes: ['id', 'name'],
-      },
-    ],
+    include: BOOKING_DETAIL_INCLUDES,
     order: [['booking_date', 'DESC'], ['start_time', 'ASC']],
     offset,
     limit: pagination.limit,
@@ -821,7 +825,83 @@ export const cancelBooking = async ({ bookingId, userId }) => {
     });
   }
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
+};
+
+/**
+ * Get booked/available time slots for a specific arena on a given date.
+ * Called by mobile: GET /bookings/arenas/:arenaId/slots?date=YYYY-MM-DD
+ */
+export const getArenaSlots = async ({ arenaId, date }) => {
+  if (!arenaId || !date) throw new Error('arenaId and date are required.');
+
+  const arena = await Arena.findByPk(arenaId, {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!arena) throw new Error('Arena not found.');
+
+  const stable = arena.stable;
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dateObj = new Date(date);
+  const dayName = dayNames[dateObj.getDay()];
+
+  let openTime = '06:00';
+  let closeTime = '22:00';
+  let isClosed = false;
+
+  if (stable?.operating_hours && stable.operating_hours[dayName]) {
+    const dayHours = stable.operating_hours[dayName];
+    if (dayHours.is_closed) isClosed = true;
+    if (dayHours.open) openTime = dayHours.open;
+    if (dayHours.close) closeTime = dayHours.close;
+  }
+
+  if (isClosed) return { data: [] };
+
+  // Find all bookings for this arena on this date
+  const bookings = await LessonBooking.findAll({
+    where: {
+      arena_id: arenaId,
+      booking_date: date,
+      status: { [Op.in]: ['pending_review', 'confirmed', 'in_progress', 'pending_horse_approval', 'pending_payment'] },
+    },
+    attributes: ['id', 'start_time', 'end_time', 'status', 'lesson_type'],
+    include: [
+      { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name'] },
+      { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name'] },
+    ],
+    order: [['start_time', 'ASC']],
+  });
+
+  // Generate 30-minute slots across operating hours
+  const [openH, openM] = openTime.split(':').map(Number);
+  const [closeH, closeM] = closeTime.split(':').map(Number);
+  const openMins = openH * 60 + openM;
+  const closeMins = closeH * 60 + closeM;
+
+  const slots = [];
+  for (let m = openMins; m + 30 <= closeMins; m += 30) {
+    const startStr = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00`;
+    const endMin = m + 30;
+    const endStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}:00`;
+
+    const overlapping = bookings.find(b => startStr < b.end_time && endStr > b.start_time);
+
+    slots.push({
+      start_time: startStr,
+      end_time: endStr,
+      available: !overlapping,
+      booking: overlapping ? {
+        id: overlapping.id,
+        status: overlapping.status,
+        lesson_type: overlapping.lesson_type,
+        rider: overlapping.rider,
+        coach: overlapping.coach,
+      } : null,
+    });
+  }
+
+  return { data: slots };
 };
 
 export const getAvailableSlots = async ({ stableId, date, duration = 60 }) => {
@@ -900,7 +980,45 @@ export const approveBooking = async ({ bookingId, userId, isAdmin = false }) => 
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
+};
+
+// Allow coach to confirm a booking directly (bypasses payment when stable allows it)
+export const coachConfirmBooking = async ({ bookingId, coachId }) => {
+  const booking = await LessonBooking.findByPk(parseInt(bookingId, 10), {
+    include: [{ model: Stable, as: 'stable' }],
+  });
+  if (!booking) throw new Error('Booking not found.');
+  if (String(booking.coach_id) !== String(coachId)) {
+    throw new Error('Only the assigned coach can confirm this booking.');
+  }
+  if (!['pending_payment', 'pending_review'].includes(booking.status)) {
+    throw new Error('Booking is not in a confirmable state.');
+  }
+
+  booking.status = 'confirmed';
+  await booking.save();
+
+  // Increment horse availability if assigned
+  if (booking.horse_id) {
+    const availability = await HorseAvailability.findOne({
+      where: { horse_id: booking.horse_id, date: booking.booking_date },
+    });
+    if (availability) {
+      availability.sessions_booked += 1;
+      await availability.save();
+    }
+  }
+
+  await Notification.create({
+    user_id: booking.rider_id,
+    type: 'booking_approved',
+    title: 'Booking Confirmed',
+    body: `Your booking on ${booking.booking_date} has been confirmed by your coach.`,
+    data: { booking_id: booking.id },
+  });
+
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 // Allow admin to manually confirm a booking (bypasses payment requirement during Coming Soon phase)
@@ -924,7 +1042,7 @@ export const adminConfirmBooking = async ({ bookingId, adminId }) => {
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const declineBooking = async ({ bookingId, userId, isAdmin = false, reason }) => {
@@ -950,7 +1068,7 @@ export const declineBooking = async ({ bookingId, userId, isAdmin = false, reaso
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const startBooking = async ({ bookingId, userId }) => {
@@ -961,7 +1079,7 @@ export const startBooking = async ({ bookingId, userId }) => {
 
   booking.status = 'in_progress';
   await booking.save();
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const completeBooking = async ({ bookingId, userId }) => {
@@ -983,7 +1101,7 @@ export const completeBooking = async ({ bookingId, userId }) => {
     data: { booking_id: booking.id },
   });
 
-  return booking;
+  return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };
 
 export const sendPaymentReminder = async ({ bookingId, coachId }) => {
@@ -996,7 +1114,9 @@ export const sendPaymentReminder = async ({ bookingId, coachId }) => {
   });
   if (!booking) throw new Error('Booking not found.');
   if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can send reminders.');
-  if (booking.status !== 'completed') throw new Error('Can only send reminders for completed bookings.');
+  if (!['pending_payment', 'completed'].includes(booking.status)) {
+    throw new Error('Can only send payment reminders for pending payment or completed bookings.');
+  }
 
   const coach = booking.coach;
   const coachType = coach?.coach_type || 'freelancer';

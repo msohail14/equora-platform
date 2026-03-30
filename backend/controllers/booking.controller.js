@@ -5,6 +5,7 @@ import {
   getCoachSlots,
   getStableHorses,
   getAvailableSlots,
+  getArenaSlots,
   createBooking,
   approveHorseForBooking,
   confirmHorseAvailability,
@@ -17,6 +18,7 @@ import {
   getMyBookings,
   cancelBooking,
   adminConfirmBooking,
+  coachConfirmBooking,
   getReturningRiderDefaults,
   coachModifyBooking,
   createSeriesBooking,
@@ -200,6 +202,18 @@ export const cancelBookingController = async (req, res) => {
   }
 };
 
+export const getArenaSlotsController = async (req, res) => {
+  try {
+    const data = await getArenaSlots({
+      arenaId: req.params.arenaId,
+      date: req.query.date,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 export const getAvailableSlotsController = async (req, res) => {
   try {
     const data = await getAvailableSlots({
@@ -232,6 +246,18 @@ export const adminConfirmBookingController = async (req, res) => {
     const data = await adminConfirmBooking({
       bookingId: req.params.id,
       adminId: req.user.id,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const coachConfirmBookingController = async (req, res) => {
+  try {
+    const data = await coachConfirmBooking({
+      bookingId: req.params.id,
+      coachId: req.user.id,
     });
     return res.status(200).json(data);
   } catch (error) {

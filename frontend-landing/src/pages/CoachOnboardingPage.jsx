@@ -3,6 +3,7 @@ import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase'
 import { verifyFirebaseToken, bypassOtp, sendMagicLink, onboardCoach, setCredentials } from '../lib/api';
 import PhoneInput from '../components/PhoneInput';
 
+const ADMIN_URL = 'https://admin.equorariding.com';
 const APP_STORE_URL = '#';
 const PLAY_STORE_URL = '#';
 const STEPS = ['Account', 'Profile', 'Set Password', 'Get the App'];

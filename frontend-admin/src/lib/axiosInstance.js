@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCookie } from './cookies';
+import { getCookie, deleteCookie } from './cookies';
 
 export const AUTH_COOKIE_NAME = 'hr_admin_token';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
@@ -23,6 +23,11 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (error?.response?.status === 401) {
+      deleteCookie(AUTH_COOKIE_NAME);
+      localStorage.clear();
+      window.location.href = '/admin/login';
+    }
     const message = error?.response?.data?.message || error?.message || 'Request failed.';
     return Promise.reject(new Error(message));
   }

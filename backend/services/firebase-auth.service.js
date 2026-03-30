@@ -5,8 +5,18 @@ import { Admin, Stable, User } from '../models/index.js';
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-const OTP_BYPASS_ENABLED = () => process.env.FIREBASE_OTP_BYPASS === 'true';
-const BYPASS_OTP_CODE = '123456';
+const OTP_BYPASS_ENABLED = () => {
+  const enabled = process.env.FIREBASE_OTP_BYPASS === 'true';
+  if (enabled && process.env.NODE_ENV === 'production') {
+    console.error(
+      '⚠️  SECURITY WARNING: FIREBASE_OTP_BYPASS=true in production! ' +
+      'This allows anyone to authenticate with code 123456. ' +
+      'Set FIREBASE_OTP_BYPASS=false immediately.'
+    );
+  }
+  return enabled;
+};
+const BYPASS_OTP_CODE = process.env.OTP_BYPASS_CODE || '123456';
 
 const issueJwt = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 

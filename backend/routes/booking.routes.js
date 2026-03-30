@@ -9,12 +9,14 @@ import {
   getCoachSlotsController,
   getStableHorsesController,
   getAvailableSlotsController,
+  getArenaSlotsController,
   createBookingController,
   approveHorseController,
   confirmHorseController,
   payForBookingController,
   approveBookingController,
   adminConfirmBookingController,
+  coachConfirmBookingController,
   declineBookingController,
   startBookingController,
   completeBookingController,
@@ -33,6 +35,7 @@ router.get('/stables/:id/arenas', getStableArenasController);
 router.get('/stables/:id/coaches', getStableCoachesController);
 router.get('/stables/:id/horses', getStableHorsesController);
 router.get('/stables/:id/available-slots', getAvailableSlotsController);
+router.get('/arenas/:arenaId/slots', getArenaSlotsController);
 
 router.get('/coaches/:id/slots', authMiddleware, getCoachSlotsController);
 router.post('/', authMiddleware, createBookingController);
@@ -42,6 +45,7 @@ router.post('/:id/pay', authMiddleware, payForBookingController);
 
 router.patch('/:id/approve', authMiddleware, approveBookingController);
 router.patch('/:id/confirm', adminAuthMiddleware, adminConfirmBookingController);
+router.patch('/:id/coach-confirm', coachAuthMiddleware, coachConfirmBookingController);
 router.patch('/:id/decline', authMiddleware, declineBookingController);
 router.patch('/:id/start', authMiddleware, startBookingController);
 router.patch('/:id/complete', authMiddleware, completeBookingController);

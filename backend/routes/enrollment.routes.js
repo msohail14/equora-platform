@@ -1,5 +1,6 @@
 import express from 'express';
 import authMiddleware from '../middleware/auth.middleware.js';
+import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import {
   createEnrollmentController,
   createEnrollmentsByAdminController,
@@ -12,12 +13,15 @@ import {
 
 const router = express.Router();
 
+// Rider self-enrollment and viewing own enrollments
 router.post('/', authMiddleware, createEnrollmentController);
-router.post('/admin/bulk', authMiddleware, createEnrollmentsByAdminController);
-router.get('/all', authMiddleware, getAllEnrollmentsController);
 router.get('/my', authMiddleware, getMyEnrollmentsController);
 router.get('/course/:courseId', authMiddleware, getCourseEnrollmentsController);
 router.delete('/:id', authMiddleware, withdrawEnrollmentController);
-router.put('/:id/status', authMiddleware, updateEnrollmentStatusController);
+
+// Admin-only operations
+router.post('/admin/bulk', adminAuthMiddleware, createEnrollmentsByAdminController);
+router.get('/all', adminAuthMiddleware, getAllEnrollmentsController);
+router.put('/:id/status', adminAuthMiddleware, updateEnrollmentStatusController);
 
 export default router;

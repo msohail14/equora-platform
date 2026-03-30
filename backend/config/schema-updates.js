@@ -1,4 +1,5 @@
 import sequelize from './database.js';
+import ObstacleType from '../models/obstacleType.model.js';
 
 const ensureUserIsActiveColumn = async () => {
   const [results] = await sequelize.query(`
@@ -995,7 +996,54 @@ export const applySchemaUpdates = async () => {
 
   // Phase J: One-time cleanup — fix phone formats + remove test accounts
   await cleanupPhoneFormatsAndTestAccounts();
+
+  // Phase K: Course obstacles layout
+  await ensureCourseObstaclesLayoutColumn();
+
+  // Phase L: Fix created_by_user_id to allow NULL for coach cascade delete
+  await ensureCreatedByUserIdNullable();
+
+  // Phase M: Seed standard obstacle types
+  await seedObstacleTypes();
 };
+
+const ensureCourseObstaclesLayoutColumn = async () => {
+  const tables = ['courses', 'course_templates'];
+  for (const table of tables) {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = '${table}'
+        AND COLUMN_NAME = 'obstacles_layout'
+    `);
+    if (Number(results?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN \`obstacles_layout\` JSON DEFAULT NULL`);
+      console.log(`[schema] Added obstacles_layout to ${table}`);
+    }
+  }
+};
+
+async function ensureCreatedByUserIdNullable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT IS_NULLABLE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'course_sessions'
+        AND COLUMN_NAME = 'created_by_user_id'
+    `);
+    if (results?.length > 0 && results[0].IS_NULLABLE === 'NO') {
+      await sequelize.query(`
+        ALTER TABLE \`course_sessions\`
+        MODIFY COLUMN \`created_by_user_id\` INT DEFAULT NULL
+      `);
+      console.log('[schema] Made course_sessions.created_by_user_id nullable for coach cascade delete.');
+    }
+  } catch (e) {
+    console.warn('[schema] ensureCreatedByUserIdNullable:', e.message);
+  }
+}
 
 async function removeSeededTestData() {
   const seededStableNames = [
@@ -1028,6 +1076,38 @@ async function removeSeededTestData() {
     }
   } catch (e) {
     console.warn('[schema] removeSeededTestData:', e.message);
+  }
+}
+
+async function seedObstacleTypes() {
+  const standardTypes = [
+    // Jump category
+    { name: 'Vertical', icon_key: 'vertical', category: 'jump', default_height_range: '0.9m - 1.6m' },
+    { name: 'Oxer', icon_key: 'oxer', category: 'jump', default_height_range: '0.9m - 1.5m' },
+    { name: 'Triple Bar', icon_key: 'triple_bar', category: 'jump', default_height_range: '0.9m - 1.4m' },
+    { name: 'Wall', icon_key: 'wall', category: 'jump', default_height_range: '0.9m - 1.5m' },
+    { name: 'Gate', icon_key: 'gate', category: 'jump', default_height_range: '0.9m - 1.2m' },
+    { name: 'Liverpool', icon_key: 'liverpool', category: 'jump', default_height_range: '0.9m - 1.4m' },
+    // Terrain category
+    { name: 'Water Jump', icon_key: 'water_jump', category: 'terrain', default_height_range: '0.0m - 0.5m' },
+    { name: 'Bank', icon_key: 'bank', category: 'terrain', default_height_range: '0.5m - 1.2m' },
+    { name: 'Ditch', icon_key: 'ditch', category: 'terrain', default_height_range: '0.0m - 0.5m' },
+    // Combination category
+    { name: 'Bounce', icon_key: 'bounce', category: 'combination', default_height_range: '0.9m - 1.2m' },
+    { name: 'Double Combination', icon_key: 'double_combination', category: 'combination', default_height_range: '0.9m - 1.3m' },
+    { name: 'Triple Combination', icon_key: 'triple_combination', category: 'combination', default_height_range: '0.9m - 1.2m' },
+  ];
+
+  try {
+    for (const type of standardTypes) {
+      await ObstacleType.findOrCreate({
+        where: { name: type.name },
+        defaults: type,
+      });
+    }
+    console.log('[schema] Standard obstacle types seeded.');
+  } catch (e) {
+    console.warn('[schema] seedObstacleTypes:', e.message);
   }
 }
 

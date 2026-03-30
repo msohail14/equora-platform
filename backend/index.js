@@ -125,10 +125,10 @@ app.get('/', (req, res) => {
 });
 
 app.use((error, _req, res, _next) => {
-  if (error) {
-    return res.status(400).json({ message: error.message || 'Request failed.' });
-  }
-  return res.status(500).json({ message: 'Internal server error.' });
+  const statusCode = error.statusCode || error.status || 500;
+  return res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({
+    message: error.message || 'Internal server error.',
+  });
 });
 
 const startServer = async () => {
@@ -147,6 +147,22 @@ const startServer = async () => {
     } catch (e) {
       console.warn('Firebase Admin SDK not initialized:', e.message);
       console.warn('Firebase auth endpoints will not work until credentials are configured.');
+    }
+
+    // Production safety checks
+    if (IS_PRODUCTION) {
+      if (process.env.FIREBASE_OTP_BYPASS === 'true') {
+        console.error('');
+        console.error('╔══════════════════════════════════════════════════════════╗');
+        console.error('║  🚨 CRITICAL: FIREBASE_OTP_BYPASS=true in PRODUCTION!  ║');
+        console.error('║  Anyone can authenticate with a hardcoded OTP code.     ║');
+        console.error('║  Set FIREBASE_OTP_BYPASS=false in your environment.     ║');
+        console.error('╚══════════════════════════════════════════════════════════╝');
+        console.error('');
+      }
+      if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+        console.warn('⚠️  WARNING: JWT_SECRET is missing or too short (< 32 chars). Use a strong secret in production.');
+      }
     }
 
     if (USE_HTTPS) {

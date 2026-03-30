@@ -49,6 +49,10 @@ const CourseTemplate = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    obstacles_layout: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
     is_active: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

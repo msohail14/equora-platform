@@ -102,6 +102,10 @@ const Course = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    obstacles_layout: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM('draft', 'published', 'archived'),
       allowNull: false,

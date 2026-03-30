@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../lib/firebase';
 import { verifyFirebaseToken, bypassOtp, sendMagicLink, onboardStable, stableSetupWizard } from '../lib/api';
 import PhoneInput from '../components/PhoneInput';
+import PlacesAutocomplete from '../components/PlacesAutocomplete';
 
 const ADMIN_URL = 'https://admin.equorariding.com';
 const STEPS = ['Account', 'Stable Info', 'Setup', 'Done'];
@@ -23,6 +24,7 @@ const StableOnboardingPage = () => {
   const [stableName, setStableName] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [description, setDescription] = useState('');
@@ -297,6 +299,17 @@ const StableOnboardingPage = () => {
             <p className="text-gray-600 mb-8">Tell us about your stable. You can always update this later.</p>
             <div className="space-y-4">
               <Field label="Stable Name *" value={stableName} onChange={setStableName} placeholder="e.g. Desert Riders Stable" />
+              <PlacesAutocomplete
+                label="Location"
+                value={locationQuery}
+                onChange={setLocationQuery}
+                placeholder="Search for your city..."
+                onPlaceSelect={({ city: c, country: co }) => {
+                  setCity(c);
+                  setCountry(co);
+                  setLocationQuery(`${c}${co ? ', ' + co : ''}`);
+                }}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <Field label="City" value={city} onChange={setCity} placeholder="Riyadh" />
                 <Field label="Country" value={country} onChange={setCountry} placeholder="Saudi Arabia" />

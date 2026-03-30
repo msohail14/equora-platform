@@ -16,6 +16,7 @@ import HorseAvailability from './horseAvailability.model.js';
 import LessonBooking from './lessonBooking.model.js';
 import LessonPackage from './lessonPackage.model.js';
 import Notification from './notification.model.js';
+import ObstacleType from './obstacleType.model.js';
 import Payment from './payment.model.js';
 import PlatformSetting from './platformSetting.model.js';
 import RiderPackageBalance from './riderPackageBalance.model.js';
@@ -64,10 +65,10 @@ CourseSession.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
 User.hasMany(CourseSession, { foreignKey: 'rider_id', as: 'rider_sessions' });
 CourseSession.belongsTo(User, { foreignKey: 'rider_id', as: 'rider' });
 
-User.hasMany(CourseSession, { foreignKey: 'created_by_user_id', as: 'created_sessions' });
+User.hasMany(CourseSession, { foreignKey: 'created_by_user_id', as: 'created_sessions', onDelete: 'SET NULL' });
 CourseSession.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'created_by_user' });
 
-User.hasMany(CourseSession, { foreignKey: 'cancelled_by_user_id', as: 'cancelled_sessions' });
+User.hasMany(CourseSession, { foreignKey: 'cancelled_by_user_id', as: 'cancelled_sessions', onDelete: 'SET NULL' });
 CourseSession.belongsTo(User, { foreignKey: 'cancelled_by_user_id', as: 'cancelled_by_user' });
 
 Horse.hasMany(CourseSession, { foreignKey: 'horse_id', as: 'sessions' });
@@ -181,7 +182,7 @@ Invitation.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
 export {
   Admin, Arena, CoachPayout, CoachReview, CoachStable, CoachStableSchedule, Course,
   CourseEnrollment, CourseSession, CourseTemplate, Discipline, Horse, HorseAvailability,
-  Invitation, LessonBooking, LessonPackage, MagicLinkToken, Notification, Payment,
+  Invitation, LessonBooking, LessonPackage, MagicLinkToken, Notification, ObstacleType, Payment,
   PlatformSetting, RiderPackageBalance, SessionFeedback, Stable, StableRegistration,
   Subscription, User,
 };
