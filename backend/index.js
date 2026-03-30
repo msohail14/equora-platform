@@ -131,7 +131,37 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-const startServer = async () => {
+// Track readiness so /health can report database status
+let dbReady = false;
+let dbError = null;
+
+app.get('/health', (_req, res) => {
+  if (dbReady) return res.json({ status: 'ok', db: 'connected' });
+  return res.status(503).json({ status: 'starting', db: dbError || 'connecting' });
+});
+
+// Start HTTP server immediately so Railway healthcheck passes while DB syncs
+const startServer = () => {
+  if (USE_HTTPS) {
+    const options = {
+      key: fs.readFileSync(KEY_PATH),
+      cert: fs.readFileSync(CERT_PATH),
+    };
+    https.createServer(options, app).listen(PORT, () => {
+      console.log(`HTTPS server running at https://horse.atlasits.cloud:${PORT}`);
+      console.log(`Allowed frontend origin: ${FRONTEND_URL}`);
+    });
+  } else {
+    app.listen(PORT, HOST, () => {
+      console.log(`HTTP server running at http://localhost:${PORT}`);
+    });
+  }
+
+  // Database setup runs after server is listening
+  initDatabase();
+};
+
+const initDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connected successfully.');
@@ -139,6 +169,7 @@ const startServer = async () => {
     console.log('Database tables synced.');
     await applySchemaUpdates();
     console.log('Schema updates applied successfully.');
+    dbReady = true;
 
     // Initialize Firebase Admin SDK (non-blocking — logs warning if no credentials)
     try {
@@ -165,25 +196,11 @@ const startServer = async () => {
       }
     }
 
-    if (USE_HTTPS) {
-      const options = {
-        key: fs.readFileSync(KEY_PATH),
-        cert: fs.readFileSync(CERT_PATH),
-      };
-
-      https.createServer(options, app).listen(PORT, () => {
-        console.log(`HTTPS server running at https://horse.atlasits.cloud:${PORT}`);
-        console.log(`Allowed frontend origin: ${FRONTEND_URL}`);
-      });
-      return;
-    }
-
-    app.listen(PORT, HOST, () => {
-      console.log(`HTTP server running at http://localhost:${PORT}`);
-    });
+    console.log('Server fully ready.');
   } catch (error) {
-    console.error('Database connection failed:', error.message);
-    process.exit(1);
+    dbError = error.message;
+    console.error('Database setup failed:', error.message);
+    console.error('Server is running but database is unavailable.');
   }
 };
 
