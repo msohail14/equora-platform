@@ -68,9 +68,8 @@ const allowedOrigins = [
   'https://equorariding.com',
   'https://www.equorariding.com',
   'https://equestrian-platform.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
+  // Only allow localhost origins in development
+  ...(IS_PRODUCTION ? [] : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175']),
 ].filter(Boolean);
 const uniqueOrigins = [...new Set(allowedOrigins)];
 

@@ -32,7 +32,7 @@ export const initiatePaymentController = async (req, res) => {
 };
 
 export const webhookController = async (req, res) => {
-  // Optional Tap signature verification
+  // Tap signature verification — REQUIRED in production
   if (process.env.TAP_WEBHOOK_SECRET) {
     const signature = req.headers['x-tap-signature'] || req.headers['x-webhook-signature'];
     if (!signature) {
@@ -46,6 +46,11 @@ export const webhookController = async (req, res) => {
     if (signature !== expected) {
       return res.status(401).json({ message: 'Invalid webhook signature.' });
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    console.error('[SECURITY] TAP_WEBHOOK_SECRET not configured — rejecting webhook in production');
+    return res.status(503).json({ message: 'Payment webhook not configured.' });
+  } else {
+    console.warn('[WARN] TAP_WEBHOOK_SECRET not set — accepting webhook without verification (dev only)');
   }
 
   try {
