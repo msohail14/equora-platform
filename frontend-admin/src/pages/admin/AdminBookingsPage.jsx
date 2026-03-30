@@ -18,6 +18,7 @@ const STATUS_OPTIONS = [
   'pending_review',
   'pending_horse_approval',
   'pending_payment',
+  'waitlisted',
   'confirmed',
   'in_progress',
   'declined',
@@ -35,6 +36,7 @@ const statusBadge = (status) => {
     declined: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
     cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    waitlisted: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
   };
   return map[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
 };
@@ -269,6 +271,16 @@ const AdminBookingsPage = () => {
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(b.status)}`}>
                     {(b.status || '-').replace(/_/g, ' ')}
                   </span>
+                  {b.series_id && (
+                    <span className="ml-1 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      Series
+                    </span>
+                  )}
+                  {b.waitlist_position != null && b.status === 'waitlisted' && (
+                    <span className="ml-1 text-[10px] text-violet-600 dark:text-violet-400">
+                      #{b.waitlist_position}
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{b.lesson_type || b.type || '-'}</td>
                 <td className="px-3 py-2">{renderActions(b)}</td>

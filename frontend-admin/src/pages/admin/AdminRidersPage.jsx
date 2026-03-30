@@ -292,6 +292,19 @@ const AdminRidersPage = () => {
               <option value="prefer_not_to_say">Prefer Not To Say</option>
             </select>
           </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Riding Level</span>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              value={createForm.riding_level || ''}
+              onChange={(e) => setCreateForm((p) => ({ ...p, riding_level: e.target.value }))}
+            >
+              <option value="">Select Level</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </label>
           </div>
           <div>
             <FormInput
