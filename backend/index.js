@@ -165,6 +165,29 @@ const initDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connected successfully.');
+
+    // Pre-sync fixes: resolve schema conflicts that prevent sync({ alter: true })
+    try {
+      // Fix created_by_user_id NOT NULL conflict with SET NULL foreign key
+      await sequelize.query(`
+        ALTER TABLE \`course_sessions\`
+        MODIFY COLUMN \`created_by_user_id\` INT DEFAULT NULL
+      `);
+      console.log('[pre-sync] Fixed created_by_user_id nullable.');
+    } catch (e) {
+      // Column may already be nullable or table may not exist yet — safe to ignore
+    }
+    try {
+      // Fix cancelled_by_user_id NOT NULL conflict with SET NULL foreign key
+      await sequelize.query(`
+        ALTER TABLE \`course_sessions\`
+        MODIFY COLUMN \`cancelled_by_user_id\` INT DEFAULT NULL
+      `);
+      console.log('[pre-sync] Fixed cancelled_by_user_id nullable.');
+    } catch (e) {
+      // Safe to ignore
+    }
+
     await sequelize.sync({ alter: true });
     console.log('Database tables synced.');
     await applySchemaUpdates();
