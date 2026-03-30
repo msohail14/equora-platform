@@ -2,11 +2,11 @@ import { verifyAndLoginFirebase, linkFirebaseToAccount, verifyBypassOtp } from '
 
 export const firebaseVerifyController = async (req, res) => {
   try {
-    const { idToken, role, phone, email, displayName } = req.body;
+    const { idToken, role, phone, email, displayName, mode } = req.body;
     if (!idToken) {
       return res.status(400).json({ error: 'idToken is required.' });
     }
-    const result = await verifyAndLoginFirebase({ idToken, role, phone, email, displayName });
+    const result = await verifyAndLoginFirebase({ idToken, role, phone, email, displayName, mode });
     return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json({ error: error.message });
@@ -30,11 +30,11 @@ export const firebaseLinkController = async (req, res) => {
 
 export const bypassOtpController = async (req, res) => {
   try {
-    const { phone, otp, role } = req.body;
+    const { phone, otp, role, mode } = req.body;
     if (!phone || !otp) {
       return res.status(400).json({ error: 'phone and otp are required.' });
     }
-    const result = await verifyBypassOtp({ phone, otp, role });
+    const result = await verifyBypassOtp({ phone, otp, role, mode });
     return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json({ error: error.message });

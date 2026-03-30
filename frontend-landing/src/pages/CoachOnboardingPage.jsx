@@ -57,7 +57,7 @@ const CoachOnboardingPage = () => {
     try {
       let result;
       if (verificationId === 'bypass') {
-        result = await bypassOtp({ phone, otp, role: 'coach' });
+        result = await bypassOtp({ phone, otp, role: 'coach', mode: 'signup' });
       } else {
         const credential = await verificationId.confirm(otp);
         const idToken = await credential.user.getIdToken();

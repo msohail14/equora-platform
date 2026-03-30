@@ -14,7 +14,7 @@ const issueJwt = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXP
  * Verify a Firebase ID token and find or create the corresponding local user.
  * Returns our own JWT for subsequent API calls.
  */
-export const verifyAndLoginFirebase = async ({ idToken, role, phone, email, displayName }) => {
+export const verifyAndLoginFirebase = async ({ idToken, role, phone, email, displayName, mode = 'login' }) => {
   let firebaseUid;
   let firebasePhone;
   let firebaseEmail;
@@ -37,14 +37,14 @@ export const verifyAndLoginFirebase = async ({ idToken, role, phone, email, disp
 
   // Stable owner → Admin model
   if (role === 'stable_owner') {
-    return findOrCreateAdmin({ firebaseUid, phone: firebasePhone, email: firebaseEmail, displayName });
+    return findOrCreateAdmin({ firebaseUid, phone: firebasePhone, email: firebaseEmail, displayName, mode });
   }
 
   // Rider or Coach → User model
-  return findOrCreateUser({ firebaseUid, phone: firebasePhone, email: firebaseEmail, role, displayName });
+  return findOrCreateUser({ firebaseUid, phone: firebasePhone, email: firebaseEmail, role, displayName, mode });
 };
 
-const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName }) => {
+const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName, mode = 'login' }) => {
   // Try to find by firebase_uid first
   let user = await User.findOne({ where: { firebase_uid: firebaseUid } });
 
@@ -76,7 +76,12 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName }
   }
 
   if (!user) {
-    // Create new user
+    // Login mode: reject unknown users
+    if (mode === 'login') {
+      throw new Error('This phone number is not registered. Please sign up first.');
+    }
+
+    // Signup mode: create new user
     const names = (displayName || '').split(' ');
     user = await User.create({
       email: email || null,
@@ -105,7 +110,7 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName }
   };
 };
 
-const findOrCreateAdmin = async ({ firebaseUid, phone, email, displayName }) => {
+const findOrCreateAdmin = async ({ firebaseUid, phone, email, displayName, mode = 'login' }) => {
   let admin = await Admin.findOne({ where: { firebase_uid: firebaseUid } });
 
   if (!admin && email) {
@@ -118,7 +123,19 @@ const findOrCreateAdmin = async ({ firebaseUid, phone, email, displayName }) => 
     }
   }
 
+  if (!admin && phone) {
+    admin = await Admin.findOne({ where: { mobile_number: phone } });
+    if (admin) {
+      admin.firebase_uid = firebaseUid;
+      admin.auth_method = 'firebase_phone';
+      await admin.save();
+    }
+  }
+
   if (!admin) {
+    if (mode === 'login') {
+      throw new Error('This account is not registered. Please sign up first.');
+    }
     const names = (displayName || '').split(' ');
     admin = await Admin.create({
       email: email || `${firebaseUid}@firebase.local`,
@@ -186,7 +203,7 @@ export const linkFirebaseToAccount = async ({ userId, isAdmin, firebaseIdToken }
  * Dev/test bypass: verify a hardcoded OTP without Firebase.
  * Only works when FIREBASE_OTP_BYPASS=true.
  */
-export const verifyBypassOtp = async ({ phone, otp, role }) => {
+export const verifyBypassOtp = async ({ phone, otp, role, mode = 'login' }) => {
   if (!OTP_BYPASS_ENABLED()) {
     throw new Error('OTP bypass is not enabled.');
   }
@@ -199,5 +216,6 @@ export const verifyBypassOtp = async ({ phone, otp, role }) => {
     idToken: 'bypass_token',
     role,
     phone,
+    mode,
   });
 };

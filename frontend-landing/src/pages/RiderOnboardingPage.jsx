@@ -49,7 +49,7 @@ const RiderOnboardingPage = () => {
     try {
       let result;
       if (verificationId === 'bypass') {
-        result = await bypassOtp({ phone, otp, role: 'rider' });
+        result = await bypassOtp({ phone, otp, role: 'rider', mode: 'signup' });
       } else {
         const credential = await verificationId.confirm(otp);
         const idToken = await credential.user.getIdToken();

@@ -60,7 +60,7 @@ const StableOnboardingPage = () => {
       let result;
       if (verificationId === 'bypass') {
         // Bypass mode
-        result = await bypassOtp({ phone, otp, role: 'stable_owner' });
+        result = await bypassOtp({ phone, otp, role: 'stable_owner', mode: 'signup' });
       } else {
         // Real Firebase
         const credential = await verificationId.confirm(otp);
