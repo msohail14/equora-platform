@@ -166,7 +166,7 @@ const initDatabase = async () => {
     await sequelize.authenticate();
     console.log('Database connected successfully.');
 
-    // Pre-sync fixes: resolve schema conflicts that prevent sync({ alter: true })
+    // Pre-sync fixes: resolve schema conflicts that prevent sync()
     try {
       // Fix created_by_user_id NOT NULL conflict with SET NULL foreign key
       await sequelize.query(`
@@ -188,7 +188,9 @@ const initDatabase = async () => {
       // Safe to ignore
     }
 
-    await sequelize.sync({ alter: true });
+    // Use sync() without alter to avoid re-adding foreign keys on every restart
+    // (MySQL has a 64-key limit). Schema changes are handled by applySchemaUpdates().
+    await sequelize.sync();
     console.log('Database tables synced.');
     await applySchemaUpdates();
     console.log('Schema updates applied successfully.');
