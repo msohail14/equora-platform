@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
-import { CoachPayout, CoachReview, Course, CourseSession, CourseTemplate, LessonBooking, LessonPackage, Notification, SessionFeedback, User } from '../models/index.js';
+import { CoachPayout, CoachReview, Course, CourseEnrollment, CourseSession, CourseTemplate, LessonBooking, LessonPackage, Notification, SessionFeedback, User } from '../models/index.js';
 import CoachStable from '../models/coachStable.model.js';
 import Stable from '../models/stable.model.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
@@ -488,9 +488,9 @@ export const deleteCoach = async (coachId, { force = false } = {}) => {
   await CoachPayout.destroy({ where: { coach_id: coachId } });
   await Notification.destroy({ where: { user_id: coachId } });
 
-  // Archive courses (set inactive instead of deleting — preserves enrollment history)
+  // Archive courses and nullify coach reference
   await Course.update(
-    { status: 'archived', is_active: false },
+    { status: 'archived', is_active: false, coach_id: null },
     { where: { coach_id: coachId } }
   );
 
@@ -499,6 +499,19 @@ export const deleteCoach = async (coachId, { force = false } = {}) => {
     { coach_id: null },
     { where: { coach_id: coachId } }
   );
+
+  // Nullify any other user references (created_by, cancelled_by)
+  await CourseSession.update(
+    { created_by_user_id: null },
+    { where: { created_by_user_id: coachId } }
+  );
+  await CourseSession.update(
+    { cancelled_by_user_id: null },
+    { where: { cancelled_by_user_id: coachId } }
+  );
+
+  // Nullify rider_id references if this coach was somehow referenced
+  await CourseEnrollment.destroy({ where: { rider_id: coachId } });
 
   // Delete the coach user record
   await coach.destroy();
