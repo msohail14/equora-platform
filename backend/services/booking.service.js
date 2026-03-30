@@ -13,12 +13,12 @@ const BOOKING_DETAIL_INCLUDES = [
   {
     model: User,
     as: 'rider',
-    attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'phone', 'profile_picture_url'],
+    attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'profile_picture_url'],
   },
   {
     model: User,
     as: 'coach',
-    attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'profile_picture_url'],
+    attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'profile_picture_url'],
   },
   {
     model: Stable,
