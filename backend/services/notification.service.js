@@ -1,43 +1,88 @@
 import { Notification, User } from '../models/index.js';
 import { Op } from 'sequelize';
+import { sendMail } from './mail.service.js';
 
-// Guarded email helper — only sends if SMTP is configured
-const EMAIL_TYPES = ['booking_approved', 'booking_declined', 'payment_confirmed', 'lesson_booked'];
+// Types that trigger email notifications
+const EMAIL_TYPES = ['booking_approved', 'booking_declined', 'payment_confirmed', 'lesson_booked', 'payment_reminder', 'general'];
 
-let _mailerTransport = null;
-const getMailer = () => {
-  if (_mailerTransport) return _mailerTransport;
-  if (!process.env.SMTP_HOST) return null;
+// Types that trigger push notifications
+const PUSH_TYPES = ['lesson_booked', 'booking_approved', 'booking_declined', 'horse_approved', 'horse_assigned', 'payment_confirmed', 'payment_reminder', 'session_reminder'];
+
+// ── FCM Push ──────────────────────────────────────────────
+
+import admin from 'firebase-admin';
+
+const getMessaging = () => {
   try {
-    const nodemailer = require('nodemailer');
-    _mailerTransport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    if (admin.apps.length > 0) return admin.messaging();
+  } catch {
+    // Firebase not initialized
+  }
+  return null;
+};
+
+const sendPushNotification = async (fcmToken, title, body, data) => {
+  if (!fcmToken) return;
+
+  const messaging = getMessaging();
+  if (!messaging) return;
+
+  try {
+    await messaging.send({
+      token: fcmToken,
+      notification: { title, body: body || title },
+      data: data ? Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, String(v)])
+      ) : undefined,
+      android: { priority: 'high' },
+      apns: {
+        payload: { aps: { sound: 'default', badge: 1 } },
+      },
     });
-    return _mailerTransport;
-  } catch (_) {
-    return null;
+  } catch (e) {
+    const errorCode = e?.errorInfo?.code || e?.code || '';
+    if (
+      errorCode === 'messaging/registration-token-not-registered' ||
+      errorCode === 'messaging/invalid-registration-token'
+    ) {
+      // Stale token — clear it from the user record
+      try {
+        await User.update({ fcm_token: null }, { where: { fcm_token: fcmToken } });
+        console.warn('[push] Cleared stale FCM token');
+      } catch {
+        // ignore
+      }
+    } else {
+      console.warn('[push] FCM send failed:', e.message);
+    }
   }
 };
 
+// ── Email for Notifications ──────────────────────────────
+
 const sendEmailForNotification = async (userId, title, body) => {
-  const mailer = getMailer();
-  if (!mailer || !userId) return;
+  if (!userId) return;
   try {
     const user = await User.findByPk(userId, { attributes: ['email', 'first_name'] });
     if (!user?.email) return;
-    await mailer.sendMail({
-      from: process.env.MAIL_FROM || 'noreply@equora.app',
+    await sendMail({
       to: user.email,
       subject: title,
-      html: `<p>Hi ${user.first_name || 'there'},</p><p>${body}</p><p>— Equora Team</p>`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="color: #059669;">Equora</h2>
+          <p>Hi ${user.first_name || 'there'},</p>
+          <p>${body || title}</p>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">— The Equora Team</p>
+        </div>
+      `,
     });
-  } catch (_) {
+  } catch {
     // Non-critical — don't fail notification if email fails
   }
 };
+
+// ── Pagination Helpers ───────────────────────────────────
 
 const normalizePagination = ({ page, limit }) => {
   const parsedPage = Number(page);
@@ -60,15 +105,14 @@ const buildPaginationMeta = ({ page, limit, totalItems }) => {
   };
 };
 
+// ── Core Functions ───────────────────────────────────────
+
 export const createNotification = async ({ userId, adminId, type, title, body, data }) => {
   if (!userId && !adminId) {
     throw new Error('At least one of userId or adminId is required.');
   }
-  if (!type) {
-    throw new Error('type is required.');
-  }
-  if (!title) {
-    throw new Error('title is required.');
+  if (!type || !title) {
+    throw new Error('type and title are required.');
   }
 
   const notification = await Notification.create({
@@ -80,9 +124,26 @@ export const createNotification = async ({ userId, adminId, type, title, body, d
     data: data || null,
   });
 
-  // Send email for critical notification types (guarded — skips if SMTP not configured)
+  // Send email for important notification types (non-blocking)
   if (userId && EMAIL_TYPES.includes(type)) {
     sendEmailForNotification(userId, title, body || title).catch(() => {});
+  }
+
+  // Send push notification (non-blocking)
+  if (userId && PUSH_TYPES.includes(type)) {
+    try {
+      const user = await User.findByPk(userId, { attributes: ['fcm_token'] });
+      if (user?.fcm_token) {
+        sendPushNotification(
+          user.fcm_token,
+          title,
+          body || title,
+          { type, notification_id: String(notification.id), ...(data || {}) }
+        ).catch(() => {});
+      }
+    } catch {
+      // Non-critical
+    }
   }
 
   return notification;

@@ -1180,3 +1180,223 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
 
   return booking;
 };
+
+// ──────────────────────────────────────────────────
+// Part B: Waitlist
+// ──────────────────────────────────────────────────
+
+/**
+ * Promote the next waitlisted rider when a booking is cancelled.
+ */
+export const promoteFromWaitlist = async ({ coachId, stableId, bookingDate, startTime }) => {
+  if (!coachId && !stableId) return null;
+
+  const where = {
+    status: 'waitlisted',
+    booking_date: bookingDate,
+    start_time: startTime,
+  };
+  if (coachId) where.coach_id = coachId;
+  if (stableId) where.stable_id = stableId;
+
+  const nextWaitlisted = await LessonBooking.findOne({
+    where,
+    order: [['waitlist_position', 'ASC'], ['created_at', 'ASC']],
+  });
+
+  if (!nextWaitlisted) return null;
+
+  let newStatus = 'pending_review';
+  if (nextWaitlisted.coach_id) {
+    const coach = await User.findByPk(nextWaitlisted.coach_id, { attributes: ['approval_mode'] });
+    if (coach?.approval_mode === 'auto') newStatus = 'confirmed';
+  }
+
+  nextWaitlisted.status = newStatus;
+  nextWaitlisted.waitlist_position = null;
+  await nextWaitlisted.save();
+
+  await Notification.create({
+    user_id: nextWaitlisted.rider_id,
+    type: 'booking_approved',
+    title: 'You\'re off the waitlist!',
+    body: `A spot opened up for your session on ${bookingDate}. Your booking is now ${newStatus === 'confirmed' ? 'confirmed' : 'under review'}.`,
+    data: { booking_id: nextWaitlisted.id },
+  });
+
+  return nextWaitlisted;
+};
+
+// ──────────────────────────────────────────────────
+// Part C: Series (Multi-Session) Booking
+// ──────────────────────────────────────────────────
+
+/**
+ * Create bookings for multiple dates in one transaction.
+ */
+export const createSeriesBooking = async ({
+  riderId, coachId, stableId, dates, startTime, endTime,
+  lessonType, price, notes, bookingType, durationMinutes, horseAssignment, horseId,
+}) => {
+  if (!dates || !Array.isArray(dates) || dates.length === 0) {
+    throw new Error('dates array is required for series booking.');
+  }
+  if (dates.length > 52) {
+    throw new Error('Maximum 52 sessions per series.');
+  }
+
+  if (!stableId && coachId) {
+    stableId = await resolveStableForCoach(coachId);
+  }
+  if (!stableId) throw new Error('stableId is required.');
+
+  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+
+  // Validate ALL dates first
+  for (const date of dates) {
+    const riderConflict = await LessonBooking.findOne({
+      where: {
+        rider_id: riderId, booking_date: date, status: { [Op.in]: activeStatuses },
+        [Op.or]: [{ start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } }],
+      },
+    });
+    if (riderConflict) throw new Error(`You already have a booking on ${date} during this time.`);
+
+    if (coachId) {
+      const coachConflict = await LessonBooking.findOne({
+        where: {
+          coach_id: coachId, booking_date: date, status: { [Op.in]: activeStatuses },
+          [Op.or]: [{ start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } }],
+        },
+      });
+      if (coachConflict) throw new Error(`Coach is already booked on ${date} during this time.`);
+    }
+  }
+
+  const seriesId = `SER_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  let initialStatus = 'pending_review';
+  if (coachId) {
+    const coach = await User.findByPk(coachId, { attributes: ['approval_mode'] });
+    if (coach?.approval_mode === 'auto') initialStatus = 'confirmed';
+  }
+
+  const bookings = [];
+  for (const date of dates) {
+    const booking = await LessonBooking.create({
+      rider_id: riderId,
+      coach_id: coachId || null,
+      stable_id: stableId,
+      booking_date: date,
+      start_time: startTime,
+      end_time: endTime,
+      lesson_type: lessonType || 'private',
+      status: initialStatus,
+      price: price || null,
+      notes: notes || null,
+      booking_type: bookingType || 'lesson',
+      duration_minutes: durationMinutes || null,
+      horse_assignment: horseAssignment || 'stable_assigns',
+      horse_id: horseId || null,
+      series_id: seriesId,
+    });
+    bookings.push(booking);
+  }
+
+  if (coachId) {
+    const rider = await User.findByPk(riderId, { attributes: ['first_name'] });
+    await Notification.create({
+      user_id: coachId,
+      type: 'lesson_booked',
+      title: `New Series Booking (${dates.length} sessions)`,
+      body: `${rider?.first_name || 'A rider'} booked ${dates.length} sessions starting ${dates[0]}.`,
+      data: { series_id: seriesId, session_count: dates.length },
+    });
+  }
+
+  return { series_id: seriesId, bookings, count: bookings.length };
+};
+
+// ──────────────────────────────────────────────────
+// Part D: Rider Eligibility
+// ──────────────────────────────────────────────────
+
+const LEVEL_ORDER = { beginner: 1, intermediate: 2, advanced: 3 };
+
+export const validateRiderEligibility = (riderLevel, requiredLevel) => {
+  if (!requiredLevel) return true;
+  if (!riderLevel) return false;
+  return (LEVEL_ORDER[riderLevel] || 0) >= (LEVEL_ORDER[requiredLevel] || 0);
+};
+
+// ──────────────────────────────────────────────────
+// Part E: Horse Workload
+// ──────────────────────────────────────────────────
+
+export const checkHorseWorkload = async (horseId, bookingDate, startTime) => {
+  const horse = await Horse.findByPk(horseId);
+  if (!horse) return { available: false, reason: 'Horse not found.' };
+  if (horse.status !== 'available') return { available: false, reason: `Horse is currently ${horse.status}.` };
+
+  if (horse.last_session_end && horse.min_rest_hours > 0) {
+    const lastEnd = new Date(horse.last_session_end);
+    const bookingStart = new Date(`${bookingDate}T${startTime}`);
+    const hoursSince = (bookingStart - lastEnd) / (1000 * 60 * 60);
+    if (hoursSince < horse.min_rest_hours) {
+      return { available: false, reason: `Horse needs ${horse.min_rest_hours}h rest between sessions.` };
+    }
+  }
+
+  const dailyAvail = await HorseAvailability.findOne({ where: { horse_id: horseId, date: bookingDate } });
+  if (dailyAvail && dailyAvail.sessions_booked >= (dailyAvail.max_sessions_per_day || horse.max_daily_sessions)) {
+    return { available: false, reason: `Horse has reached daily session limit.` };
+  }
+
+  const weekStart = new Date(bookingDate);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+  const weeklyCount = await LessonBooking.count({
+    where: {
+      horse_id: horseId,
+      booking_date: { [Op.between]: [weekStart.toISOString().slice(0, 10), weekEnd.toISOString().slice(0, 10)] },
+      status: { [Op.in]: activeStatuses },
+    },
+  });
+  if (weeklyCount >= horse.max_weekly_sessions) {
+    return { available: false, reason: `Horse has reached weekly session limit.` };
+  }
+
+  return { available: true };
+};
+
+export const getHorseWorkloadReport = async (horseId, startDate, endDate) => {
+  const horse = await Horse.findByPk(horseId);
+  if (!horse) throw new Error('Horse not found.');
+
+  const bookings = await LessonBooking.count({
+    where: {
+      horse_id: horseId,
+      booking_date: { [Op.between]: [startDate, endDate] },
+      status: { [Op.in]: ['confirmed', 'in_progress', 'completed'] },
+    },
+  });
+
+  const days = Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)));
+  const weeks = Math.max(1, days / 7);
+  const avgPerWeek = bookings / weeks;
+  const utilizationPercent = Math.round((avgPerWeek / horse.max_weekly_sessions) * 100);
+
+  return {
+    horse: { id: horse.id, name: horse.name, status: horse.status },
+    totalSessions: bookings,
+    avgPerWeek: Math.round(avgPerWeek * 10) / 10,
+    maxWeekly: horse.max_weekly_sessions,
+    maxDaily: horse.max_daily_sessions,
+    minRestHours: horse.min_rest_hours,
+    utilizationPercent,
+    level: utilizationPercent > 80 ? 'high' : utilizationPercent > 50 ? 'medium' : 'low',
+  };
+};

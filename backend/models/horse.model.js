@@ -62,6 +62,23 @@ const Horse = sequelize.define(
       allowNull: false,
       defaultValue: 3,
     },
+    min_rest_hours: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 4,
+      comment: 'Minimum hours between sessions',
+    },
+    max_weekly_sessions: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Maximum sessions per week',
+    },
+    last_session_end: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'When the horse last session ended',
+    },
     is_featured: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

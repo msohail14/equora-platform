@@ -9,6 +9,7 @@ import {
   signupUser,
   verifyEmailOtp,
 } from '../services/user.service.js';
+import User from '../models/user.model.js';
 import { deleteFileIfExists, toPublicUploadPath } from '../utils/file.util.js';
 
 const handleError = (res, error) => {
@@ -121,6 +122,19 @@ export const getMyProfileController = async (req, res) => {
   try {
     const data = await getMyProfile(req.user.id);
     return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const updateFcmTokenController = async (req, res) => {
+  try {
+    const { fcm_token } = req.body;
+    if (!fcm_token) {
+      return res.status(400).json({ message: 'fcm_token is required.' });
+    }
+    await User.update({ fcm_token }, { where: { id: req.user.id } });
+    return res.status(200).json({ message: 'FCM token updated.' });
   } catch (error) {
     return handleError(res, error);
   }

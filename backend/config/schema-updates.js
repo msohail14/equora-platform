@@ -821,6 +821,30 @@ const ensureMagicLinkTokensTable = async () => {
   `);
 };
 
+const ensureBookingEnhancements = async () => {
+  // Add waitlisted to booking status ENUM
+  try {
+    await sequelize.query(`
+      ALTER TABLE \`lesson_bookings\`
+      MODIFY COLUMN \`status\` ENUM('pending_horse_approval','pending_payment','pending_review','confirmed','declined','in_progress','cancelled','completed','waitlisted') NOT NULL DEFAULT 'pending_review'
+    `);
+  } catch {
+    // ENUM already has these values
+  }
+
+  // Add waitlist_position column
+  await ensureColumnExists('lesson_bookings', 'waitlist_position', 'ADD COLUMN `waitlist_position` INT NULL');
+
+  // Add series_id column for multi-session bookings
+  await ensureColumnExists('lesson_bookings', 'series_id', 'ADD COLUMN `series_id` VARCHAR(36) NULL');
+};
+
+const ensureHorseWorkloadColumns = async () => {
+  await ensureColumnExists('horses', 'min_rest_hours', 'ADD COLUMN `min_rest_hours` INT NOT NULL DEFAULT 4');
+  await ensureColumnExists('horses', 'max_weekly_sessions', 'ADD COLUMN `max_weekly_sessions` INT NOT NULL DEFAULT 15');
+  await ensureColumnExists('horses', 'last_session_end', 'ADD COLUMN `last_session_end` DATETIME NULL');
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -886,6 +910,10 @@ export const applySchemaUpdates = async () => {
   await ensureFirebaseAuthColumns();
   await ensureInvitationsTable();
   await ensureMagicLinkTokensTable();
+
+  // Phase I: Booking enhancements (waitlist, series, horse workload)
+  await ensureBookingEnhancements();
+  await ensureHorseWorkloadColumns();
 };
 
 async function removeSeededTestData() {

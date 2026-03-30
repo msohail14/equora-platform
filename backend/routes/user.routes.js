@@ -10,6 +10,7 @@ import {
   resendEmailOtpController,
   resetPasswordController,
   signup,
+  updateFcmTokenController,
   verifyEmailOtpController,
 } from '../controllers/user.controller.js';
 
@@ -27,5 +28,6 @@ router.post('/reset-password', resetPasswordController);
 router.get('/me', authMiddleware, getMyProfileController);
 router.post('/change-password', authMiddleware, changePasswordController);
 router.put('/change-profile', authMiddleware, uploadUserProfileImage, changeProfileController);
+router.patch('/me/fcm-token', authMiddleware, updateFcmTokenController);
 
 export default router;

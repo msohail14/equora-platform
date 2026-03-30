@@ -97,10 +97,20 @@ const LessonBooking = sequelize.define(
         'declined',
         'in_progress',
         'cancelled',
-        'completed'
+        'completed',
+        'waitlisted'
       ),
       allowNull: false,
       defaultValue: 'pending_review',
+    },
+    waitlist_position: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    series_id: {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+      comment: 'Groups multi-session bookings together (UUID)',
     },
     decline_reason: {
       type: DataTypes.STRING(500),
