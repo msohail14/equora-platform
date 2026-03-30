@@ -845,6 +845,84 @@ const ensureHorseWorkloadColumns = async () => {
   await ensureColumnExists('horses', 'last_session_end', 'ADD COLUMN `last_session_end` DATETIME NULL');
 };
 
+const cleanupPhoneFormatsAndTestAccounts = async () => {
+  try {
+    // Check if cleanup already ran (use a platform_settings flag)
+    const [flag] = await sequelize.query(
+      `SELECT value FROM platform_settings WHERE \`key\` = 'phone_cleanup_done' LIMIT 1`
+    );
+    if (flag?.length > 0) return; // Already ran
+
+    console.log('[cleanup] Running one-time phone format fix + test account removal...');
+
+    // 1. Fix phone numbers missing +966 prefix (Saudi numbers starting with 0)
+    const [updated] = await sequelize.query(`
+      UPDATE user
+      SET mobile_number = CONCAT('+966', SUBSTRING(mobile_number, 2))
+      WHERE mobile_number IS NOT NULL
+        AND mobile_number LIKE '0%'
+        AND LENGTH(mobile_number) >= 9
+        AND LENGTH(mobile_number) <= 11
+    `);
+    const phoneFixed = updated?.affectedRows || updated?.changedRows || 0;
+    if (phoneFixed > 0) console.log(`[cleanup] Fixed ${phoneFixed} phone numbers (added +966 prefix)`);
+
+    // 2. Delete test accounts created via bypass OTP
+    const [testUsers] = await sequelize.query(`
+      SELECT id FROM user
+      WHERE email LIKE '%@equora.test'
+        OR email LIKE '%@firebase.local'
+        OR (firebase_uid LIKE 'bypass_%' AND first_name IS NULL AND email IS NULL)
+    `);
+    for (const u of testUsers || []) {
+      try {
+        // Nullify references first
+        await sequelize.query(`UPDATE lesson_bookings SET rider_id = NULL WHERE rider_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE lesson_bookings SET coach_id = NULL WHERE coach_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE courses SET coach_id = NULL WHERE coach_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE course_sessions SET coach_id = NULL WHERE coach_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE course_sessions SET rider_id = NULL WHERE rider_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE course_sessions SET created_by_user_id = NULL WHERE created_by_user_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`UPDATE course_sessions SET cancelled_by_user_id = NULL WHERE cancelled_by_user_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM coach_stables WHERE coach_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM notifications WHERE user_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM coach_reviews WHERE coach_id = :id OR reviewer_user_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM session_feedback WHERE coach_id = :id OR rider_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM course_enrollments WHERE rider_id = :id`, { replacements: { id: u.id } });
+        await sequelize.query(`DELETE FROM user WHERE id = :id`, { replacements: { id: u.id } });
+        console.log(`[cleanup] Deleted test user ID ${u.id}`);
+      } catch (e) {
+        console.warn(`[cleanup] Failed to delete user ${u.id}: ${e.message}`);
+      }
+    }
+
+    // 3. Delete test admin/stable_owner bypass accounts
+    const [testAdmins] = await sequelize.query(`
+      SELECT id FROM admin
+      WHERE firebase_uid LIKE 'bypass_%'
+        OR email LIKE '%@firebase.local'
+    `);
+    for (const a of testAdmins || []) {
+      try {
+        await sequelize.query(`UPDATE stables SET admin_id = NULL WHERE admin_id = :id`, { replacements: { id: a.id } });
+        await sequelize.query(`DELETE FROM admin WHERE id = :id`, { replacements: { id: a.id } });
+        console.log(`[cleanup] Deleted test admin ID ${a.id}`);
+      } catch (e) {
+        console.warn(`[cleanup] Failed to delete admin ${a.id}: ${e.message}`);
+      }
+    }
+
+    // 4. Mark as done so it doesn't run again
+    await sequelize.query(
+      `INSERT INTO platform_settings (\`key\`, value) VALUES ('phone_cleanup_done', '"true"')
+       ON DUPLICATE KEY UPDATE value = '"true"'`
+    );
+    console.log('[cleanup] ✅ One-time cleanup complete');
+  } catch (e) {
+    console.warn('[cleanup] Cleanup error (non-fatal):', e.message);
+  }
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -914,6 +992,9 @@ export const applySchemaUpdates = async () => {
   // Phase I: Booking enhancements (waitlist, series, horse workload)
   await ensureBookingEnhancements();
   await ensureHorseWorkloadColumns();
+
+  // Phase J: One-time cleanup — fix phone formats + remove test accounts
+  await cleanupPhoneFormatsAndTestAccounts();
 };
 
 async function removeSeededTestData() {
