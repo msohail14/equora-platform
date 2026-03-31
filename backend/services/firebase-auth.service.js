@@ -9,10 +9,10 @@ const OTP_BYPASS_ENABLED = () => {
   const enabled = process.env.FIREBASE_OTP_BYPASS === 'true';
   if (enabled && process.env.NODE_ENV === 'production') {
     console.error(
-      '⚠️  SECURITY WARNING: FIREBASE_OTP_BYPASS=true in production! ' +
-      'This allows anyone to authenticate with code 123456. ' +
-      'Set FIREBASE_OTP_BYPASS=false immediately.'
+      '⚠️  SECURITY: OTP bypass blocked in production. ' +
+      'Set FIREBASE_OTP_BYPASS=false.'
     );
+    return false; // Hard-block bypass in production
   }
   return enabled;
 };
@@ -37,12 +37,14 @@ export const verifyAndLoginFirebase = async ({ idToken, role, phone, email, disp
   } else {
     const decoded = await verifyFirebaseIdToken(idToken);
     firebaseUid = decoded.uid;
-    firebasePhone = decoded.phone_number || phone || null;
-    firebaseEmail = decoded.email || email || null;
+    // Only trust identity claims from the verified token, not client-supplied values
+    firebasePhone = decoded.phone_number || null;
+    firebaseEmail = decoded.email || null;
   }
 
-  if (!role) {
-    throw new Error('Role is required (rider, coach, or stable_owner).');
+  const VALID_ROLES = ['rider', 'coach', 'stable_owner'];
+  if (!role || !VALID_ROLES.includes(role)) {
+    throw new Error('Invalid role. Must be rider, coach, or stable_owner.');
   }
 
   // Stable owner → Admin model
