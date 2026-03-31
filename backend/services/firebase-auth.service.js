@@ -21,6 +21,65 @@ const BYPASS_OTP_CODE = process.env.OTP_BYPASS_CODE || '123456';
 const issueJwt = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
 /**
+ * Split a display name into first/last name parts.
+ */
+const parseDisplayName = (displayName) => {
+  const parts = (displayName || '').split(' ');
+  return {
+    firstName: parts[0] || null,
+    lastName: parts.slice(1).join(' ') || null,
+  };
+};
+
+/**
+ * Check if a record with the same email or phone already exists and link Firebase UID.
+ * Returns the linked record or null.
+ * @param {boolean} opts.checkConflict — if true, throw when firebase_uid belongs to a different account.
+ */
+const linkExistingAccount = async (Model, { firebaseUid, phone, email, checkConflict = false }) => {
+  let record = null;
+
+  if (email) {
+    record = await Model.findOne({ where: { email } });
+    if (record) {
+      if (checkConflict && record.firebase_uid && record.firebase_uid !== firebaseUid) {
+        // Check if any OTHER user already has this firebaseUid before blocking
+        const conflict = await Model.findOne({ where: { firebase_uid: firebaseUid } });
+        if (conflict && conflict.id !== record.id) {
+          throw new Error('This email is already linked to a different account.');
+        }
+        // No conflict — safe to update UID (device migration scenario)
+      }
+      record.firebase_uid = firebaseUid;
+      record.auth_method = phone ? 'firebase_phone' : 'firebase_email';
+      if (phone && !record.mobile_number) record.mobile_number = phone;
+      await record.save();
+      return record;
+    }
+  }
+
+  if (phone) {
+    record = await Model.findOne({ where: { mobile_number: phone } });
+    if (record) {
+      if (checkConflict && record.firebase_uid && record.firebase_uid !== firebaseUid) {
+        // Check if any OTHER user already has this firebaseUid before blocking
+        const conflict = await Model.findOne({ where: { firebase_uid: firebaseUid } });
+        if (conflict && conflict.id !== record.id) {
+          throw new Error('This phone number is already linked to a different account.');
+        }
+        // No conflict — safe to update UID (device migration scenario)
+      }
+      record.firebase_uid = firebaseUid;
+      record.auth_method = 'firebase_phone';
+      await record.save();
+      return record;
+    }
+  }
+
+  return null;
+};
+
+/**
  * Verify a Firebase ID token and find or create the corresponding local user.
  * Returns our own JWT for subsequent API calls.
  */
@@ -60,31 +119,8 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName, 
   // Try to find by firebase_uid first
   let user = await User.findOne({ where: { firebase_uid: firebaseUid } });
 
-  if (!user && email) {
-    // Check if a user with this email already exists (link Firebase to existing account)
-    user = await User.findOne({ where: { email } });
-    if (user) {
-      if (user.firebase_uid && user.firebase_uid !== firebaseUid) {
-        throw new Error('This email is already linked to a different account.');
-      }
-      user.firebase_uid = firebaseUid;
-      user.auth_method = phone ? 'firebase_phone' : 'firebase_email';
-      if (phone && !user.mobile_number) user.mobile_number = phone;
-      await user.save();
-    }
-  }
-
-  if (!user && phone) {
-    // Check if a user with this phone already exists
-    user = await User.findOne({ where: { mobile_number: phone } });
-    if (user) {
-      if (user.firebase_uid && user.firebase_uid !== firebaseUid) {
-        throw new Error('This phone number is already linked to a different account.');
-      }
-      user.firebase_uid = firebaseUid;
-      user.auth_method = 'firebase_phone';
-      await user.save();
-    }
+  if (!user) {
+    user = await linkExistingAccount(User, { firebaseUid, phone, email, checkConflict: true });
   }
 
   if (!user) {
@@ -94,7 +130,7 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName, 
     }
 
     // Signup mode: create new user
-    const names = (displayName || '').split(' ');
+    const { firstName, lastName } = parseDisplayName(displayName);
     user = await User.create({
       email: email || null,
       mobile_number: phone || null,
@@ -102,8 +138,8 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName, 
       firebase_uid: firebaseUid,
       auth_method: phone ? 'firebase_phone' : 'firebase_email',
       role,
-      first_name: names[0] || null,
-      last_name: names.slice(1).join(' ') || null,
+      first_name: firstName,
+      last_name: lastName,
       is_email_verified: !!email,
       is_active: true,
     });
@@ -125,30 +161,15 @@ const findOrCreateUser = async ({ firebaseUid, phone, email, role, displayName, 
 const findOrCreateAdmin = async ({ firebaseUid, phone, email, displayName, mode = 'login' }) => {
   let admin = await Admin.findOne({ where: { firebase_uid: firebaseUid } });
 
-  if (!admin && email) {
-    admin = await Admin.findOne({ where: { email } });
-    if (admin) {
-      admin.firebase_uid = firebaseUid;
-      admin.auth_method = phone ? 'firebase_phone' : 'firebase_email';
-      if (phone && !admin.mobile_number) admin.mobile_number = phone;
-      await admin.save();
-    }
-  }
-
-  if (!admin && phone) {
-    admin = await Admin.findOne({ where: { mobile_number: phone } });
-    if (admin) {
-      admin.firebase_uid = firebaseUid;
-      admin.auth_method = 'firebase_phone';
-      await admin.save();
-    }
+  if (!admin) {
+    admin = await linkExistingAccount(Admin, { firebaseUid, phone, email, checkConflict: false });
   }
 
   if (!admin) {
     if (mode === 'login') {
       throw new Error('This account is not registered. Please sign up first.');
     }
-    const names = (displayName || '').split(' ');
+    const { firstName, lastName } = parseDisplayName(displayName);
     admin = await Admin.create({
       email: email || `${firebaseUid}@firebase.local`,
       password_hash: null,
@@ -157,16 +178,12 @@ const findOrCreateAdmin = async ({ firebaseUid, phone, email, displayName, mode 
       mobile_number: phone || null,
       is_email_verified: !!email,
       role: 'stable_owner',
-      first_name: names[0] || null,
-      last_name: names.slice(1).join(' ') || null,
+      first_name: firstName,
+      last_name: lastName,
     });
   }
 
-  const token = jwt.sign(
-    { id: admin.id, email: admin.email, role: admin.role, type: 'admin' },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  const token = issueJwt({ id: admin.id, email: admin.email, role: admin.role, type: 'admin' });
 
   const safeAdmin = admin.toJSON();
   delete safeAdmin.password_hash;
