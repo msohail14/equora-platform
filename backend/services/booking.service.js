@@ -37,6 +37,16 @@ const BOOKING_DETAIL_INCLUDES = [
   },
 ];
 
+/**
+ * Convert a date string to ISO day-of-week (1=Monday ... 7=Sunday).
+ * Uses T12:00:00 to avoid UTC midnight timezone shift issues.
+ */
+const getIsoDayOfWeek = (dateString) => {
+  const d = new Date(`${dateString}T12:00:00`);
+  const jsDay = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  return jsDay === 0 ? 7 : jsDay; // Convert to 1=Mon, ..., 7=Sun
+};
+
 const normalizePagination = ({ page, limit }) => {
   const parsedPage = Number(page);
   const parsedLimit = Number(limit);
@@ -257,8 +267,7 @@ export const getCoachSlots = async ({ coachId, date, stableId }) => {
     throw new Error('Coach not found.');
   }
 
-  const dateObj = new Date(date);
-  const dayOfWeek = dateObj.getDay();
+  const dayOfWeek = getIsoDayOfWeek(date);
 
   const exception = await CoachAvailabilityException.findOne({
     where: {
@@ -842,7 +851,7 @@ export const getArenaSlots = async ({ arenaId, date }) => {
 
   const stable = arena.stable;
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const dateObj = new Date(date);
+  const dateObj = new Date(`${date}T12:00:00`);
   const dayName = dayNames[dateObj.getDay()];
 
   let openTime = '06:00';
@@ -912,7 +921,7 @@ export const getAvailableSlots = async ({ stableId, date, duration = 60 }) => {
 
   const durationMins = Number(duration) || 60;
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const dateObj = new Date(date);
+  const dateObj = new Date(`${date}T12:00:00`);
   const dayName = dayNames[dateObj.getDay()];
 
   let openTime = '06:00';
@@ -1472,7 +1481,7 @@ export const checkHorseWorkload = async (horseId, bookingDate, startTime) => {
     return { available: false, reason: `Horse has reached daily session limit.` };
   }
 
-  const weekStart = new Date(bookingDate);
+  const weekStart = new Date(`${bookingDate}T12:00:00`);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
