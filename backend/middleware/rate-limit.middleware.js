@@ -30,6 +30,15 @@ export const mailRateLimiter = rateLimit({
   keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] || 'unknown',
 });
 
+export const inviteCodeRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_INVITE_CODE_MAX) || 10,
+  message: { message: 'Too many verification attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] || 'unknown',
+});
+
 export const generalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.RATE_LIMIT_GENERAL_MAX) || 200,

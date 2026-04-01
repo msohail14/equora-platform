@@ -7,6 +7,7 @@ import {
 } from '../controllers/invitation.controller.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import authMiddleware from '../middleware/auth.middleware.js';
+import { inviteCodeRateLimiter } from '../middleware/rate-limit.middleware.js';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.post('/rider', authMiddleware, createRiderInvitationController);
 router.get('/rider/mine', authMiddleware, getCoachRiderInvitationsController);
 
 // Public — verify an invite code (used during signup)
-router.get('/verify/:code', verifyInviteCodeController);
+router.get('/verify/:code', inviteCodeRateLimiter, verifyInviteCodeController);
 
 // Rider — accept invite code (after signup/login)
 router.post('/rider/accept', authMiddleware, acceptRiderInvitationController);

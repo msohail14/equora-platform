@@ -26,6 +26,7 @@ import {
   getReturningRiderDefaultsController,
   coachModifyBookingController,
   createSeriesBookingController,
+  getHorseWorkloadController,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
@@ -56,5 +57,6 @@ router.post('/series', authMiddleware, createSeriesBookingController);
 router.get('/my', authMiddleware, getMyBookingsController);
 router.patch('/:id/modify', coachAuthMiddleware, coachModifyBookingController);
 router.patch('/:id/cancel', authMiddleware, cancelBookingController);
+router.get('/horses/:id/workload', authMiddleware, getHorseWorkloadController);
 
 export default router;
