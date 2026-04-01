@@ -14,46 +14,57 @@ import admin from 'firebase-admin';
 
 const getMessaging = () => {
   try {
-    if (admin.apps.length > 0) return admin.messaging();
-  } catch {
-    // Firebase not initialized
+    const appCount = admin.apps.length;
+    if (appCount > 0) {
+      return admin.messaging();
+    }
+    console.warn('[push] Firebase not initialized — admin.apps.length =', appCount);
+  } catch (e) {
+    console.warn('[push] getMessaging() error:', e.message);
   }
   return null;
 };
 
 const sendPushNotification = async (fcmToken, title, body, data) => {
-  if (!fcmToken) return;
+  if (!fcmToken) {
+    console.log('[push] Skipped: no FCM token for user');
+    return;
+  }
 
   const messaging = getMessaging();
-  if (!messaging) return;
+  if (!messaging) {
+    console.warn('[push] Skipped: Firebase messaging not available');
+    return;
+  }
+
+  const message = {
+    token: fcmToken,
+    notification: { title, body: body || title },
+    data: data ? Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, String(v)])
+    ) : undefined,
+    android: { priority: 'high' },
+    apns: {
+      payload: { aps: { sound: 'default', badge: 1 } },
+    },
+  };
 
   try {
-    await messaging.send({
-      token: fcmToken,
-      notification: { title, body: body || title },
-      data: data ? Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)])
-      ) : undefined,
-      android: { priority: 'high' },
-      apns: {
-        payload: { aps: { sound: 'default', badge: 1 } },
-      },
-    });
+    const messageId = await messaging.send(message);
+    console.log(`[push] ✅ Sent "${title}" → token ${fcmToken.slice(0, 12)}... (messageId: ${messageId})`);
   } catch (e) {
     const errorCode = e?.errorInfo?.code || e?.code || '';
+    console.error(`[push] ❌ Failed "${title}" → token ${fcmToken.slice(0, 12)}... | code: ${errorCode} | ${e.message}`);
     if (
       errorCode === 'messaging/registration-token-not-registered' ||
       errorCode === 'messaging/invalid-registration-token'
     ) {
-      // Stale token — clear it from the user record
       try {
         await User.update({ fcm_token: null }, { where: { fcm_token: fcmToken } });
         console.warn('[push] Cleared stale FCM token');
       } catch {
         // ignore
       }
-    } else {
-      console.warn('[push] FCM send failed:', e.message);
     }
   }
 };
@@ -132,18 +143,21 @@ export const createNotification = async ({ userId, adminId, type, title, body, d
   // Send push notification (non-blocking)
   if (userId && PUSH_TYPES.includes(type)) {
     try {
-      const user = await User.findByPk(userId, { attributes: ['fcm_token'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'first_name', 'fcm_token'] });
+      console.log(`[push] Notification type="${type}" for user ${user?.id} (${user?.first_name || '?'}) — fcm_token: ${user?.fcm_token ? user.fcm_token.slice(0, 12) + '...' : 'NULL'}`);
       if (user?.fcm_token) {
         sendPushNotification(
           user.fcm_token,
           title,
           body || title,
           { type, notification_id: String(notification.id), ...(data || {}) }
-        ).catch(() => {});
+        ).catch((e) => console.error('[push] Unhandled push error:', e.message));
       }
-    } catch {
-      // Non-critical
+    } catch (e) {
+      console.error('[push] Error looking up user for push:', e.message);
     }
+  } else if (userId) {
+    console.log(`[push] Skipped push: type="${type}" not in PUSH_TYPES`);
   }
 
   return notification;

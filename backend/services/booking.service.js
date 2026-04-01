@@ -152,7 +152,7 @@ export const getStableArenas = async ({ stableId }) => {
   };
 };
 
-export const getStableCoaches = async ({ stableId, search, page, limit }) => {
+export const getStableCoaches = async ({ stableId, search, page, limit, date, startTime, riderId }) => {
   if (!stableId) {
     throw new Error('stableId is required.');
   }
@@ -179,9 +179,12 @@ export const getStableCoaches = async ({ stableId, search, page, limit }) => {
     ],
   });
 
+  // Track visibility per coach for privacy filtering
+  const visibilityMap = new Map();
   for (const link of coachLinks) {
     if (link.coach && !coachMap.has(link.coach.id)) {
       coachMap.set(link.coach.id, link.coach);
+      visibilityMap.set(link.coach.id, link.visibility || 'public');
     }
   }
 
@@ -213,6 +216,84 @@ export const getStableCoaches = async ({ stableId, search, page, limit }) => {
     coaches = coaches.filter((c) => {
       const full = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase();
       return full.includes(keyword) || (c.email || '').toLowerCase().includes(keyword);
+    });
+  }
+
+  // ── Multi-stable privacy: filter coaches with 'featured_riders_only' visibility ──
+  if (riderId && coaches.length > 0) {
+    const restrictedCoachIds = coaches
+      .filter((c) => visibilityMap.get(c.id) === 'featured_riders_only')
+      .map((c) => c.id);
+
+    if (restrictedCoachIds.length > 0) {
+      // Check if rider has completed bookings or accepted invitations with these coaches
+      const priorBookings = await LessonBooking.findAll({
+        where: {
+          rider_id: riderId,
+          coach_id: { [Op.in]: restrictedCoachIds },
+          status: { [Op.in]: ['confirmed', 'completed', 'in_progress'] },
+        },
+        attributes: ['coach_id'],
+        group: ['coach_id'],
+        raw: true,
+      });
+      const hasBookingWith = new Set(priorBookings.map((b) => b.coach_id));
+
+      coaches = coaches.filter((c) => {
+        if (visibilityMap.get(c.id) !== 'featured_riders_only') return true;
+        return hasBookingWith.has(c.id);
+      });
+    }
+  }
+
+  // ── Availability filtering: only show coaches available at selected date/time ──
+  if (date && startTime && coaches.length > 0) {
+    const coachIds = coaches.map((c) => c.id);
+    const parsedDate = new Date(date);
+    // ISO day: 1 = Monday … 7 = Sunday  (JS getDay: 0 = Sunday)
+    const jsDay = parsedDate.getDay(); // 0-6 (Sun-Sat)
+    const isoDay = jsDay === 0 ? 7 : jsDay; // 1-7 (Mon-Sun)
+
+    // Batch-fetch weekly availability for all candidate coaches on this day
+    const availabilities = await CoachWeeklyAvailability.findAll({
+      where: {
+        coach_id: { [Op.in]: coachIds },
+        day_of_week: isoDay,
+        is_active: true,
+        start_time: { [Op.lte]: startTime },
+        end_time: { [Op.gte]: startTime },
+      },
+      raw: true,
+    });
+    const availableCoachIds = new Set(availabilities.map((a) => a.coach_id));
+
+    // Batch-fetch exceptions (day off) for this date
+    const exceptions = await CoachAvailabilityException.findAll({
+      where: {
+        coach_id: { [Op.in]: [...availableCoachIds] },
+        date: date,
+        type: 'day_off',
+      },
+      raw: true,
+    });
+    const dayOffCoachIds = new Set(exceptions.map((e) => e.coach_id));
+
+    // Batch-fetch conflicting bookings at this time
+    const conflicts = await LessonBooking.findAll({
+      where: {
+        coach_id: { [Op.in]: [...availableCoachIds] },
+        booking_date: date,
+        start_time: startTime,
+        status: { [Op.notIn]: ['cancelled', 'declined'] },
+      },
+      attributes: ['coach_id'],
+      raw: true,
+    });
+    const busyCoachIds = new Set(conflicts.map((b) => b.coach_id));
+
+    coaches = coaches.filter((c) => {
+      const id = c.id;
+      return availableCoachIds.has(id) && !dayOffCoachIds.has(id) && !busyCoachIds.has(id);
     });
   }
 
@@ -1109,6 +1190,20 @@ export const completeBooking = async ({ bookingId, userId }) => {
     body: `Your session on ${booking.booking_date} has been completed.`,
     data: { booking_id: booking.id },
   });
+
+  // Auto-favorite: link horse to rider after completed booking
+  if (booking.rider_id && booking.horse_id) {
+    try {
+      const { autoFavoriteHorse } = await import('./riderHorse.service.js');
+      await autoFavoriteHorse({
+        riderId: booking.rider_id,
+        horseId: booking.horse_id,
+        stableId: booking.stable_id,
+      });
+    } catch (e) {
+      console.warn('[booking] Auto-favorite horse failed:', e.message);
+    }
+  }
 
   return LessonBooking.findByPk(booking.id, { include: BOOKING_DETAIL_INCLUDES });
 };

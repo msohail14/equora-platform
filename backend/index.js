@@ -39,6 +39,7 @@ import firebaseAuthRoutes from './routes/firebase-auth.routes.js';
 import magicLinkRoutes from './routes/magic-link.routes.js';
 import invitationRoutes from './routes/invitation.routes.js';
 import onboardingRoutes from './routes/onboarding.routes.js';
+import riderHorseRoutes from './routes/riderHorse.routes.js';
 import initializeFirebase from './config/firebase.js';
 
 dotenv.config();
@@ -117,6 +118,7 @@ app.use('/api/v1/obstacle-types', obstacleTypeRoutes);
 app.use('/api/v1/auth/firebase', firebaseAuthRoutes);
 app.use('/api/v1/auth/magic-link', magicLinkRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
+app.use('/api/v1/rider-horses', riderHorseRoutes);
 app.use('/api/v1/onboarding', onboardingRoutes);
 
 app.get('/', (req, res) => {

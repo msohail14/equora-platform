@@ -188,3 +188,153 @@ export const cancelInvitation = async (invitationId, adminId) => {
 
   return { message: 'Invitation cancelled.' };
 };
+
+// ── Coach → Rider Invitations ──────────────────────────────────────────────
+
+/**
+ * Generate a short, unique invite code (e.g. "EQ-7X3K")
+ */
+const generateInviteCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `EQ-${code}`;
+};
+
+/**
+ * Coach creates a rider invite (with optional email/phone, generates invite code).
+ */
+export const createRiderInvitation = async ({ coachId, email, phone }) => {
+  const coach = await User.findByPk(coachId);
+  if (!coach) throw new Error('Coach not found.');
+
+  // Generate unique invite code (retry up to 5 times for collisions)
+  let inviteCode;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    inviteCode = generateInviteCode();
+    const exists = await Invitation.findOne({ where: { invite_code: inviteCode } });
+    if (!exists) break;
+    if (attempt === 4) throw new Error('Failed to generate unique invite code. Please try again.');
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days for rider invites
+
+  const invitation = await Invitation.create({
+    inviter_id: coachId,
+    coach_id: coachId,
+    stable_id: null,
+    email: email || null,
+    phone: phone || null,
+    role: 'rider',
+    status: 'pending',
+    token,
+    invite_code: inviteCode,
+    expires_at: expiresAt,
+  });
+
+  // Send email if provided
+  if (email) {
+    try {
+      const coachName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'A coach';
+      await sendMail({
+        to: email,
+        subject: `${coachName} invites you to Equora`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2 style="color: #059669;">Equora</h2>
+            <p><strong>${coachName}</strong> invites you to join Equora for equestrian training.</p>
+            <p>Use this invite code when signing up:</p>
+            <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 2px; color: #059669;">
+              ${inviteCode}
+            </div>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 16px;">This code expires in 30 days.</p>
+          </div>
+        `,
+      });
+    } catch (e) {
+      console.warn('[invitation] Failed to send rider invite email:', e.message);
+    }
+  }
+
+  return {
+    message: `Invite created${email ? ` and sent to ${email}` : ''}.`,
+    invitation: {
+      id: invitation.id,
+      invite_code: inviteCode,
+      status: invitation.status,
+    },
+  };
+};
+
+/**
+ * Get all rider invitations sent by a coach.
+ */
+export const getCoachRiderInvitations = async (coachId) => {
+  const invitations = await Invitation.findAll({
+    where: { coach_id: coachId, role: 'rider' },
+    order: [['created_at', 'DESC']],
+  });
+
+  // Auto-expire old invitations
+  const now = new Date();
+  for (const inv of invitations) {
+    if (inv.status === 'pending' && new Date(inv.expires_at) < now) {
+      inv.status = 'expired';
+      await inv.save();
+    }
+  }
+
+  return invitations;
+};
+
+/**
+ * Verify an invite code during rider signup.
+ */
+export const verifyInviteCode = async (inviteCode) => {
+  const invitation = await Invitation.findOne({
+    where: { invite_code: inviteCode.toUpperCase(), status: 'pending', role: 'rider' },
+  });
+
+  if (!invitation) {
+    throw new Error('Invalid or expired invite code.');
+  }
+
+  if (new Date() > new Date(invitation.expires_at)) {
+    invitation.status = 'expired';
+    await invitation.save();
+    throw new Error('This invite code has expired.');
+  }
+
+  const coach = await User.findByPk(invitation.coach_id, {
+    attributes: ['id', 'first_name', 'last_name', 'profile_picture_url'],
+  });
+
+  return {
+    valid: true,
+    coach_id: invitation.coach_id,
+    coach_name: coach ? `${coach.first_name || ''} ${coach.last_name || ''}`.trim() : null,
+    invitation_id: invitation.id,
+  };
+};
+
+/**
+ * Accept a rider invitation (called after successful signup/login).
+ */
+export const acceptRiderInvitation = async ({ inviteCode, riderId }) => {
+  const invitation = await Invitation.findOne({
+    where: { invite_code: inviteCode.toUpperCase(), status: 'pending', role: 'rider' },
+  });
+
+  if (!invitation) throw new Error('Invalid or expired invite code.');
+
+  invitation.status = 'accepted';
+  await invitation.save();
+
+  return {
+    message: 'Invitation accepted. You are now linked to the coach.',
+    coach_id: invitation.coach_id,
+  };
+};

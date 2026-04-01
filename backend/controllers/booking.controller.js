@@ -69,6 +69,9 @@ export const getStableCoachesController = async (req, res) => {
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
+      date: req.query.date,
+      startTime: req.query.start_time,
+      riderId: req.user?.id,
     });
     return res.status(200).json(data);
   } catch (error) {

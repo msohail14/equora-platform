@@ -26,6 +26,7 @@ import SessionFeedback from './sessionFeedback.model.js';
 import Stable from './stable.model.js';
 import StableRegistration from './stableRegistration.model.js';
 import Subscription from './subscription.model.js';
+import RiderHorse from './riderHorse.model.js';
 import User from './user.model.js';
 
 Admin.hasMany(Stable, { foreignKey: 'admin_id', as: 'stables' });
@@ -187,10 +188,18 @@ CoachWeeklyAvailability.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' })
 User.hasMany(CoachAvailabilityException, { foreignKey: 'coach_id', as: 'availabilityExceptions' });
 CoachAvailabilityException.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
 
+// Rider-Horse relationships
+User.hasMany(RiderHorse, { foreignKey: 'rider_id', as: 'riderHorses' });
+RiderHorse.belongsTo(User, { foreignKey: 'rider_id', as: 'rider' });
+Horse.hasMany(RiderHorse, { foreignKey: 'horse_id', as: 'riderHorseLinks' });
+RiderHorse.belongsTo(Horse, { foreignKey: 'horse_id', as: 'horse' });
+Stable.hasMany(RiderHorse, { foreignKey: 'stable_id', as: 'riderHorseLinks' });
+RiderHorse.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
+
 export {
   Admin, Arena, CoachAvailabilityException, CoachPayout, CoachReview, CoachStable,
   CoachStableSchedule, CoachWeeklyAvailability, Course, CourseEnrollment, CourseSession,
   CourseTemplate, Discipline, Horse, HorseAvailability, Invitation, LessonBooking, LessonPackage,
-  MagicLinkToken, Notification, ObstacleType, Payment, PlatformSetting, RiderPackageBalance,
+  MagicLinkToken, Notification, ObstacleType, Payment, PlatformSetting, RiderHorse, RiderPackageBalance,
   SessionFeedback, Stable, StableRegistration, Subscription, User,
 };

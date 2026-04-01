@@ -1005,6 +1005,12 @@ export const applySchemaUpdates = async () => {
 
   // Phase M: Seed standard obstacle types
   await seedObstacleTypes();
+
+  // Phase N: Rider-Horse relationships
+  await ensureRiderHorsesTable();
+
+  // Phase O: Invitation enhancements (coach→rider invites)
+  await ensureInvitationEnhancements();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1122,5 +1128,81 @@ async function approveExistingStables() {
     }
   } catch (e) {
     // Already done or column missing – safe to ignore
+  }
+}
+
+async function ensureRiderHorsesTable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'rider_horses'
+    `);
+    if (Number(results?.[0]?.count || 0) > 0) return;
+
+    await sequelize.query(`
+      CREATE TABLE rider_horses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        horse_id INT NOT NULL,
+        stable_id INT NULL,
+        relationship_type ENUM('owner', 'assigned', 'favorite') NOT NULL DEFAULT 'favorite',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_rider_horse (rider_id, horse_id),
+        KEY idx_rider_id (rider_id),
+        KEY idx_horse_id (horse_id),
+        CONSTRAINT fk_rider_horses_rider FOREIGN KEY (rider_id) REFERENCES user(id) ON DELETE CASCADE,
+        CONSTRAINT fk_rider_horses_horse FOREIGN KEY (horse_id) REFERENCES horses(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('[schema] Created rider_horses table.');
+  } catch (e) {
+    console.warn('[schema] ensureRiderHorsesTable:', e.message);
+  }
+}
+
+async function ensureInvitationEnhancements() {
+  try {
+    // Add coach_id column
+    const [coachIdResults] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'invitation'
+        AND COLUMN_NAME = 'coach_id'
+    `);
+    if (Number(coachIdResults?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE invitation ADD COLUMN coach_id INT NULL AFTER role`);
+      console.log('[schema] Added coach_id to invitation table.');
+    }
+
+    // Add invite_code column
+    const [codeResults] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'invitation'
+        AND COLUMN_NAME = 'invite_code'
+    `);
+    if (Number(codeResults?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE invitation ADD COLUMN invite_code VARCHAR(10) NULL UNIQUE AFTER coach_id`);
+      console.log('[schema] Added invite_code to invitation table.');
+    }
+
+    // Extend role ENUM to include 'rider'
+    try {
+      await sequelize.query(`ALTER TABLE invitation MODIFY COLUMN role ENUM('coach', 'rider') NOT NULL DEFAULT 'coach'`);
+    } catch (_) {
+      // May already have the correct ENUM — safe to ignore
+    }
+
+    // Make stable_id nullable (rider invites may not have a stable)
+    try {
+      await sequelize.query(`ALTER TABLE invitation MODIFY COLUMN stable_id INT NULL`);
+    } catch (_) {}
+  } catch (e) {
+    console.warn('[schema] ensureInvitationEnhancements:', e.message);
   }
 }

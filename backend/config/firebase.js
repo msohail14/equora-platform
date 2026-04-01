@@ -37,7 +37,14 @@ const initializeFirebase = () => {
       projectId: process.env.FIREBASE_PROJECT_ID || 'equorariding',
     });
 
-    console.log('[firebase] Admin SDK initialized successfully.');
+    // Verify messaging is actually available
+    try {
+      const messaging = admin.messaging();
+      console.log('[firebase] ✅ Admin SDK initialized — messaging available:', !!messaging);
+    } catch (e) {
+      console.warn('[firebase] ⚠️ Admin SDK initialized but messaging failed:', e.message);
+    }
+
     return firebaseApp;
   } catch (e) {
     console.warn('[firebase] Init failed:', e.message);

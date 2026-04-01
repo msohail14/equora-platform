@@ -134,6 +134,7 @@ export const updateFcmTokenController = async (req, res) => {
       return res.status(400).json({ message: 'fcm_token is required.' });
     }
     await User.update({ fcm_token }, { where: { id: req.user.id } });
+    console.log(`[fcm] Token registered for user ${req.user.id}: ${fcm_token.slice(0, 15)}...`);
     return res.status(200).json({ message: 'FCM token updated.' });
   } catch (error) {
     return handleError(res, error);

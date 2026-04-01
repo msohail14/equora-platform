@@ -16,8 +16,8 @@ const Invitation = sequelize.define(
     },
     stable_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      comment: 'Stable the coach is being invited to',
+      allowNull: true,
+      comment: 'Stable the coach is being invited to (nullable for rider invites)',
     },
     email: {
       type: DataTypes.STRING(255),
@@ -28,9 +28,20 @@ const Invitation = sequelize.define(
       allowNull: true,
     },
     role: {
-      type: DataTypes.ENUM('coach'),
+      type: DataTypes.ENUM('coach', 'rider'),
       allowNull: false,
       defaultValue: 'coach',
+    },
+    coach_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Coach who invited the rider (for role=rider)',
+    },
+    invite_code: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      unique: true,
+      comment: 'Short shareable code e.g. EQ-7X3K',
     },
     status: {
       type: DataTypes.ENUM('pending', 'accepted', 'rejected', 'expired'),
