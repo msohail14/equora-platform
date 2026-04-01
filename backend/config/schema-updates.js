@@ -1202,6 +1202,32 @@ async function ensureInvitationEnhancements() {
     try {
       await sequelize.query(`ALTER TABLE invitation MODIFY COLUMN stable_id INT NULL`);
     } catch (_) {}
+
+    // Drop FK constraint on inviter_id -> admin(id) so coaches (regular users) can create invitations
+    try {
+      await sequelize.query(`ALTER TABLE invitation DROP FOREIGN KEY fk_invitation_inviter`);
+      console.log('[schema] Dropped fk_invitation_inviter constraint.');
+    } catch (_) {
+      // Constraint may not exist — safe to ignore
+    }
+
+    // Make inviter_id nullable (rider invites use coach_id instead)
+    try {
+      await sequelize.query(`ALTER TABLE invitation MODIFY COLUMN inviter_id INT NULL`);
+    } catch (_) {}
+
+    // Add rider_id column for tracking which rider accepted a rider invitation
+    const [riderIdResults] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'invitation'
+        AND COLUMN_NAME = 'rider_id'
+    `);
+    if (Number(riderIdResults?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE invitation ADD COLUMN rider_id INT NULL AFTER coach_id`);
+      console.log('[schema] Added rider_id to invitation table.');
+    }
   } catch (e) {
     console.warn('[schema] ensureInvitationEnhancements:', e.message);
   }

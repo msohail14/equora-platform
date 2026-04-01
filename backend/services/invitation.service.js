@@ -330,7 +330,14 @@ export const acceptRiderInvitation = async ({ inviteCode, riderId }) => {
 
   if (!invitation) throw new Error('Invalid or expired invite code.');
 
+  if (new Date() > new Date(invitation.expires_at)) {
+    invitation.status = 'expired';
+    await invitation.save();
+    throw new Error('This invite code has expired.');
+  }
+
   invitation.status = 'accepted';
+  invitation.rider_id = riderId;
   await invitation.save();
 
   return {

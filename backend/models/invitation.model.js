@@ -11,8 +11,8 @@ const Invitation = sequelize.define(
     },
     inviter_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      comment: 'Admin who sent the invitation',
+      allowNull: true,
+      comment: 'Admin or coach who sent the invitation',
     },
     stable_id: {
       type: DataTypes.INTEGER,
@@ -36,6 +36,11 @@ const Invitation = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: 'Coach who invited the rider (for role=rider)',
+    },
+    rider_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Rider who accepted the invitation (for role=rider)',
     },
     invite_code: {
       type: DataTypes.STRING(10),

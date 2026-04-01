@@ -3,6 +3,21 @@ import {
   createRiderInvitation, getCoachRiderInvitations, verifyInviteCode, acceptRiderInvitation,
 } from '../services/invitation.service.js';
 
+const handleError = (res, error) => {
+  const isValidationError =
+    error.message.includes('required') ||
+    error.message.includes('Invalid') ||
+    error.message.includes('expired') ||
+    error.message.includes('not found') ||
+    error.message.includes('already') ||
+    error.message.includes('Not authenticated') ||
+    error.message.includes('must be');
+
+  return res.status(isValidationError ? 400 : 500).json({
+    error: error.message || 'Internal server error.',
+  });
+};
+
 export const createInvitationController = async (req, res) => {
   try {
     const { stableId, email, phone } = req.body;
@@ -13,7 +28,7 @@ export const createInvitationController = async (req, res) => {
     const result = await createInvitation({ stableId, adminId, email, phone });
     return res.status(201).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -24,7 +39,7 @@ export const acceptInvitationController = async (req, res) => {
     const result = await acceptInvitation({ token, userId, firebaseUid });
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -34,7 +49,7 @@ export const getStableInvitationsController = async (req, res) => {
     const invitations = await getStableInvitations(stableId);
     return res.status(200).json({ data: invitations });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -45,7 +60,7 @@ export const cancelInvitationController = async (req, res) => {
     const result = await cancelInvitation(id, adminId);
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -59,7 +74,7 @@ export const createRiderInvitationController = async (req, res) => {
     const result = await createRiderInvitation({ coachId, email, phone });
     return res.status(201).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -70,7 +85,7 @@ export const getCoachRiderInvitationsController = async (req, res) => {
     const invitations = await getCoachRiderInvitations(coachId);
     return res.status(200).json({ data: invitations });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -81,7 +96,7 @@ export const verifyInviteCodeController = async (req, res) => {
     const result = await verifyInviteCode(code);
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };
 
@@ -94,6 +109,6 @@ export const acceptRiderInvitationController = async (req, res) => {
     const result = await acceptRiderInvitation({ inviteCode: invite_code, riderId });
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return handleError(res, error);
   }
 };

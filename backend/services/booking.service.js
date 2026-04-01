@@ -2,8 +2,8 @@ import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 import {
   Arena, CoachReview, CoachStable, CoachStableSchedule, Course, CourseSession,
-  Discipline, Horse, HorseAvailability, LessonBooking, Notification, Payment,
-  Stable, User,
+  Discipline, Horse, HorseAvailability, Invitation, LessonBooking, Notification,
+  Payment, Stable, User,
 } from '../models/index.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
 import CoachAvailabilityException from '../models/coachAvailabilityException.model.js';
@@ -220,13 +220,16 @@ export const getStableCoaches = async ({ stableId, search, page, limit, date, st
   }
 
   // ── Multi-stable privacy: filter coaches with 'featured_riders_only' visibility ──
-  if (riderId && coaches.length > 0) {
-    const restrictedCoachIds = coaches
-      .filter((c) => visibilityMap.get(c.id) === 'featured_riders_only')
-      .map((c) => c.id);
+  const restrictedCoachIds = coaches
+    .filter((c) => visibilityMap.get(c.id) === 'featured_riders_only')
+    .map((c) => c.id);
 
-    if (restrictedCoachIds.length > 0) {
-      // Check if rider has completed bookings or accepted invitations with these coaches
+  if (restrictedCoachIds.length > 0) {
+    if (!riderId) {
+      // Unauthenticated: exclude all restricted coaches
+      coaches = coaches.filter((c) => visibilityMap.get(c.id) !== 'featured_riders_only');
+    } else {
+      // Check if rider has completed bookings with these coaches
       const priorBookings = await LessonBooking.findAll({
         where: {
           rider_id: riderId,
@@ -237,11 +240,27 @@ export const getStableCoaches = async ({ stableId, search, page, limit, date, st
         group: ['coach_id'],
         raw: true,
       });
-      const hasBookingWith = new Set(priorBookings.map((b) => b.coach_id));
+      const allowedCoachIds = new Set(priorBookings.map((b) => b.coach_id));
+
+      // Also check for accepted rider invitations from these coaches
+      const acceptedInvitations = await Invitation.findAll({
+        where: {
+          rider_id: riderId,
+          coach_id: { [Op.in]: restrictedCoachIds },
+          role: 'rider',
+          status: 'accepted',
+        },
+        attributes: ['coach_id'],
+        group: ['coach_id'],
+        raw: true,
+      });
+      for (const inv of acceptedInvitations) {
+        allowedCoachIds.add(inv.coach_id);
+      }
 
       coaches = coaches.filter((c) => {
         if (visibilityMap.get(c.id) !== 'featured_riders_only') return true;
-        return hasBookingWith.has(c.id);
+        return allowedCoachIds.has(c.id);
       });
     }
   }
@@ -807,13 +826,10 @@ export const payForBooking = async ({ bookingId, riderId, paymentId }) => {
   await booking.save();
 
   if (booking.horse_id) {
-    const availability = await HorseAvailability.findOne({
+    await HorseAvailability.increment('sessions_booked', {
+      by: 1,
       where: { horse_id: booking.horse_id, date: booking.booking_date },
     });
-    if (availability) {
-      availability.sessions_booked += 1;
-      await availability.save();
-    }
   }
 
   if (booking.coach_id) {
@@ -893,13 +909,14 @@ export const cancelBooking = async ({ bookingId, userId }) => {
   await booking.save();
 
   if (hadHorse && wasConfirmed) {
-    const availability = await HorseAvailability.findOne({
-      where: { horse_id: booking.horse_id, date: booking.booking_date },
+    await HorseAvailability.decrement('sessions_booked', {
+      by: 1,
+      where: {
+        horse_id: booking.horse_id,
+        date: booking.booking_date,
+        sessions_booked: { [Op.gt]: 0 },
+      },
     });
-    if (availability && availability.sessions_booked > 0) {
-      availability.sessions_booked -= 1;
-      await availability.save();
-    }
   }
 
   const notifyUserId = booking.rider_id === userId ? booking.coach_id : booking.rider_id;
@@ -1091,13 +1108,10 @@ export const coachConfirmBooking = async ({ bookingId, coachId }) => {
 
   // Increment horse availability if assigned
   if (booking.horse_id) {
-    const availability = await HorseAvailability.findOne({
+    await HorseAvailability.increment('sessions_booked', {
+      by: 1,
       where: { horse_id: booking.horse_id, date: booking.booking_date },
     });
-    if (availability) {
-      availability.sessions_booked += 1;
-      await availability.save();
-    }
   }
 
   await Notification.create({
