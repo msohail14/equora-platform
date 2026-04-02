@@ -98,17 +98,6 @@ export const createArena = async ({ adminId, payload }) => {
 export const getAllArenas = async ({ adminId, stableId, search, page, limit }) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
-  const stableIds = await getAdminStableIds(adminId);
-  if (stableIds.length === 0) {
-    return {
-      data: [],
-      pagination: buildPaginationMeta({
-        currentPage: pagination.page,
-        limit: pagination.limit,
-        totalRecords: 0,
-      }),
-    };
-  }
 
   const where = {};
   const keyword = String(search || '').trim();
@@ -121,17 +110,37 @@ export const getAllArenas = async ({ adminId, stableId, search, page, limit }) =
     ];
   }
 
-  if (stableId !== undefined) {
+  if (adminId) {
+    const stableIds = await getAdminStableIds(adminId);
+    if (stableIds.length === 0) {
+      return {
+        data: [],
+        pagination: buildPaginationMeta({
+          currentPage: pagination.page,
+          limit: pagination.limit,
+          totalRecords: 0,
+        }),
+      };
+    }
+
+    if (stableId !== undefined) {
+      const parsedStableId = Number(stableId);
+      if (Number.isNaN(parsedStableId)) {
+        throw new Error('stable_id must be a valid number.');
+      }
+      if (!stableIds.includes(parsedStableId)) {
+        throw new Error('Stable not found or access denied.');
+      }
+      where.stable_id = parsedStableId;
+    } else {
+      where.stable_id = { [Op.in]: stableIds };
+    }
+  } else if (stableId !== undefined) {
     const parsedStableId = Number(stableId);
     if (Number.isNaN(parsedStableId)) {
       throw new Error('stable_id must be a valid number.');
     }
-    if (!stableIds.includes(parsedStableId)) {
-      throw new Error('Stable not found or access denied.');
-    }
     where.stable_id = parsedStableId;
-  } else {
-    where.stable_id = { [Op.in]: stableIds };
   }
 
   const { rows, count } = await Arena.findAndCountAll({
@@ -160,7 +169,10 @@ export const getArenaById = async ({ adminId, arenaId }) => {
     throw new Error('Arena not found.');
   }
 
-  await ensureStableOwnedByAdmin(adminId, arena.stable_id);
+  if (adminId) {
+    await ensureStableOwnedByAdmin(adminId, arena.stable_id);
+  }
+
   return arena;
 };
 

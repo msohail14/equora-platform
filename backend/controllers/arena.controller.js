@@ -53,7 +53,7 @@ export const getAllArenasController = async (req, res) => {
 export const getAllArenasGlobalController = async (req, res) => {
   try {
     const data = await getAllArenas({
-      adminId: req.user.id,
+      adminId: req.user?.id,
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
@@ -67,7 +67,7 @@ export const getAllArenasGlobalController = async (req, res) => {
 export const getArenaByIdController = async (req, res) => {
   try {
     const data = await getArenaById({
-      adminId: req.user.id,
+      adminId: req.user?.id,
       arenaId: req.params.id,
     });
     return res.status(200).json(data);
