@@ -20,7 +20,7 @@ const CoachStableSchedule = sequelize.define(
     day_of_week: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      validate: { min: 0, max: 6 },
+      validate: { min: 1, max: 7 },
     },
     start_time: {
       type: DataTypes.TIME,

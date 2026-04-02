@@ -1,4 +1,5 @@
-import { Course, CourseEnrollment, User, Notification } from '../models/index.js';
+import { Course, CourseEnrollment, User } from '../models/index.js';
+import { createNotification } from './notification.service.js';
 
 const enrollmentInclude = [
   {
@@ -81,8 +82,8 @@ export const createEnrollment = async ({ user, course_id }) => {
 
   // Notify rider of enrollment
   try {
-    await Notification.create({
-      user_id: user.id,
+    await createNotification({
+      userId: user.id,
       type: 'course_enrolled',
       title: 'Enrollment Confirmed',
       body: `You have been enrolled in "${course.title}".`,
@@ -92,8 +93,8 @@ export const createEnrollment = async ({ user, course_id }) => {
     if (course.coach_id) {
       const rider = await User.findByPk(user.id, { attributes: ['first_name', 'last_name'] });
       const riderName = rider ? `${rider.first_name} ${rider.last_name}`.trim() : 'A rider';
-      await Notification.create({
-        user_id: course.coach_id,
+      await createNotification({
+        userId: course.coach_id,
         type: 'course_enrolled',
         title: 'New Enrollment',
         body: `${riderName} enrolled in your course "${course.title}".`,

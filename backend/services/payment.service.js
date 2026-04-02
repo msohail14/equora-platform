@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { Payment, Subscription, CoachPayout, LessonBooking, Notification } from '../models/index.js';
+import { Payment, Subscription, CoachPayout, LessonBooking } from '../models/index.js';
+import { createNotification } from './notification.service.js';
 import { Op } from 'sequelize';
 
 const generateTransactionId = () => `TXN_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
@@ -114,8 +115,8 @@ const confirmBookingFromPayment = async (payment) => {
   await booking.save();
 
   // Notify rider
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'payment_confirmed',
     title: 'Payment Confirmed',
     body: `Your payment for the booking on ${booking.booking_date} has been confirmed.`,
@@ -124,8 +125,8 @@ const confirmBookingFromPayment = async (payment) => {
 
   // Notify coach
   if (booking.coach_id) {
-    await Notification.create({
-      user_id: booking.coach_id,
+    await createNotification({
+      userId: booking.coach_id,
       type: 'payment_confirmed',
       title: 'Session Payment Received',
       body: `Payment confirmed for the lesson on ${booking.booking_date}.`,
@@ -221,8 +222,8 @@ export const markPaymentAsManual = async (paymentId) => {
       booking.payment_id = payment.id;
       await booking.save();
 
-      await Notification.create({
-        user_id: booking.rider_id,
+      await createNotification({
+        userId: booking.rider_id,
         type: 'payment_confirmed',
         title: 'Payment Confirmed',
         body: `Manual payment confirmed for your booking on ${booking.booking_date}.`,
@@ -243,8 +244,8 @@ export const refundPayment = async (paymentId) => {
   await payment.save();
 
   if (payment.user_id) {
-    await Notification.create({
-      user_id: payment.user_id,
+    await createNotification({
+      userId: payment.user_id,
       type: 'payment_confirmed',
       title: 'Payment Refunded',
       body: `Your payment of ${payment.currency} ${payment.amount} has been refunded.`,

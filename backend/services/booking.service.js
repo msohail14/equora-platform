@@ -2,9 +2,10 @@ import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 import {
   Arena, CoachReview, CoachStable, CoachStableSchedule, Course, CourseSession,
-  Discipline, Horse, HorseAvailability, Invitation, LessonBooking, Notification,
+  Discipline, Horse, HorseAvailability, Invitation, LessonBooking,
   Payment, Stable, User,
 } from '../models/index.js';
+import { createNotification } from './notification.service.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
 import CoachAvailabilityException from '../models/coachAvailabilityException.model.js';
 
@@ -268,10 +269,7 @@ export const getStableCoaches = async ({ stableId, search, page, limit, date, st
   // ── Availability filtering: only show coaches available at selected date/time ──
   if (date && startTime && coaches.length > 0) {
     const coachIds = coaches.map((c) => c.id);
-    const parsedDate = new Date(date);
-    // ISO day: 1 = Monday … 7 = Sunday  (JS getDay: 0 = Sunday)
-    const jsDay = parsedDate.getDay(); // 0-6 (Sun-Sat)
-    const isoDay = jsDay === 0 ? 7 : jsDay; // 1-7 (Mon-Sun)
+    const isoDay = getIsoDayOfWeek(date);
 
     // Batch-fetch weekly availability for all candidate coaches on this day
     const availabilities = await CoachWeeklyAvailability.findAll({
@@ -368,6 +366,7 @@ export const getCoachSlots = async ({ coachId, date, stableId }) => {
   }
 
   const dayOfWeek = getIsoDayOfWeek(date);
+  console.log(`[getCoachSlots] coachId=${coachId}, date=${date}, dayOfWeek=${dayOfWeek}, stableId=${stableId || 'none'}`);
 
   const exception = await CoachAvailabilityException.findOne({
     where: {
@@ -420,8 +419,13 @@ export const getCoachSlots = async ({ coachId, date, stableId }) => {
   }
 
   if (scheduleRows.length === 0) {
+    // Debug: check what availability actually exists for this coach
+    const allAvail = await CoachWeeklyAvailability.findAll({ where: { coach_id: coachId }, raw: true });
+    console.log(`[getCoachSlots] No schedule found for dayOfWeek=${dayOfWeek}. Coach has ${allAvail.length} availability records:`, allAvail.map(a => `day=${a.day_of_week} ${a.start_time}-${a.end_time} active=${a.is_active}`));
     return { data: [], allowed_durations: coach.allowed_durations || [30, 45, 60], default_duration: coach.default_duration || 45 };
   }
+
+  console.log(`[getCoachSlots] Found ${scheduleRows.length} schedule rows for dayOfWeek=${dayOfWeek}`);
 
   const existingSessions = await LessonBooking.findAll({
     where: {
@@ -719,8 +723,8 @@ export const createBooking = async ({
       ? `${rider.first_name || 'A rider'} has booked a lesson on ${bookingDate}. Auto-approved per your settings.`
       : `${rider.first_name || 'A rider'} has requested a lesson on ${bookingDate}.`;
 
-    await Notification.create({
-      user_id: coachId,
+    await createNotification({
+      userId: coachId,
       type: 'lesson_booked',
       title: notifTitle,
       body: notifBody,
@@ -729,8 +733,8 @@ export const createBooking = async ({
 
     // If auto-approved, also notify rider
     if (approvalMode === 'auto') {
-      await Notification.create({
-        user_id: riderId,
+      await createNotification({
+        userId: riderId,
         type: 'booking_approved',
         title: 'Booking Auto-Approved',
         body: `Your booking on ${bookingDate} has been auto-approved. Please complete payment to confirm.`,
@@ -742,8 +746,8 @@ export const createBooking = async ({
   // Notify stable admin about new booking
   if (stable.admin_id) {
     try {
-      await Notification.create({
-        admin_id: stable.admin_id,
+      await createNotification({
+        adminId: stable.admin_id,
         type: 'lesson_booked',
         title: 'New Booking at Your Stable',
         body: `${rider.first_name || 'A rider'} booked a ${isArenaOnly ? 'arena session' : 'lesson'} on ${bookingDate}.`,
@@ -774,8 +778,8 @@ export const approveHorseForBooking = async ({ bookingId, userId }) => {
   booking.status = 'pending_payment';
   await booking.save();
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'horse_approved',
     title: 'Horse Approved',
     body: 'Your coach has approved the horse for your upcoming lesson. Please proceed with payment.',
@@ -833,8 +837,8 @@ export const payForBooking = async ({ bookingId, riderId, paymentId }) => {
   }
 
   if (booking.coach_id) {
-    await Notification.create({
-      user_id: booking.coach_id,
+    await createNotification({
+      userId: booking.coach_id,
       type: 'payment_confirmed',
       title: 'Payment Confirmed',
       body: `Payment has been confirmed for the lesson on ${booking.booking_date}.`,
@@ -842,8 +846,8 @@ export const payForBooking = async ({ bookingId, riderId, paymentId }) => {
     });
   }
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'payment_confirmed',
     title: 'Booking Confirmed',
     body: `Your lesson on ${booking.booking_date} is now confirmed.`,
@@ -923,8 +927,8 @@ export const cancelBooking = async ({ bookingId, userId }) => {
   const cancelledByRole = booking.rider_id === userId ? 'rider' : 'coach';
 
   if (notifyUserId) {
-    await Notification.create({
-      user_id: notifyUserId,
+    await createNotification({
+      userId: notifyUserId,
       type: 'general',
       title: 'Booking Cancelled',
       body: `The lesson on ${booking.booking_date} has been cancelled by the ${cancelledByRole}.`,
@@ -1083,8 +1087,8 @@ export const approveBooking = async ({ bookingId, userId, isAdmin = false }) => 
   booking.status = 'pending_payment';
   await booking.save();
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'booking_approved',
     title: 'Booking Approved — Payment Required',
     body: `Your booking on ${booking.booking_date} has been approved. Please complete payment to confirm.`,
@@ -1118,8 +1122,8 @@ export const coachConfirmBooking = async ({ bookingId, coachId }) => {
     });
   }
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'booking_approved',
     title: 'Booking Confirmed',
     body: `Your booking on ${booking.booking_date} has been confirmed by your coach.`,
@@ -1145,8 +1149,8 @@ export const adminConfirmBooking = async ({ bookingId, adminId }) => {
   booking.status = 'confirmed';
   await booking.save();
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'booking_approved',
     title: 'Booking Confirmed',
     body: `Your booking on ${booking.booking_date} has been confirmed.`,
@@ -1175,8 +1179,8 @@ export const declineBooking = async ({ bookingId, userId, isAdmin = false, reaso
   booking.decline_reason = reason || null;
   await booking.save();
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'booking_declined',
     title: 'Booking Declined',
     body: reason ? `Your booking on ${booking.booking_date} was declined: ${reason}` : `Your booking on ${booking.booking_date} was declined.`,
@@ -1208,8 +1212,8 @@ export const completeBooking = async ({ bookingId, userId }) => {
   booking.status = 'completed';
   await booking.save();
 
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'general',
     title: 'Session Completed',
     body: `Your session on ${booking.booking_date} has been completed.`,
@@ -1251,8 +1255,8 @@ export const sendPaymentReminder = async ({ bookingId, coachId }) => {
   const coachType = coach?.coach_type || 'freelancer';
 
   if ((coachType === 'stable_employed' || booking.stable_id) && booking.stable?.admin_id) {
-    await Notification.create({
-      admin_id: booking.stable.admin_id,
+    await createNotification({
+      adminId: booking.stable.admin_id,
       type: 'payment_reminder',
       title: 'Payment Reminder',
       body: `Coach ${coach.first_name || ''} ${coach.last_name || ''} is requesting payment for session on ${booking.booking_date}.`,
@@ -1261,8 +1265,8 @@ export const sendPaymentReminder = async ({ bookingId, coachId }) => {
   }
 
   if (coachType === 'independent' || coachType === 'freelancer') {
-    await Notification.create({
-      user_id: booking.rider_id,
+    await createNotification({
+      userId: booking.rider_id,
       type: 'payment_reminder',
       title: 'Payment Reminder',
       body: `Coach ${coach.first_name || ''} ${coach.last_name || ''} is requesting payment for your session on ${booking.booking_date}.`,
@@ -1419,8 +1423,8 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
   await booking.save();
 
   // Notify rider about the modification
-  await Notification.create({
-    user_id: booking.rider_id,
+  await createNotification({
+    userId: booking.rider_id,
     type: 'general',
     title: 'Booking Modified',
     body: 'Your coach has modified your upcoming booking. Please review the changes.',
@@ -1465,8 +1469,8 @@ export const promoteFromWaitlist = async ({ coachId, stableId, bookingDate, star
   nextWaitlisted.waitlist_position = null;
   await nextWaitlisted.save();
 
-  await Notification.create({
-    user_id: nextWaitlisted.rider_id,
+  await createNotification({
+    userId: nextWaitlisted.rider_id,
     type: 'booking_approved',
     title: 'You\'re off the waitlist!',
     body: `A spot opened up for your session on ${bookingDate}. Your booking is now ${newStatus === 'confirmed' ? 'confirmed' : 'under review'}.`,
@@ -1554,8 +1558,8 @@ export const createSeriesBooking = async ({
 
   if (coachId) {
     const rider = await User.findByPk(riderId, { attributes: ['first_name'] });
-    await Notification.create({
-      user_id: coachId,
+    await createNotification({
+      userId: coachId,
       type: 'lesson_booked',
       title: `New Series Booking (${dates.length} sessions)`,
       body: `${rider?.first_name || 'A rider'} booked ${dates.length} sessions starting ${dates[0]}.`,
