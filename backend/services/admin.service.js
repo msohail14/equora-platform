@@ -186,6 +186,7 @@ export const changeAdminPassword = async ({ adminId, current_password, new_passw
     throw new Error('Current password is incorrect.');
   }
 
+  validatePasswordStrength(new_password);
   admin.password_hash = await bcrypt.hash(new_password, 10);
   await admin.save();
 
@@ -214,6 +215,7 @@ export const resetStableOwnerPassword = async (adminId, { password } = {}) => {
   if (!admin) throw new Error('Admin account not found.');
 
   const temporaryPassword = password || crypto.randomBytes(12).toString('hex');
+  if (password) validatePasswordStrength(password);
   admin.password_hash = await bcrypt.hash(temporaryPassword, 10);
   admin.auth_method = 'email_password';
   await admin.save();

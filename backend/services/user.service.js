@@ -85,6 +85,7 @@ export const signupUser = async ({
   riding_level,
   specialties,
   bio,
+  coach_type,
 }) => {
   if (!email || !password || !role) {
     throw new Error('Email, password, and role are required.');
@@ -126,6 +127,7 @@ export const signupUser = async ({
     existingUser.riding_level = normalizedRidingLevel ?? existingUser.riding_level;
     existingUser.specialties = specialties ?? existingUser.specialties;
     existingUser.bio = bio ?? existingUser.bio;
+    existingUser.coach_type = coach_type ?? existingUser.coach_type;
     existingUser.profile_picture_url = profile_picture_url ?? existingUser.profile_picture_url;
     existingUser.is_email_verified = true;
     existingUser.email_verification_otp = null;
@@ -167,6 +169,7 @@ export const signupUser = async ({
     riding_level: normalizedRidingLevel || null,
     specialties: specialties ?? null,
     bio: bio || null,
+    coach_type: coach_type || null,
     profile_picture_url: profile_picture_url || null,
     is_email_verified: true,
   });
@@ -449,7 +452,7 @@ export const setUserCredentials = async (userId, { email, password }) => {
   }
 
   if (password) {
-    if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+    validatePasswordStrength(password);
     user.password_hash = await bcrypt.hash(password, 10);
     user.auth_method = 'email_password';
   }

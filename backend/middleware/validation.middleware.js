@@ -39,6 +39,9 @@ export const signupValidation = [
   body('mobile_number')
     .optional({ values: 'falsy' })
     .isMobilePhone('any').withMessage('Must be a valid mobile number'),
+  body('coach_type')
+    .optional({ values: 'falsy' })
+    .isIn(['freelancer', 'stable_employed', 'independent']).withMessage('coach_type must be one of: freelancer, stable_employed, independent'),
 ];
 
 export const loginValidation = [

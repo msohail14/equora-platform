@@ -8,7 +8,7 @@ const coachAuthMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { issuer: 'equora-api', audience: 'equora-mobile' });
     
     // Check if the user is a coach
     if (decoded.role !== 'coach') {
