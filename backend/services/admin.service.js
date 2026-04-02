@@ -6,6 +6,7 @@ import Admin from '../models/admin.model.js';
 import sequelize from '../config/database.js';
 import { Arena, CoachPayout, Course, CourseEnrollment, CourseSession, Discipline, Horse, LessonBooking, Payment, PlatformSetting, Stable, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
+import { validatePasswordStrength } from '../utils/validators.js';
 
 const publicAdminFields = ['id', 'email', 'first_name', 'last_name', 'role', 'created_at'];
 
@@ -31,7 +32,7 @@ const getAdminJwtToken = (admin) =>
       role: admin.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d', issuer: 'equora-api', audience: 'equora-mobile' }
   );
 
 export const signupAdmin = async ({ email, password, first_name, last_name, invite_secret }) => {
@@ -43,6 +44,8 @@ export const signupAdmin = async ({ email, password, first_name, last_name, invi
   if (!email || !password) {
     throw new Error('Email and password are required.');
   }
+
+  validatePasswordStrength(password);
 
   const existingAdmin = await Admin.findOne({ where: { email } });
   if (existingAdmin) {
@@ -140,6 +143,8 @@ export const resetAdminPassword = async ({ token, new_password }) => {
   if (!token || !new_password) {
     throw new Error('Token and new_password are required.');
   }
+
+  validatePasswordStrength(new_password);
 
   const admin = await Admin.findOne({
     where: {

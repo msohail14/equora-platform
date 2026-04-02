@@ -3,6 +3,14 @@ import authMiddleware from '../middleware/auth.middleware.js';
 import adminAuthMiddleware from '../middleware/admin-auth.middleware.js';
 import coachAuthMiddleware from '../middleware/coach-auth.middleware.js';
 import {
+  validate,
+  createBookingValidation,
+  createSeriesBookingValidation,
+  bookingIdParamValidation,
+  stableIdParamValidation,
+  stableCoachesQueryValidation,
+} from '../middleware/validation.middleware.js';
+import {
   getBookingStablesController,
   getStableArenasController,
   getStableCoachesController,
@@ -32,31 +40,31 @@ import {
 const router = express.Router();
 
 router.get('/stables', getBookingStablesController);
-router.get('/stables/:id/arenas', getStableArenasController);
-router.get('/stables/:id/coaches', getStableCoachesController);
-router.get('/stables/:id/horses', getStableHorsesController);
-router.get('/stables/:id/available-slots', getAvailableSlotsController);
+router.get('/stables/:id/arenas', stableIdParamValidation, validate, getStableArenasController);
+router.get('/stables/:id/coaches', stableCoachesQueryValidation, validate, getStableCoachesController);
+router.get('/stables/:id/horses', stableIdParamValidation, validate, getStableHorsesController);
+router.get('/stables/:id/available-slots', stableIdParamValidation, validate, getAvailableSlotsController);
 router.get('/arenas/:arenaId/slots', getArenaSlotsController);
 
 router.get('/coaches/:id/slots', authMiddleware, getCoachSlotsController);
-router.post('/', authMiddleware, createBookingController);
-router.patch('/:id/approve-horse', authMiddleware, approveHorseController);
-router.patch('/:id/confirm-horse', adminAuthMiddleware, confirmHorseController);
-router.post('/:id/pay', authMiddleware, payForBookingController);
+router.post('/', authMiddleware, createBookingValidation, validate, createBookingController);
+router.patch('/:id/approve-horse', authMiddleware, bookingIdParamValidation, validate, approveHorseController);
+router.patch('/:id/confirm-horse', adminAuthMiddleware, bookingIdParamValidation, validate, confirmHorseController);
+router.post('/:id/pay', authMiddleware, bookingIdParamValidation, validate, payForBookingController);
 
-router.patch('/:id/approve', authMiddleware, approveBookingController);
-router.patch('/:id/confirm', adminAuthMiddleware, adminConfirmBookingController);
-router.patch('/:id/coach-confirm', coachAuthMiddleware, coachConfirmBookingController);
-router.patch('/:id/decline', authMiddleware, declineBookingController);
-router.patch('/:id/start', authMiddleware, startBookingController);
-router.patch('/:id/complete', authMiddleware, completeBookingController);
-router.post('/:id/payment-reminder', coachAuthMiddleware, sendPaymentReminderController);
+router.patch('/:id/approve', authMiddleware, bookingIdParamValidation, validate, approveBookingController);
+router.patch('/:id/confirm', adminAuthMiddleware, bookingIdParamValidation, validate, adminConfirmBookingController);
+router.patch('/:id/coach-confirm', coachAuthMiddleware, bookingIdParamValidation, validate, coachConfirmBookingController);
+router.patch('/:id/decline', authMiddleware, bookingIdParamValidation, validate, declineBookingController);
+router.patch('/:id/start', authMiddleware, bookingIdParamValidation, validate, startBookingController);
+router.patch('/:id/complete', authMiddleware, bookingIdParamValidation, validate, completeBookingController);
+router.post('/:id/payment-reminder', coachAuthMiddleware, bookingIdParamValidation, validate, sendPaymentReminderController);
 
 router.get('/returning-rider-defaults', authMiddleware, getReturningRiderDefaultsController);
-router.post('/series', authMiddleware, createSeriesBookingController);
+router.post('/series', authMiddleware, createSeriesBookingValidation, validate, createSeriesBookingController);
 router.get('/my', authMiddleware, getMyBookingsController);
-router.patch('/:id/modify', coachAuthMiddleware, coachModifyBookingController);
-router.patch('/:id/cancel', authMiddleware, cancelBookingController);
+router.patch('/:id/modify', coachAuthMiddleware, bookingIdParamValidation, validate, coachModifyBookingController);
+router.patch('/:id/cancel', authMiddleware, bookingIdParamValidation, validate, cancelBookingController);
 router.get('/horses/:id/workload', authMiddleware, getHorseWorkloadController);
 
 export default router;

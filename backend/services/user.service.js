@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import User from '../models/user.model.js';
 import { deleteFileIfExists, toAbsolutePathFromPublic } from '../utils/file.util.js';
+import { validatePasswordStrength } from '../utils/validators.js';
 import { sendOtpEmail, sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
 
 const publicUserFields = [
@@ -54,7 +55,7 @@ const getJwtToken = (user) =>
       role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d', issuer: 'equora-api', audience: 'equora-mobile' }
   );
 
 const normalizeRidingLevel = (value) => {
@@ -88,6 +89,8 @@ export const signupUser = async ({
   if (!email || !password || !role) {
     throw new Error('Email, password, and role are required.');
   }
+
+  validatePasswordStrength(password);
 
   if (!['rider', 'coach'].includes(role)) {
     throw new Error("Role must be either 'rider' or 'coach'.");
@@ -327,6 +330,8 @@ export const resetPassword = async ({ token, new_password }) => {
     throw new Error('Token and new_password are required.');
   }
 
+  validatePasswordStrength(new_password);
+
   const user = await User.findOne({
     where: {
       reset_password_token: token,
@@ -352,6 +357,8 @@ export const changePassword = async ({ userId, current_password, new_password })
   if (!current_password || !new_password) {
     throw new Error('current_password and new_password are required.');
   }
+
+  validatePasswordStrength(new_password);
 
   const user = await User.findByPk(userId);
   if (!user) {

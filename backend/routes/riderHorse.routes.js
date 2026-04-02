@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import authMiddleware from '../middleware/auth.middleware.js';
 import {
+  validate,
+  addRiderHorseValidation,
+  removeRiderHorseValidation,
+} from '../middleware/validation.middleware.js';
+import {
   getRiderHorsesController,
   addRiderHorseController,
   removeRiderHorseController,
@@ -12,9 +17,9 @@ const router = Router();
 router.get('/', authMiddleware, getRiderHorsesController);
 
 // POST /rider-horses — add horse to my horses
-router.post('/', authMiddleware, addRiderHorseController);
+router.post('/', authMiddleware, addRiderHorseValidation, validate, addRiderHorseController);
 
 // DELETE /rider-horses/:horseId — remove horse from my horses
-router.delete('/:horseId', authMiddleware, removeRiderHorseController);
+router.delete('/:horseId', authMiddleware, removeRiderHorseValidation, validate, removeRiderHorseController);
 
 export default router;

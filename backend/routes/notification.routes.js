@@ -1,6 +1,10 @@
 import express from 'express';
 import authMiddleware from '../middleware/auth.middleware.js';
 import {
+  validate,
+  notificationIdParamValidation,
+} from '../middleware/validation.middleware.js';
+import {
   getNotificationsController,
   markAsReadController,
   markAllAsReadController,
@@ -10,7 +14,7 @@ import {
 const router = express.Router();
 
 router.get('/', authMiddleware, getNotificationsController);
-router.patch('/:id/read', authMiddleware, markAsReadController);
+router.patch('/:id/read', authMiddleware, notificationIdParamValidation, validate, markAsReadController);
 router.patch('/read-all', authMiddleware, markAllAsReadController);
 router.get('/unread-count', authMiddleware, getUnreadCountController);
 

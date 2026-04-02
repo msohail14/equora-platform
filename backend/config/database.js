@@ -23,6 +23,17 @@ const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
   port: dbPort,
   dialect: process.env.DB_DIALECT || 'mysql',
   logging: false,
+  dialectOptions: {
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false,  // Railway uses self-signed certs
+    } : undefined,
+  },
+  pool: {
+    max: parseInt(process.env.DB_POOL_MAX) || 10,
+    min: parseInt(process.env.DB_POOL_MIN) || 2,
+    acquire: 30000,
+    idle: 10000,
+  },
 });
 
 export default sequelize;
