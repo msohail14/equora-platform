@@ -711,7 +711,7 @@ const ensureNotificationNewTypes = async () => {
   try {
     await sequelize.query(`
       ALTER TABLE \`notifications\`
-      MODIFY COLUMN \`type\` ENUM('lesson_booked','session_reminder','payment_confirmed','horse_assigned','horse_approved','feedback_posted','coach_verified','stable_approved','payout_processed','booking_approved','booking_declined','payment_reminder','general') NOT NULL
+      MODIFY COLUMN \`type\` ENUM('lesson_booked','session_reminder','payment_confirmed','horse_assigned','horse_approved','feedback_posted','coach_verified','stable_approved','payout_processed','booking_approved','booking_declined','payment_reminder','course_enrolled','general') NOT NULL
     `);
   } catch (e) {
     // ENUM already has these values

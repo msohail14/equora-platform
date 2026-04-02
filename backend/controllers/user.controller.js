@@ -1,6 +1,7 @@
 import {
   changePassword,
   changeProfile,
+  deleteAccount,
   forgotPassword,
   getMyProfile,
   loginUser,
@@ -13,18 +14,22 @@ import User from '../models/user.model.js';
 import { deleteFileIfExists, toPublicUploadPath } from '../utils/file.util.js';
 
 const handleError = (res, error) => {
+  const msg = error.message || '';
   const isValidationError =
-    error.message.includes('required') ||
-    error.message.includes('Invalid') ||
-    error.message.includes('expired') ||
-    error.message.includes('verified') ||
-    error.message.includes('incorrect') ||
-    error.message.includes('exists') ||
-    error.message.includes('Role must') ||
-    error.message.includes('must be one of');
+    msg.includes('required') ||
+    msg.includes('Invalid') ||
+    msg.includes('expired') ||
+    msg.includes('verified') ||
+    msg.includes('incorrect') ||
+    msg.includes('exists') ||
+    msg.includes('Role must') ||
+    msg.includes('must be one of') ||
+    msg.includes('Password must') ||
+    msg.includes('not found') ||
+    msg.includes('deactivated');
 
   return res.status(isValidationError ? 400 : 500).json({
-    message: error.message || 'Internal server error.',
+    message: msg || 'Internal server error.',
   });
 };
 
@@ -121,6 +126,15 @@ export const changeProfileController = async (req, res) => {
 export const getMyProfileController = async (req, res) => {
   try {
     const data = await getMyProfile(req.user.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const deleteAccountController = async (req, res) => {
+  try {
+    const data = await deleteAccount(req.user.id);
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

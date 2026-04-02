@@ -39,6 +39,7 @@ const Notification = sequelize.define(
         'booking_approved',
         'booking_declined',
         'payment_reminder',
+        'course_enrolled',
         'general'
       ),
       allowNull: false,

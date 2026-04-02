@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import User from '../models/user.model.js';
+import LessonBooking from '../models/lessonBooking.model.js';
 import { deleteFileIfExists, toAbsolutePathFromPublic } from '../utils/file.util.js';
 import { validatePasswordStrength } from '../utils/validators.js';
 import { sendOtpEmail, sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
@@ -461,4 +462,39 @@ export const setUserCredentials = async (userId, { email, password }) => {
 
   const safeUser = await User.findByPk(user.id, { attributes: publicUserFields });
   return { message: 'Credentials set successfully.', user: safeUser };
+};
+
+export const deleteAccount = async (userId) => {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error('User not found.');
+  }
+
+  if (!user.is_active) {
+    throw new Error('Account is already deactivated.');
+  }
+
+  // Cancel all future bookings for this user (as rider or coach)
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  await LessonBooking.update(
+    { status: 'cancelled' },
+    {
+      where: {
+        [Op.or]: [{ rider_id: userId }, { coach_id: userId }],
+        booking_date: { [Op.gte]: todayStr },
+        status: {
+          [Op.notIn]: ['cancelled', 'completed', 'declined'],
+        },
+      },
+    }
+  );
+
+  // Soft-delete: deactivate the account
+  user.is_active = false;
+  user.fcm_token = null;
+  await user.save();
+
+  return { message: 'Account deleted successfully.' };
 };

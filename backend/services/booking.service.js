@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import sequelize from '../config/database.js';
 import {
   Arena, CoachReview, CoachStable, CoachStableSchedule, Course, CourseSession,
@@ -568,11 +568,6 @@ export const createBooking = async ({
     throw new Error('stableId is required (or provide coachId to auto-resolve).');
   }
 
-  // Auto-assign horse if requested
-  if (horseAssignment === 'auto' && !horseId) {
-    horseId = await autoAssignHorse(stableId, bookingDate, startTime, endTime);
-  }
-
   const isArenaOnly = bookingType === 'arena_only';
   if (isArenaOnly) {
     if (!arenaId) throw new Error('arenaId is required for arena-only booking.');
@@ -610,74 +605,6 @@ export const createBooking = async ({
     if (!horse) throw new Error('Horse not found.');
   }
 
-  // --- Availability conflict detection ---
-  // Only check against bookings that are not cancelled or declined
-  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
-
-  if (coachId) {
-    const coachConflict = await LessonBooking.findOne({
-      where: {
-        coach_id: coachId,
-        booking_date: bookingDate,
-        status: { [Op.in]: activeStatuses },
-        [Op.or]: [
-          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
-        ],
-      },
-    });
-    if (coachConflict) {
-      throw new Error('This coach is already booked for the selected time slot.');
-    }
-  }
-
-  if (arenaId) {
-    const arenaConflict = await LessonBooking.findOne({
-      where: {
-        arena_id: arenaId,
-        booking_date: bookingDate,
-        status: { [Op.in]: activeStatuses },
-        [Op.or]: [
-          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
-        ],
-      },
-    });
-    if (arenaConflict) {
-      throw new Error('This arena is already booked for the selected time slot.');
-    }
-  }
-
-  if (horseId) {
-    const horseConflict = await LessonBooking.findOne({
-      where: {
-        horse_id: horseId,
-        booking_date: bookingDate,
-        status: { [Op.in]: activeStatuses },
-        [Op.or]: [
-          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
-        ],
-      },
-    });
-    if (horseConflict) {
-      throw new Error('This horse is already booked for the selected time slot.');
-    }
-  }
-
-  // Rider double-booking prevention
-  const riderConflict = await LessonBooking.findOne({
-    where: {
-      rider_id: riderId,
-      booking_date: bookingDate,
-      status: { [Op.in]: activeStatuses },
-      [Op.or]: [
-        { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
-      ],
-    },
-  });
-  if (riderConflict) {
-    throw new Error('You already have a booking during the selected time slot.');
-  }
-  // --- End conflict detection ---
-
   // Determine initial status based on coach approval mode
   const approvalMode = coachRecord?.approval_mode || 'manual';
   let initialStatus = 'pending_review';
@@ -685,38 +612,111 @@ export const createBooking = async ({
     initialStatus = 'pending_payment';
   }
 
-  const booking = await LessonBooking.create({
-    rider_id: riderId,
-    coach_id: coachId || null,
-    stable_id: stableId,
-    arena_id: arenaId || null,
-    horse_id: horseId || null,
-    booking_date: bookingDate,
-    start_time: startTime,
-    end_time: endTime,
-    lesson_type: lessonType || 'private',
-    status: initialStatus,
-    price: price || null,
-    notes: notes || null,
-    booking_type: isArenaOnly ? 'arena_only' : 'lesson',
-    duration_minutes: durationMinutes || null,
-    horse_assignment: horseAssignment || 'stable_assigns',
-  });
+  // ── Wrap conflict checks + booking creation in a serializable transaction ──
+  // Uses SELECT ... FOR UPDATE to acquire row-level locks, preventing race
+  // conditions where two concurrent requests both pass availability checks
+  // before either booking is committed.
+  const booking = await sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    async (t) => {
+      const lockOpts = { transaction: t, lock: t.LOCK.UPDATE };
+      const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+      const overlapWhere = (extraFields) => ({
+        ...extraFields,
+        booking_date: bookingDate,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [
+          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+        ],
+      });
 
-  if (horseId) {
-    const [availability] = await HorseAvailability.findOrCreate({
-      where: { horse_id: horseId, date: bookingDate },
-      defaults: {
-        horse_id: horseId,
-        date: bookingDate,
-        max_sessions_per_day: 3,
-        sessions_booked: 0,
-        is_available: true,
-      },
-    });
-    await availability.save();
-  }
+      // Coach double-booking prevention (with row lock)
+      if (coachId) {
+        const coachConflict = await LessonBooking.findOne({
+          where: overlapWhere({ coach_id: coachId }),
+          ...lockOpts,
+        });
+        if (coachConflict) {
+          throw new Error('This coach is already booked for the selected time slot.');
+        }
+      }
 
+      // Arena double-booking prevention (with row lock)
+      if (arenaId) {
+        const arenaConflict = await LessonBooking.findOne({
+          where: overlapWhere({ arena_id: arenaId }),
+          ...lockOpts,
+        });
+        if (arenaConflict) {
+          throw new Error('This arena is already booked for the selected time slot.');
+        }
+      }
+
+      // Auto-assign horse inside the transaction so the lock covers it
+      let resolvedHorseId = horseId;
+      if (horseAssignment === 'auto' && !resolvedHorseId) {
+        resolvedHorseId = await autoAssignHorse(stableId, bookingDate, startTime, endTime, t);
+      }
+
+      // Horse double-booking prevention (with row lock)
+      if (resolvedHorseId) {
+        const horseConflict = await LessonBooking.findOne({
+          where: overlapWhere({ horse_id: resolvedHorseId }),
+          ...lockOpts,
+        });
+        if (horseConflict) {
+          throw new Error('This horse is already booked for the selected time slot.');
+        }
+      }
+
+      // Rider double-booking prevention (with row lock)
+      const riderConflict = await LessonBooking.findOne({
+        where: overlapWhere({ rider_id: riderId }),
+        ...lockOpts,
+      });
+      if (riderConflict) {
+        throw new Error('You already have a booking during the selected time slot.');
+      }
+
+      const created = await LessonBooking.create({
+        rider_id: riderId,
+        coach_id: coachId || null,
+        stable_id: stableId,
+        arena_id: arenaId || null,
+        horse_id: resolvedHorseId || null,
+        booking_date: bookingDate,
+        start_time: startTime,
+        end_time: endTime,
+        lesson_type: lessonType || 'private',
+        status: initialStatus,
+        price: price || null,
+        notes: notes || null,
+        booking_type: isArenaOnly ? 'arena_only' : 'lesson',
+        duration_minutes: durationMinutes || null,
+        horse_assignment: horseAssignment || 'stable_assigns',
+      }, { transaction: t });
+
+      if (resolvedHorseId) {
+        const [availability] = await HorseAvailability.findOrCreate({
+          where: { horse_id: resolvedHorseId, date: bookingDate },
+          defaults: {
+            horse_id: resolvedHorseId,
+            date: bookingDate,
+            max_sessions_per_day: 3,
+            sessions_booked: 0,
+            is_available: true,
+          },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+        await availability.save({ transaction: t });
+      }
+
+      return created;
+    }
+  );
+
+  // ── Notifications are sent outside the transaction to avoid holding locks ──
   if (coachId) {
     const notifTitle = approvalMode === 'auto' ? 'New Booking (Auto-Approved)' : 'New Booking Request';
     const notifBody = approvalMode === 'auto'
@@ -1306,25 +1306,29 @@ export const resolveStableForCoach = async (coachId) => {
 /**
  * Auto-assign an available horse at the stable for the given time slot.
  */
-export const autoAssignHorse = async (stableId, bookingDate, startTime, endTime) => {
+export const autoAssignHorse = async (stableId, bookingDate, startTime, endTime, transaction = null) => {
   const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+  const txOpts = transaction ? { transaction } : {};
+  const lockOpts = transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {};
 
   // Get all active horses at this stable
   const horses = await Horse.findAll({
     where: { stable_id: stableId, status: 'available' },
     attributes: ['id', 'name', 'max_daily_sessions'],
+    ...txOpts,
   });
 
   for (const horse of horses) {
-    // Check daily session limit
+    // Check daily session limit (with row lock when inside a transaction)
     const availability = await HorseAvailability.findOne({
       where: { horse_id: horse.id, date: bookingDate },
+      ...lockOpts,
     });
     if (availability && (!availability.is_available || availability.sessions_booked >= availability.max_sessions_per_day)) {
       continue;
     }
 
-    // Check time slot conflict
+    // Check time slot conflict (with row lock when inside a transaction)
     const conflict = await LessonBooking.findOne({
       where: {
         horse_id: horse.id,
@@ -1334,6 +1338,7 @@ export const autoAssignHorse = async (stableId, bookingDate, startTime, endTime)
           { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
         ],
       },
+      ...lockOpts,
     });
     if (!conflict) {
       return horse.id; // Found an available horse
@@ -1503,59 +1508,80 @@ export const createSeriesBooking = async ({
   }
   if (!stableId) throw new Error('stableId is required.');
 
-  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
-
-  // Validate ALL dates first
-  for (const date of dates) {
-    const riderConflict = await LessonBooking.findOne({
-      where: {
-        rider_id: riderId, booking_date: date, status: { [Op.in]: activeStatuses },
-        [Op.or]: [{ start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } }],
-      },
-    });
-    if (riderConflict) throw new Error(`You already have a booking on ${date} during this time.`);
-
-    if (coachId) {
-      const coachConflict = await LessonBooking.findOne({
-        where: {
-          coach_id: coachId, booking_date: date, status: { [Op.in]: activeStatuses },
-          [Op.or]: [{ start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } }],
-        },
-      });
-      if (coachConflict) throw new Error(`Coach is already booked on ${date} during this time.`);
-    }
-  }
-
-  const seriesId = `SER_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
   let initialStatus = 'pending_review';
   if (coachId) {
     const coach = await User.findByPk(coachId, { attributes: ['approval_mode'] });
     if (coach?.approval_mode === 'auto') initialStatus = 'confirmed';
   }
 
-  const bookings = [];
-  for (const date of dates) {
-    const booking = await LessonBooking.create({
-      rider_id: riderId,
-      coach_id: coachId || null,
-      stable_id: stableId,
-      booking_date: date,
-      start_time: startTime,
-      end_time: endTime,
-      lesson_type: lessonType || 'private',
-      status: initialStatus,
-      price: price || null,
-      notes: notes || null,
-      booking_type: bookingType || 'lesson',
-      duration_minutes: durationMinutes || null,
-      horse_assignment: horseAssignment || 'stable_assigns',
-      horse_id: horseId || null,
-      series_id: seriesId,
-    });
-    bookings.push(booking);
-  }
+  const seriesId = `SER_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+  // ── Wrap all conflict checks + creates in a single transaction with row locks ──
+  const bookings = await sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    async (t) => {
+      const lockOpts = { transaction: t, lock: t.LOCK.UPDATE };
+      const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+
+      const overlapWhere = (extraFields, date) => ({
+        ...extraFields,
+        booking_date: date,
+        status: { [Op.in]: activeStatuses },
+        [Op.or]: [{ start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } }],
+      });
+
+      const created = [];
+      for (const date of dates) {
+        // Rider conflict check with row lock
+        const riderConflict = await LessonBooking.findOne({
+          where: overlapWhere({ rider_id: riderId }, date),
+          ...lockOpts,
+        });
+        if (riderConflict) throw new Error(`You already have a booking on ${date} during this time.`);
+
+        // Coach conflict check with row lock
+        if (coachId) {
+          const coachConflict = await LessonBooking.findOne({
+            where: overlapWhere({ coach_id: coachId }, date),
+            ...lockOpts,
+          });
+          if (coachConflict) throw new Error(`Coach is already booked on ${date} during this time.`);
+        }
+
+        // Horse conflict check with row lock
+        if (horseId) {
+          const horseConflict = await LessonBooking.findOne({
+            where: overlapWhere({ horse_id: horseId }, date),
+            ...lockOpts,
+          });
+          if (horseConflict) throw new Error(`Horse is already booked on ${date} during this time.`);
+        }
+
+        const booking = await LessonBooking.create({
+          rider_id: riderId,
+          coach_id: coachId || null,
+          stable_id: stableId,
+          booking_date: date,
+          start_time: startTime,
+          end_time: endTime,
+          lesson_type: lessonType || 'private',
+          status: initialStatus,
+          price: price || null,
+          notes: notes || null,
+          booking_type: bookingType || 'lesson',
+          duration_minutes: durationMinutes || null,
+          horse_assignment: horseAssignment || 'stable_assigns',
+          horse_id: horseId || null,
+          series_id: seriesId,
+        }, { transaction: t });
+        created.push(booking);
+      }
+
+      return created;
+    }
+  );
+
+  // Notifications sent outside the transaction
   if (coachId) {
     const rider = await User.findByPk(riderId, { attributes: ['first_name'] });
     await createNotification({

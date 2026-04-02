@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { LessonPackage, RiderPackageBalance, User, Payment } from '../models/index.js';
+import { createNotification } from './notification.service.js';
 
 const normalizePagination = ({ page, limit }) => {
   const parsedPage = Number(page);
@@ -134,6 +135,30 @@ export const purchasePackage = async ({ riderId, packageId, paymentId }) => {
     expires_at: expiresAt,
     payment_id: paymentId,
   });
+
+  // Notify rider + coach of package purchase
+  try {
+    await createNotification({
+      userId: riderId,
+      type: 'payment_confirmed',
+      title: 'Package Purchased',
+      body: `You purchased the "${lessonPackage.title}" lesson package (${lessonPackage.lesson_count} lessons).`,
+      data: { package_id: packageId, balance_id: balance.id },
+    });
+    if (lessonPackage.coach_id) {
+      const rider = await User.findByPk(riderId, { attributes: ['first_name', 'last_name'] });
+      const riderName = rider ? `${rider.first_name} ${rider.last_name}`.trim() : 'A rider';
+      await createNotification({
+        userId: lessonPackage.coach_id,
+        type: 'payment_confirmed',
+        title: 'Package Sold',
+        body: `${riderName} purchased your "${lessonPackage.title}" package.`,
+        data: { package_id: packageId, balance_id: balance.id, rider_id: riderId },
+      });
+    }
+  } catch (notifError) {
+    console.error('[notification] Package purchase notification failed:', notifError.message);
+  }
 
   return balance;
 };

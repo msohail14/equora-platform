@@ -16,6 +16,7 @@ import {
 import {
   changePasswordController,
   changeProfileController,
+  deleteAccountController,
   forgotPasswordController,
   getMyProfileController,
   login,
@@ -41,5 +42,6 @@ router.get('/me', authMiddleware, getMyProfileController);
 router.post('/change-password', authMiddleware, changePasswordValidation, validate, changePasswordController);
 router.put('/change-profile', authMiddleware, uploadUserProfileImage, changeProfileController);
 router.patch('/me/fcm-token', authMiddleware, updateFcmTokenValidation, validate, updateFcmTokenController);
+router.delete('/account', authMiddleware, deleteAccountController);
 
 export default router;

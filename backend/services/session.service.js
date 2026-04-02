@@ -1,4 +1,4 @@
-import { Op, QueryTypes } from 'sequelize';
+import { Op, QueryTypes, Transaction } from 'sequelize';
 import sequelize from '../config/database.js';
 import { Course, CourseEnrollment, CourseSession, User } from '../models/index.js';
 
@@ -159,6 +159,7 @@ const ensureCoachAndRiderNoOverlap = async ({
   startTime,
   endTime,
   excludeSessionId,
+  transaction,
 }) => {
   const baseWhere = {
     session_date: sessionDate,
@@ -167,11 +168,13 @@ const ensureCoachAndRiderNoOverlap = async ({
     end_time: { [Op.gt]: startTime },
   };
 
+  const txOpts = transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {};
+
   const whereCoach = { ...baseWhere, coach_id: coachId };
   if (excludeSessionId) {
     whereCoach.id = { [Op.ne]: excludeSessionId };
   }
-  const hasCoachOverlap = await CourseSession.findOne({ where: whereCoach });
+  const hasCoachOverlap = await CourseSession.findOne({ where: whereCoach, ...txOpts });
   if (hasCoachOverlap) {
     throw new Error('Coach already has another session in this time range.');
   }
@@ -183,7 +186,7 @@ const ensureCoachAndRiderNoOverlap = async ({
   if (excludeSessionId) {
     whereRider.id = { [Op.ne]: excludeSessionId };
   }
-  const hasRiderOverlap = await CourseSession.findOne({ where: whereRider });
+  const hasRiderOverlap = await CourseSession.findOne({ where: whereRider, ...txOpts });
   if (hasRiderOverlap) {
     throw new Error('Rider already has another session in this time range.');
   }
@@ -359,13 +362,9 @@ const buildCreateContext = async ({ user, payload }) => {
     throw new Error('Invalid course_type.');
   }
 
-  await ensureCoachAndRiderNoOverlap({
-    coachId: course.coach_id,
-    riderId,
-    sessionDate: session_date,
-    startTime,
-    endTime,
-  });
+  // NOTE: Coach/rider overlap check is intentionally NOT done here.
+  // It is performed inside a transaction with row-level locking in
+  // createCourseSession / updateCourseSession to prevent race conditions.
 
   return {
     course,
@@ -378,20 +377,39 @@ const buildCreateContext = async ({ user, payload }) => {
 };
 
 export const createCourseSession = async ({ user, payload }) => {
+  // Perform non-locking validations first (course existence, coach availability, etc.)
   const context = await buildCreateContext({ user, payload });
-  const created = await CourseSession.create({
-    course_id: context.course.id,
-    coach_id: context.course.coach_id,
-    rider_id: context.riderId,
-    created_by_user_id: user.id,
-    session_date: context.sessionDate,
-    start_time: context.startTime,
-    end_time: context.endTime,
-    duration_minutes: context.durationMinutes,
-    status: 'scheduled',
-    cancel_reason: null,
-    cancelled_by_user_id: null,
-  });
+
+  // Wrap the overlap check + insert in a transaction with row-level locks
+  // to prevent coach/rider double-booking race conditions.
+  const created = await sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    async (t) => {
+      await ensureCoachAndRiderNoOverlap({
+        coachId: context.course.coach_id,
+        riderId: context.riderId,
+        sessionDate: context.sessionDate,
+        startTime: context.startTime,
+        endTime: context.endTime,
+        transaction: t,
+      });
+
+      return CourseSession.create({
+        course_id: context.course.id,
+        coach_id: context.course.coach_id,
+        rider_id: context.riderId,
+        created_by_user_id: user.id,
+        session_date: context.sessionDate,
+        start_time: context.startTime,
+        end_time: context.endTime,
+        duration_minutes: context.durationMinutes,
+        status: 'scheduled',
+        cancel_reason: null,
+        cancelled_by_user_id: null,
+      }, { transaction: t });
+    }
+  );
+
   return CourseSession.findByPk(created.id, { include: sessionInclude });
 };
 
@@ -453,20 +471,27 @@ export const updateCourseSession = async ({ user, sessionId, payload }) => {
     throw new Error('Requested slot is outside coach availability.');
   }
 
-  await ensureCoachAndRiderNoOverlap({
-    coachId: course.coach_id,
-    riderId: session.rider_id,
-    sessionDate,
-    startTime,
-    endTime,
-    excludeSessionId: session.id,
-  });
+  // Wrap overlap check + save in a transaction with row locks to prevent race conditions
+  await sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    async (t) => {
+      await ensureCoachAndRiderNoOverlap({
+        coachId: course.coach_id,
+        riderId: session.rider_id,
+        sessionDate,
+        startTime,
+        endTime,
+        excludeSessionId: session.id,
+        transaction: t,
+      });
 
-  session.session_date = sessionDate;
-  session.start_time = startTime;
-  session.end_time = endTime;
-  session.duration_minutes = durationMinutes;
-  await session.save();
+      session.session_date = sessionDate;
+      session.start_time = startTime;
+      session.end_time = endTime;
+      session.duration_minutes = durationMinutes;
+      await session.save({ transaction: t });
+    }
+  );
 
   return CourseSession.findByPk(session.id, { include: sessionInclude });
 };
