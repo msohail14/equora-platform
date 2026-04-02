@@ -6,7 +6,7 @@ import { sendMail } from './mail.service.js';
 const EMAIL_TYPES = ['booking_approved', 'booking_declined', 'payment_confirmed', 'lesson_booked', 'payment_reminder', 'general'];
 
 // Types that trigger push notifications
-const PUSH_TYPES = ['lesson_booked', 'booking_approved', 'booking_declined', 'horse_approved', 'horse_assigned', 'payment_confirmed', 'payment_reminder', 'session_reminder'];
+const PUSH_TYPES = ['lesson_booked', 'booking_approved', 'booking_declined', 'horse_approved', 'horse_assigned', 'payment_confirmed', 'payment_reminder', 'session_reminder', 'general', 'course_enrolled'];
 
 // ── FCM Push ──────────────────────────────────────────────
 

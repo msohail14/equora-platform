@@ -207,7 +207,7 @@ export const resetCoachPasswordController = async (req, res) => {
 export const getFavouriteRidersController = async (req, res) => {
   try {
     const data = await getFavouriteRiders(req.user.id);
-    return res.status(200).json(data);
+    return res.status(200).json({ data });
   } catch (error) {
     return handleError(res, error);
   }
