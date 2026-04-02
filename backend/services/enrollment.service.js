@@ -1,4 +1,4 @@
-import { Course, CourseEnrollment, User } from '../models/index.js';
+import { CoachFavouriteRider, Course, CourseEnrollment, User } from '../models/index.js';
 import { createNotification } from './notification.service.js';
 
 const enrollmentInclude = [
@@ -42,6 +42,17 @@ export const createEnrollment = async ({ user, course_id }) => {
   }
 
   const course = await ensureCourseForEnrollment(course_id);
+
+  // Visibility guard: my_riders courses require rider to be in coach's favourites
+  if (course.visibility === 'my_riders' && course.coach_id) {
+    const isFavourite = await CoachFavouriteRider.findOne({
+      where: { coach_id: course.coach_id, rider_id: user.id },
+    });
+    if (!isFavourite) {
+      throw new Error('This course is only available to the coach\'s riders.');
+    }
+  }
+
   if (course.max_enrollment) {
     const activeEnrollmentsCount = await CourseEnrollment.count({
       where: { course_id, status: 'active' },

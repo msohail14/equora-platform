@@ -1,8 +1,10 @@
 import {
+  addFavouriteRider,
   createCoachWeeklyAvailabilityByAdmin,
   createCoach,
   deleteCoach,
   deleteCoachWeeklyAvailabilityByAdmin,
+  getFavouriteRiders,
   getCoachCourses,
   getCoachDetails,
   getCoachDeletionPreview,
@@ -11,6 +13,7 @@ import {
   getCoachWeeklyAvailabilityByAdmin,
   getAllCoaches,
   getCoachById,
+  removeFavouriteRider,
   updateCoachWeeklyAvailabilityByAdmin,
   updateCoach,
 } from '../services/coach.service.js';
@@ -195,6 +198,33 @@ export const resetCoachPasswordController = async (req, res) => {
       method: 'manual',
       customPassword: password || undefined,
     });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getFavouriteRidersController = async (req, res) => {
+  try {
+    const data = await getFavouriteRiders(req.user.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const addFavouriteRiderController = async (req, res) => {
+  try {
+    const data = await addFavouriteRider(req.user.id, Number(req.params.riderId));
+    return res.status(201).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const removeFavouriteRiderController = async (req, res) => {
+  try {
+    const data = await removeFavouriteRider(req.user.id, Number(req.params.riderId));
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
-import { CoachPayout, CoachReview, Course, CourseEnrollment, CourseSession, CourseTemplate, LessonBooking, LessonPackage, Notification, SessionFeedback, User } from '../models/index.js';
+import { CoachFavouriteRider, CoachPayout, CoachReview, Course, CourseEnrollment, CourseSession, CourseTemplate, LessonBooking, LessonPackage, Notification, SessionFeedback, User } from '../models/index.js';
 import CoachStable from '../models/coachStable.model.js';
 import Stable from '../models/stable.model.js';
 import CoachWeeklyAvailability from '../models/coachWeeklyAvailability.model.js';
@@ -513,6 +513,9 @@ export const deleteCoach = async (coachId, { force = false } = {}) => {
   // Nullify rider_id references if this coach was somehow referenced
   await CourseEnrollment.destroy({ where: { rider_id: coachId } });
 
+  // Clean up favourite riders
+  await CoachFavouriteRider.destroy({ where: { coach_id: coachId } });
+
   // Delete the coach user record
   await coach.destroy();
 
@@ -520,4 +523,47 @@ export const deleteCoach = async (coachId, { force = false } = {}) => {
     message: 'Coach deleted successfully.',
     cancelledBookings: cancelledCount,
   };
+};
+
+export const getFavouriteRiders = async (coachId) => {
+  return CoachFavouriteRider.findAll({
+    where: { coach_id: coachId },
+    include: [
+      {
+        model: User,
+        as: 'rider',
+        attributes: ['id', 'first_name', 'last_name', 'email', 'profile_picture_url'],
+      },
+    ],
+    order: [['created_at', 'DESC']],
+  });
+};
+
+export const addFavouriteRider = async (coachId, riderId) => {
+  const rider = await User.findOne({ where: { id: riderId, role: 'rider' } });
+  if (!rider) {
+    throw new Error('Rider not found.');
+  }
+
+  const [record, created] = await CoachFavouriteRider.findOrCreate({
+    where: { coach_id: coachId, rider_id: riderId },
+    defaults: { coach_id: coachId, rider_id: riderId },
+  });
+
+  return {
+    message: created ? 'Rider added to favourites.' : 'Rider is already in favourites.',
+    favourite: record,
+  };
+};
+
+export const removeFavouriteRider = async (coachId, riderId) => {
+  const deleted = await CoachFavouriteRider.destroy({
+    where: { coach_id: coachId, rider_id: riderId },
+  });
+
+  if (!deleted) {
+    throw new Error('Favourite rider not found.');
+  }
+
+  return { message: 'Rider removed from favourites.' };
 };

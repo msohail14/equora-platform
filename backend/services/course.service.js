@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Course, User, Discipline, Stable } from '../models/index.js';
+import { CoachFavouriteRider, Course, User, Discipline, Stable } from '../models/index.js';
 import { deleteFileIfExists, toAbsolutePathFromPublic } from '../utils/file.util.js';
 
 const normalizePagination = ({ page, limit }) => {
@@ -102,22 +102,59 @@ export const createCourse = async (coachId, payload) => {
   return course;
 };
 
-export const getAllCourses = async ({ include_inactive, coach_id, status, search, page, limit } = {}) => {
+export const getAllCourses = async ({ include_inactive, coach_id, status, search, page, limit, requesting_user_id, requesting_user_role } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
   const where = {};
-  
+
   if (!include_inactive) {
     where.is_active = true;
   }
-  
+
   if (coach_id) {
     where.coach_id = coach_id;
   }
-  
+
   if (status) {
     where.status = status;
   }
+
+  // Visibility filtering
+  // If coach viewing own courses (via getMyCourses), no visibility filter is applied (coach_id is set).
+  // If an authenticated rider: show public + my_riders courses where rider is in coach's favourites.
+  // If unauthenticated: only public.
+  if (!coach_id) {
+    if (requesting_user_id && requesting_user_role === 'rider') {
+      // Get all coach IDs who have this rider as a favourite
+      const favourites = await CoachFavouriteRider.findAll({
+        where: { rider_id: requesting_user_id },
+        attributes: ['coach_id'],
+      });
+      const favouriteCoachIds = favourites.map((f) => f.coach_id);
+
+      if (favouriteCoachIds.length > 0) {
+        where[Op.and] = [
+          ...(where[Op.and] || []),
+          {
+            [Op.or]: [
+              { visibility: 'public' },
+              {
+                visibility: 'my_riders',
+                coach_id: { [Op.in]: favouriteCoachIds },
+              },
+            ],
+          },
+        ];
+      } else {
+        where.visibility = 'public';
+      }
+    } else if (!requesting_user_role || requesting_user_role === 'rider') {
+      // Unauthenticated or non-coach/non-admin: only public
+      where.visibility = 'public';
+    }
+    // Admin users see everything — no visibility filter
+  }
+
   const keyword = String(search || '').trim();
   if (keyword) {
     where[Op.or] = [

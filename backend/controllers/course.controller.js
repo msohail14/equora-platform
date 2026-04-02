@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import * as courseService from '../services/course.service.js';
 
 export const createCourseController = async (req, res) => {
@@ -39,6 +40,21 @@ export const createCourseByAdminController = async (req, res) => {
 
 export const getAllCoursesController = async (req, res) => {
   try {
+    // Optionally parse JWT to identify the requesting user (non-blocking)
+    let requesting_user_id = null;
+    let requesting_user_role = null;
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, { issuer: 'equora-api', audience: 'equora-mobile' });
+        requesting_user_id = decoded.id;
+        requesting_user_role = decoded.role;
+      }
+    } catch (_) {
+      // Invalid or missing token — treat as unauthenticated
+    }
+
     const { include_inactive, coach_id, status, search, page, limit } = req.query;
     const courses = await courseService.getAllCourses({
       include_inactive: include_inactive === 'true',
@@ -47,6 +63,8 @@ export const getAllCoursesController = async (req, res) => {
       search,
       page,
       limit,
+      requesting_user_id,
+      requesting_user_role,
     });
     return res.status(200).json(courses);
   } catch (error) {

@@ -20,9 +20,11 @@ import {
   coachGetSchedulesController,
 } from '../controllers/coach-stable-schedule.controller.js';
 import {
+  addFavouriteRiderController,
   createCoachWeeklyAvailabilityByAdminController,
   createCoachController,
   deleteCoachController,
+  getFavouriteRidersController,
   getCoachDeletionPreviewController,
   deleteCoachWeeklyAvailabilityByAdminController,
   getCoachCoursesController,
@@ -33,6 +35,7 @@ import {
   getCoachWeeklyAvailabilityByAdminController,
   getAllCoachesController,
   getCoachByIdController,
+  removeFavouriteRiderController,
   updateCoachWeeklyAvailabilityByAdminController,
   updateCoachController,
   resetCoachPasswordController,
@@ -51,6 +54,11 @@ router.patch('/me/stables/:stableId/visibility', coachAuthMiddleware, updateVisi
 router.get('/stables/:stableId/coach-requests', authMiddleware, getPendingRequestsController);
 router.patch('/stables/:stableId/coach-requests/:coachId/approve', authMiddleware, approveRequestController);
 router.patch('/stables/:stableId/coach-requests/:coachId/reject', authMiddleware, rejectRequestController);
+
+// Coach self-management: favourite riders
+router.get('/me/favourite-riders', coachAuthMiddleware, getFavouriteRidersController);
+router.post('/me/favourite-riders/:riderId', coachAuthMiddleware, addFavouriteRiderController);
+router.delete('/me/favourite-riders/:riderId', coachAuthMiddleware, removeFavouriteRiderController);
 
 // Coach self-management: per-stable schedules
 router.post('/me/stables/:stableId/schedules', coachAuthMiddleware, coachCreateScheduleController);

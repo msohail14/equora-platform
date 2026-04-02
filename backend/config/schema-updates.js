@@ -1039,6 +1039,9 @@ export const applySchemaUpdates = async () => {
 
   // Phase P: Unique index on user mobile_number
   await ensureUserMobileNumberUniqueIndex();
+
+  // Phase Q: Coach favourite riders
+  await ensureCoachFavouriteRidersTable();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1258,5 +1261,34 @@ async function ensureInvitationEnhancements() {
     }
   } catch (e) {
     console.warn('[schema] ensureInvitationEnhancements:', e.message);
+  }
+}
+
+async function ensureCoachFavouriteRidersTable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'coach_favourite_riders'
+    `);
+    if (Number(results?.[0]?.count || 0) > 0) return;
+
+    await sequelize.query(`
+      CREATE TABLE IF NOT EXISTS coach_favourite_riders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coach_id INT NOT NULL,
+        rider_id INT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_coach_rider (coach_id, rider_id),
+        KEY idx_coach_id (coach_id),
+        KEY idx_rider_id (rider_id),
+        CONSTRAINT fk_coach_fav_rider_coach FOREIGN KEY (coach_id) REFERENCES user(id) ON DELETE CASCADE,
+        CONSTRAINT fk_coach_fav_rider_rider FOREIGN KEY (rider_id) REFERENCES user(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('[schema] Created coach_favourite_riders table.');
+  } catch (e) {
+    console.warn('[schema] ensureCoachFavouriteRidersTable:', e.message);
   }
 }
