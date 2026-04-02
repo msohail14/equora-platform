@@ -290,8 +290,8 @@ export const getStableCoaches = async ({ stableId, search, page, limit, date, st
     const exceptions = await CoachAvailabilityException.findAll({
       where: {
         coach_id: { [Op.in]: [...availableCoachIds] },
-        date: date,
-        type: 'day_off',
+        exception_date: date,
+        exception_type: 'unavailable',
       },
       raw: true,
     });
@@ -898,11 +898,11 @@ export const cancelBooking = async ({ bookingId, userId }) => {
     throw new Error('You do not have permission to cancel this booking.');
   }
 
-  if (booking.status === 'cancelled') {
-    throw new Error('Booking is already cancelled.');
+  if (['cancelled', 'completed', 'declined'].includes(booking.status)) {
+    throw new Error('This booking cannot be cancelled.');
   }
 
-  const wasConfirmed = booking.status === 'confirmed';
+  const wasConfirmed = ['confirmed', 'in_progress'].includes(booking.status);
   const hadHorse = booking.horse_id;
 
   booking.status = 'cancelled';
@@ -974,8 +974,8 @@ export const getArenaSlots = async ({ arenaId, date }) => {
     },
     attributes: ['id', 'start_time', 'end_time', 'status', 'lesson_type'],
     include: [
-      { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name'] },
-      { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name'] },
+      { model: User, as: 'rider', attributes: ['id', 'first_name'] },
+      { model: User, as: 'coach', attributes: ['id', 'first_name'] },
     ],
     order: [['start_time', 'ASC']],
   });
@@ -1072,7 +1072,11 @@ export const approveBooking = async ({ bookingId, userId, isAdmin = false }) => 
   if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
 
   // Allow if admin or if the coach assigned to this booking
-  if (!isAdmin && booking.coach_id !== userId) {
+  if (isAdmin) {
+    if (!booking.stable || booking.stable.admin_id !== userId) {
+      throw new Error('Admin does not own the stable for this booking.');
+    }
+  } else if (booking.coach_id !== userId) {
     throw new Error('Only the assigned coach or an admin can approve this booking.');
   }
 
@@ -1131,6 +1135,9 @@ export const adminConfirmBooking = async ({ bookingId, adminId }) => {
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
+  if (!booking.stable || booking.stable.admin_id !== adminId) {
+    throw new Error('Admin does not own the stable for this booking.');
+  }
   if (!['pending_payment', 'pending_review'].includes(booking.status)) {
     throw new Error('Booking is not in a confirmable state.');
   }
@@ -1156,7 +1163,11 @@ export const declineBooking = async ({ bookingId, userId, isAdmin = false, reaso
   if (!booking) throw new Error('Booking not found.');
   if (booking.status !== 'pending_review') throw new Error('Booking is not pending review.');
 
-  if (!isAdmin && booking.coach_id !== userId) {
+  if (isAdmin) {
+    if (!booking.stable || booking.stable.admin_id !== userId) {
+      throw new Error('Admin does not own the stable for this booking.');
+    }
+  } else if (booking.coach_id !== userId) {
     throw new Error('Only the assigned coach or an admin can decline this booking.');
   }
 

@@ -9,7 +9,9 @@ const router = Router();
 router.post('/verify', authRateLimiter, firebaseVerifyController);
 
 // Public — dev/test bypass OTP (only works when FIREBASE_OTP_BYPASS=true)
-router.post('/bypass-otp', otpRateLimiter, bypassOtpController);
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/bypass-otp', otpRateLimiter, bypassOtpController);
+}
 
 // Protected — link Firebase UID to existing authenticated account
 router.post('/link', authMiddleware, firebaseLinkController);

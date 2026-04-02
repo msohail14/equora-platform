@@ -32,25 +32,23 @@ export const initiatePaymentController = async (req, res) => {
 };
 
 export const webhookController = async (req, res) => {
-  // Tap signature verification — REQUIRED in production
-  if (process.env.TAP_WEBHOOK_SECRET) {
-    const signature = req.headers['x-tap-signature'] || req.headers['x-webhook-signature'];
-    if (!signature) {
-      return res.status(401).json({ message: 'Missing webhook signature.' });
-    }
-    const crypto = await import('crypto');
-    const expected = crypto.default
-      .createHmac('sha256', process.env.TAP_WEBHOOK_SECRET)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
-    if (signature !== expected) {
-      return res.status(401).json({ message: 'Invalid webhook signature.' });
-    }
-  } else if (process.env.NODE_ENV === 'production') {
-    console.error('[SECURITY] TAP_WEBHOOK_SECRET not configured — rejecting webhook in production');
+  // Tap signature verification — REQUIRED in all environments
+  if (!process.env.TAP_WEBHOOK_SECRET) {
+    console.error('[SECURITY] TAP_WEBHOOK_SECRET not configured — rejecting webhook');
     return res.status(503).json({ message: 'Payment webhook not configured.' });
-  } else {
-    console.warn('[WARN] TAP_WEBHOOK_SECRET not set — accepting webhook without verification (dev only)');
+  }
+
+  const signature = req.headers['x-tap-signature'] || req.headers['x-webhook-signature'];
+  if (!signature) {
+    return res.status(401).json({ message: 'Missing webhook signature.' });
+  }
+  const crypto = await import('crypto');
+  const expected = crypto.default
+    .createHmac('sha256', process.env.TAP_WEBHOOK_SECRET)
+    .update(JSON.stringify(req.body))
+    .digest('hex');
+  if (signature !== expected) {
+    return res.status(401).json({ message: 'Invalid webhook signature.' });
   }
 
   try {

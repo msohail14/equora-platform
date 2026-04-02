@@ -181,6 +181,7 @@ export const getStableInvitations = async (stableId) => {
 export const cancelInvitation = async (invitationId, adminId) => {
   const invitation = await Invitation.findByPk(invitationId);
   if (!invitation) throw new Error('Invitation not found.');
+  if (invitation.inviter_id !== adminId) throw new Error('You can only cancel your own invitations.');
   if (invitation.status !== 'pending') throw new Error('Only pending invitations can be cancelled.');
 
   invitation.status = 'expired';

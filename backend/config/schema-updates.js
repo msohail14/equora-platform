@@ -924,6 +924,31 @@ const cleanupPhoneFormatsAndTestAccounts = async () => {
   }
 };
 
+const ensureUserMobileNumberUniqueIndex = async () => {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'user'
+        AND INDEX_NAME = 'uq_user_mobile_number'
+    `);
+
+    const hasIndex = Number(results?.[0]?.count || 0) > 0;
+    if (hasIndex) {
+      return;
+    }
+
+    await sequelize.query(`
+      ALTER TABLE \`user\`
+      ADD UNIQUE INDEX \`uq_user_mobile_number\` (\`mobile_number\`)
+    `);
+    console.log('[schema] Added unique index on user.mobile_number');
+  } catch (e) {
+    console.warn('[schema] Failed to add unique index on user.mobile_number:', e.message);
+  }
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -1011,6 +1036,9 @@ export const applySchemaUpdates = async () => {
 
   // Phase O: Invitation enhancements (coach→rider invites)
   await ensureInvitationEnhancements();
+
+  // Phase P: Unique index on user mobile_number
+  await ensureUserMobileNumberUniqueIndex();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
