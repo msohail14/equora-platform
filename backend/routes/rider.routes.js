@@ -4,6 +4,7 @@ import {
   createRiderController,
   deleteRiderController,
   getAllRidersController,
+  getRiderDeletionPreviewController,
   getRiderDetailsController,
   getRiderSessionsController,
   getRiderStatsController,
@@ -20,6 +21,7 @@ router.get('/:id', adminAuthMiddleware, getRiderDetailsController);
 router.get('/:id/stats', adminAuthMiddleware, getRiderStatsController);
 router.get('/:id/sessions', adminAuthMiddleware, getRiderSessionsController);
 router.put('/:id', adminAuthMiddleware, updateRiderController);
+router.get('/:id/deletion-preview', adminAuthMiddleware, getRiderDeletionPreviewController);
 router.delete('/:id', adminAuthMiddleware, deleteRiderController);
 router.put('/:id/status', adminAuthMiddleware, updateRiderStatusController);
 router.post('/:id/reset-password', adminAuthMiddleware, resetRiderPasswordController);

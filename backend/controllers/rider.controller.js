@@ -3,6 +3,7 @@ import {
   createRiderByAdmin,
   deleteRider,
   getAllRiders,
+  getRiderDeletionPreview,
   getRiderDetailsWithEnrollments,
   getRiderSessions,
   getRiderStats,
@@ -91,14 +92,20 @@ export const updateRiderController = async (req, res) => {
   }
 };
 
+export const getRiderDeletionPreviewController = async (req, res) => {
+  try {
+    const data = await getRiderDeletionPreview(req.params.id);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 export const deleteRiderController = async (req, res) => {
   try {
     const data = await deleteRider(req.params.id);
     return res.status(200).json(data);
   } catch (error) {
-    if (error.message.includes('Cannot delete')) {
-      return res.status(409).json({ message: error.message });
-    }
     return handleError(res, error);
   }
 };

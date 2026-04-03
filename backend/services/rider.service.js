@@ -1,7 +1,11 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
-import { Course, CourseEnrollment, CourseSession, Discipline, LessonBooking, User } from '../models/index.js';
+import {
+  CoachFavouriteRider, CoachReview, Course, CourseEnrollment, CourseSession,
+  Discipline, LessonBooking, Notification, Payment, RiderHorse,
+  RiderPackageBalance, SessionFeedback, Subscription, User,
+} from '../models/index.js';
 import { sendResetPasswordLinkEmail } from './mail.service.js';
 
 /**
@@ -448,26 +452,86 @@ export const updateRiderActiveStatus = async (riderId, is_active) => {
   };
 };
 
+/**
+ * Get a preview of what will be deleted when a rider is removed.
+ */
+export const getRiderDeletionPreview = async (riderId) => {
+  const rider = await User.findOne({ where: { id: riderId, role: 'rider' } });
+  if (!rider) throw new Error('Rider not found.');
+
+  const activeStatuses = ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'];
+
+  const [activeBookings, totalBookings, enrollments, payments, notifications] = await Promise.all([
+    LessonBooking.count({ where: { rider_id: riderId, status: { [Op.in]: activeStatuses } } }),
+    LessonBooking.count({ where: { rider_id: riderId } }),
+    CourseEnrollment.count({ where: { rider_id: riderId } }),
+    Payment.count({ where: { user_id: riderId } }),
+    Notification.count({ where: { user_id: riderId } }),
+  ]);
+
+  return {
+    rider: { id: rider.id, name: `${rider.first_name || ''} ${rider.last_name || ''}`.trim(), email: rider.email },
+    activeBookings,
+    totalBookings,
+    enrollments,
+    payments,
+    notifications,
+    canDelete: true,
+  };
+};
+
 export const deleteRider = async (riderId) => {
   const rider = await User.findOne({ where: { id: riderId, role: 'rider' } });
   if (!rider) {
     throw new Error('Rider not found.');
   }
 
-  const activeBookings = await LessonBooking.count({
-    where: {
-      rider_id: riderId,
-      status: { [Op.in]: ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'] },
-    },
-  });
-  if (activeBookings > 0) {
-    throw new Error(`Cannot delete rider with ${activeBookings} active booking(s). Cancel or complete them first.`);
-  }
+  const activeStatuses = ['pending_review', 'pending_payment', 'confirmed', 'in_progress', 'pending_horse_approval'];
 
+  // Cancel all active bookings (same pattern as coach deletion)
+  const [cancelledCount] = await LessonBooking.update(
+    { status: 'cancelled', decline_reason: 'Rider account was deleted by admin.' },
+    { where: { rider_id: riderId, status: { [Op.in]: activeStatuses } } }
+  );
+
+  // Nullify rider_id on historical bookings (keep records for coaches)
+  await LessonBooking.update(
+    { rider_id: null },
+    { where: { rider_id: riderId } }
+  );
+
+  // Cascade delete rider-specific data
   await CourseEnrollment.destroy({ where: { rider_id: riderId } });
+  await RiderPackageBalance.destroy({ where: { rider_id: riderId } });
+  await RiderHorse.destroy({ where: { rider_id: riderId } });
+  await SessionFeedback.destroy({ where: { rider_id: riderId } });
+  await CoachReview.destroy({ where: { reviewer_user_id: riderId } });
+  await CoachFavouriteRider.destroy({ where: { rider_id: riderId } });
+  await Notification.destroy({ where: { user_id: riderId } });
+  await Payment.destroy({ where: { user_id: riderId } });
+  await Subscription.destroy({ where: { user_id: riderId } });
+
+  // Nullify rider references in course sessions
+  await CourseSession.update(
+    { rider_id: null },
+    { where: { rider_id: riderId } }
+  );
+  await CourseSession.update(
+    { created_by_user_id: null },
+    { where: { created_by_user_id: riderId } }
+  );
+  await CourseSession.update(
+    { cancelled_by_user_id: null },
+    { where: { cancelled_by_user_id: riderId } }
+  );
+
+  // Delete the rider user record
   await rider.destroy();
 
-  return { message: 'Rider deleted successfully.' };
+  return {
+    message: 'Rider deleted successfully.',
+    cancelledBookings: cancelledCount,
+  };
 };
 
 export const updateRider = async (riderId, payload) => {
