@@ -1042,6 +1042,11 @@ export const applySchemaUpdates = async () => {
 
   // Phase Q: Coach favourite riders
   await ensureCoachFavouriteRidersTable();
+
+  // Phase R: Allow NULL FKs on related tables (for user deletion cascade)
+  await ensureCourseCoachIdNullable();
+  await ensureCourseSessionCoachIdNullable();
+  await ensureBookingRiderIdNullable();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1290,5 +1295,110 @@ async function ensureCoachFavouriteRidersTable() {
     console.log('[schema] Created coach_favourite_riders table.');
   } catch (e) {
     console.warn('[schema] ensureCoachFavouriteRidersTable:', e.message);
+  }
+}
+
+async function ensureCourseCoachIdNullable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT IS_NULLABLE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'courses'
+        AND COLUMN_NAME = 'coach_id'
+    `);
+    if (results?.[0]?.IS_NULLABLE === 'YES') return;
+
+    // Drop foreign key constraint first (name may vary)
+    try {
+      await sequelize.query(`ALTER TABLE courses DROP FOREIGN KEY courses_ibfk_1`);
+    } catch (_) {}
+    try {
+      await sequelize.query(`ALTER TABLE courses DROP FOREIGN KEY fk_courses_coach`);
+    } catch (_) {}
+
+    await sequelize.query(`ALTER TABLE courses MODIFY COLUMN coach_id INT NULL`);
+
+    // Re-add foreign key with ON DELETE SET NULL
+    try {
+      await sequelize.query(`
+        ALTER TABLE courses
+        ADD CONSTRAINT fk_courses_coach FOREIGN KEY (coach_id) REFERENCES user(id) ON DELETE SET NULL
+      `);
+    } catch (_) {}
+
+    console.log('[schema] Made courses.coach_id nullable for coach deletion.');
+  } catch (e) {
+    console.warn('[schema] ensureCourseCoachIdNullable:', e.message);
+  }
+}
+
+async function ensureCourseSessionCoachIdNullable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT IS_NULLABLE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'course_sessions'
+        AND COLUMN_NAME = 'coach_id'
+    `);
+    if (results?.[0]?.IS_NULLABLE === 'YES') return;
+
+    // Drop foreign key constraint first
+    try {
+      await sequelize.query(`ALTER TABLE course_sessions DROP FOREIGN KEY course_sessions_ibfk_2`);
+    } catch (_) {}
+    try {
+      await sequelize.query(`ALTER TABLE course_sessions DROP FOREIGN KEY fk_course_sessions_coach`);
+    } catch (_) {}
+
+    await sequelize.query(`ALTER TABLE course_sessions MODIFY COLUMN coach_id INT NULL`);
+
+    // Re-add foreign key with ON DELETE SET NULL
+    try {
+      await sequelize.query(`
+        ALTER TABLE course_sessions
+        ADD CONSTRAINT fk_course_sessions_coach FOREIGN KEY (coach_id) REFERENCES user(id) ON DELETE SET NULL
+      `);
+    } catch (_) {}
+
+    console.log('[schema] Made course_sessions.coach_id nullable for coach deletion.');
+  } catch (e) {
+    console.warn('[schema] ensureCourseSessionCoachIdNullable:', e.message);
+  }
+}
+
+async function ensureBookingRiderIdNullable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT IS_NULLABLE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'lesson_bookings'
+        AND COLUMN_NAME = 'rider_id'
+    `);
+    if (results?.[0]?.IS_NULLABLE === 'YES') return;
+
+    // Drop foreign key constraint first
+    try {
+      await sequelize.query(`ALTER TABLE lesson_bookings DROP FOREIGN KEY fk_lesson_bookings_rider`);
+    } catch (_) {}
+    try {
+      await sequelize.query(`ALTER TABLE lesson_bookings DROP FOREIGN KEY lesson_bookings_ibfk_1`);
+    } catch (_) {}
+
+    await sequelize.query(`ALTER TABLE lesson_bookings MODIFY COLUMN rider_id INT NULL`);
+
+    // Re-add foreign key with ON DELETE SET NULL
+    try {
+      await sequelize.query(`
+        ALTER TABLE lesson_bookings
+        ADD CONSTRAINT fk_lesson_bookings_rider FOREIGN KEY (rider_id) REFERENCES user(id) ON DELETE SET NULL
+      `);
+    } catch (_) {}
+
+    console.log('[schema] Made lesson_bookings.rider_id nullable for rider deletion.');
+  } catch (e) {
+    console.warn('[schema] ensureBookingRiderIdNullable:', e.message);
   }
 }
