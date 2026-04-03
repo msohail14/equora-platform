@@ -18,7 +18,11 @@ const OTP_BYPASS_ENABLED = () => {
 };
 const BYPASS_OTP_CODE = process.env.OTP_BYPASS_CODE || '123456';
 
-const issueJwt = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const issueJwt = (payload) => jwt.sign(payload, JWT_SECRET, {
+  expiresIn: JWT_EXPIRES_IN,
+  issuer: 'equora-api',
+  audience: 'equora-mobile',
+});
 
 /**
  * Split a display name into first/last name parts.
