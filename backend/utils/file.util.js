@@ -19,7 +19,15 @@ export const toAbsolutePathFromPublic = (publicPath) => {
   }
 
   const sanitized = publicPath.replace(/^\/+/, '');
-  return path.join(process.cwd(), sanitized);
+  const resolved = path.resolve(process.cwd(), sanitized);
+  const uploadDir = path.resolve(process.cwd(), 'upload');
+
+  // Prevent path traversal — resolved path must stay within the upload directory
+  if (!resolved.startsWith(uploadDir + path.sep) && resolved !== uploadDir) {
+    return null;
+  }
+
+  return resolved;
 };
 
 export const deleteFileIfExists = async (absolutePath) => {

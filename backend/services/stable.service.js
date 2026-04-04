@@ -109,7 +109,11 @@ export const createStable = async ({ adminId, payload }) => {
     formatted_address: formatted_address || null,
     google_rating: normalizeOptionalNumber(google_rating, 'google_rating'),
     website: website || null,
-    google_photos: google_photos ? (typeof google_photos === 'string' ? JSON.parse(google_photos) : google_photos) : null,
+    google_photos: google_photos
+      ? (typeof google_photos === 'string'
+        ? (() => { try { return JSON.parse(google_photos); } catch { return null; } })()
+        : google_photos)
+      : null,
   });
 
   return stable;

@@ -65,6 +65,10 @@ export const webhookController = async (req, res) => {
 export const getPaymentStatusController = async (req, res) => {
   try {
     const data = await getPaymentStatus(req.params.transactionId);
+    // Ownership check — users can only query their own payments
+    if (data.user_id && req.user.type !== 'admin' && Number(data.user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ message: 'You do not have permission to view this payment.' });
+    }
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

@@ -61,6 +61,12 @@ const FRONTEND_URL = IS_PRODUCTION
   ? (process.env.FRONTEND_URL_PROD || 'https://horse.atlasits.cloud')
   : (process.env.FRONTEND_URL_DEV || 'http://localhost:5173');
 
+// Load additional allowed origins from env (comma-separated)
+const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   FRONTEND_URL,
   process.env.FRONTEND_URL_PROD,
@@ -69,6 +75,7 @@ const allowedOrigins = [
   'https://equorariding.com',
   'https://www.equorariding.com',
   'https://equestrian-platform.vercel.app',
+  ...envOrigins,
   // Only allow localhost origins in development
   ...(IS_PRODUCTION ? [] : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175']),
 ].filter(Boolean);
@@ -156,9 +163,17 @@ app.use((error, _req, res, _next) => {
 let dbReady = false;
 let dbError = null;
 
-app.get('/health', (_req, res) => {
-  if (dbReady) return res.json({ status: 'ok', db: 'connected' });
-  return res.status(503).json({ status: 'starting', db: dbError || 'connecting' });
+app.get('/health', async (_req, res) => {
+  if (!dbReady) {
+    return res.status(503).json({ status: 'starting', db: dbError || 'connecting' });
+  }
+  // Active DB ping to verify connection is still alive
+  try {
+    await sequelize.query('SELECT 1');
+    return res.json({ status: 'ok', db: 'connected', uptime: Math.floor(process.uptime()) });
+  } catch (e) {
+    return res.status(503).json({ status: 'degraded', db: 'unreachable', error: e.message });
+  }
 });
 
 // Start HTTP server immediately so Railway healthcheck passes while DB syncs

@@ -1047,6 +1047,9 @@ export const applySchemaUpdates = async () => {
   await ensureCourseCoachIdNullable();
   await ensureCourseSessionCoachIdNullable();
   await ensureBookingRiderIdNullable();
+
+  // Phase S: Performance indexes on frequently-queried columns
+  await ensurePerformanceIndexes();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1400,5 +1403,42 @@ async function ensureBookingRiderIdNullable() {
     console.log('[schema] Made lesson_bookings.rider_id nullable for rider deletion.');
   } catch (e) {
     console.warn('[schema] ensureBookingRiderIdNullable:', e.message);
+  }
+}
+
+async function ensurePerformanceIndexes() {
+  // Indexes that are safe to add on a live database (CREATE INDEX IF NOT EXISTS pattern)
+  const indexes = [
+    { table: 'lesson_bookings', name: 'idx_lb_stable_date', columns: 'stable_id, booking_date' },
+    { table: 'lesson_bookings', name: 'idx_lb_horse_date', columns: 'horse_id, booking_date, status' },
+    { table: 'lesson_bookings', name: 'idx_lb_series', columns: 'series_id' },
+    { table: 'course_sessions', name: 'idx_cs_course_date', columns: 'course_id, session_date' },
+    { table: 'course_sessions', name: 'idx_cs_coach_date', columns: 'coach_id, session_date' },
+    { table: 'course_sessions', name: 'idx_cs_rider', columns: 'rider_id' },
+    { table: 'courses', name: 'idx_courses_stable_status', columns: 'stable_id, status' },
+    { table: 'courses', name: 'idx_courses_coach', columns: 'coach_id' },
+    { table: 'coach_stables', name: 'idx_cs_coach_active', columns: 'coach_id, is_active, status' },
+    { table: 'coach_stables', name: 'idx_cs_stable_active', columns: 'stable_id, is_active, status' },
+  ];
+
+  for (const idx of indexes) {
+    try {
+      const [existing] = await sequelize.query(`
+        SELECT COUNT(*) AS count
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = '${idx.table}'
+          AND INDEX_NAME = '${idx.name}'
+      `);
+      if (Number(existing?.[0]?.count || 0) > 0) continue;
+
+      await sequelize.query(`CREATE INDEX \`${idx.name}\` ON \`${idx.table}\` (${idx.columns})`);
+      console.log(`[schema] Created index ${idx.name} on ${idx.table}`);
+    } catch (e) {
+      // Table may not exist yet or index already exists under different name — safe to skip
+      if (!e.message.includes('Duplicate')) {
+        console.warn(`[schema] Index ${idx.name}:`, e.message);
+      }
+    }
   }
 }

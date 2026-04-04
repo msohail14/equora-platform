@@ -560,6 +560,11 @@ export const createBooking = async ({
     throw new Error('riderId, bookingDate, startTime, and endTime are required.');
   }
 
+  // Validate time ordering
+  if (startTime >= endTime) {
+    throw new Error('startTime must be before endTime.');
+  }
+
   // Coach-first flow: auto-resolve stable from coach if not provided
   if (!stableId && coachId) {
     stableId = await resolveStableForCoach(coachId);
@@ -617,7 +622,7 @@ export const createBooking = async ({
   // conditions where two concurrent requests both pass availability checks
   // before either booking is committed.
   const booking = await sequelize.transaction(
-    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
     async (t) => {
       const lockOpts = { transaction: t, lock: t.LOCK.UPDATE };
       const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
@@ -1104,7 +1109,7 @@ export const coachConfirmBooking = async ({ bookingId, coachId }) => {
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
-  if (String(booking.coach_id) !== String(coachId)) {
+  if (Number(booking.coach_id) !== Number(coachId)) {
     throw new Error('Only the assigned coach can confirm this booking.');
   }
   if (!['pending_payment', 'pending_review'].includes(booking.status)) {
@@ -1518,7 +1523,7 @@ export const createSeriesBooking = async ({
 
   // ── Wrap all conflict checks + creates in a single transaction with row locks ──
   const bookings = await sequelize.transaction(
-    { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
     async (t) => {
       const lockOpts = { transaction: t, lock: t.LOCK.UPDATE };
       const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
