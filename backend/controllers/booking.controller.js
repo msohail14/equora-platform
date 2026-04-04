@@ -26,13 +26,23 @@ import {
 } from '../services/booking.service.js';
 
 const handleError = (res, error) => {
-  const isValidationError =
-    error.message.includes('required') ||
-    error.message.includes('not found') ||
-    error.message.includes('access denied') ||
-    error.message.includes('must be');
+  const msg = (error.message || '').toLowerCase();
+  const isClientError =
+    msg.includes('required') ||
+    msg.includes('not found') ||
+    msg.includes('access denied') ||
+    msg.includes('must be') ||
+    msg.includes('already booked') ||
+    msg.includes('already has') ||
+    msg.includes('not available') ||
+    msg.includes('cannot') ||
+    msg.includes('not in a') ||
+    msg.includes('only the') ||
+    msg.includes('conflict') ||
+    msg.includes('invalid') ||
+    msg.includes('before');
 
-  return res.status(isValidationError ? 400 : 500).json({
+  return res.status(isClientError ? 400 : 500).json({
     message: error.message || 'Internal server error.',
   });
 };
