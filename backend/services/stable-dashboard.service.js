@@ -198,7 +198,7 @@ export const getHorseUtilization = async ({ adminId, stableId }) => {
 
   const horses = await Horse.findAll({
     where: { stable_id: stableId },
-    attributes: ['id', 'name', 'breed', 'image_url'],
+    attributes: ['id', 'name', 'breed', 'profile_picture_url'],
   });
 
   const utilization = await Promise.all(
@@ -211,7 +211,7 @@ export const getHorseUtilization = async ({ adminId, stableId }) => {
         id: horse.id,
         name: horse.name,
         breed: horse.breed,
-        image_url: horse.image_url,
+        image_url: horse.profile_picture_url,
         sessionCount,
         bookingCount,
         totalUsage: sessionCount + bookingCount,
