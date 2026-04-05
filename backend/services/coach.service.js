@@ -193,7 +193,22 @@ export const getCoachById = async (coachId) => {
     throw new Error('Coach not found.');
   }
 
-  return coach;
+  // Include linked stables so the mobile app can resolve stableId for booking
+  const stableLinks = await CoachStable.findAll({
+    where: { coach_id: coachId, is_active: true },
+    include: [{ model: Stable, as: 'stable', attributes: ['id', 'name', 'city', 'logo_url'] }],
+  });
+
+  const coachData = coach.toJSON();
+  coachData.stables = stableLinks.map((link) => ({
+    id: link.stable_id,
+    name: link.stable?.name || null,
+    city: link.stable?.city || null,
+    logo_url: link.stable?.logo_url || null,
+    is_primary: link.is_primary || false,
+  }));
+
+  return coachData;
 };
 
 export const updateCoach = async (coachId, payload) => {

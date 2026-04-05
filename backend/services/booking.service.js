@@ -490,8 +490,19 @@ export const getCoachSlots = async ({ coachId, date, stableId }) => {
     }
   }
 
+  // Resolve stable for this coach (so the mobile app can pass stableId to horse selection)
+  let resolvedStableId = stableId || null;
+  if (!resolvedStableId) {
+    const primaryLink = await CoachStable.findOne({
+      where: { coach_id: coachId, is_active: true },
+      order: [['is_primary', 'DESC'], ['id', 'ASC']],
+    });
+    if (primaryLink) resolvedStableId = primaryLink.stable_id;
+  }
+
   return {
     data: slots,
+    stable_id: resolvedStableId ? Number(resolvedStableId) : null,
     allowed_durations: coach.allowed_durations || [30, 45, 60],
     default_duration: coach.default_duration || 45,
     approval_mode: coach.approval_mode || 'manual',
