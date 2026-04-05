@@ -200,6 +200,33 @@ export const updateHorse = async ({ adminId, horseId, payload }) => {
     horse.is_featured = String(payload.is_featured).toLowerCase() === 'true' || payload.is_featured === true;
   }
   horse.status = payload.status ?? horse.status;
+  if (payload.injury_notes !== undefined) {
+    horse.injury_notes = payload.injury_notes || null;
+  }
+  if (payload.rider_suitability !== undefined) {
+    horse.rider_suitability = payload.rider_suitability || null;
+  }
+  if (payload.fei_pedigree_link !== undefined) {
+    horse.fei_pedigree_link = payload.fei_pedigree_link || null;
+  }
+  if (payload.age !== undefined) {
+    horse.age = payload.age != null ? Number(payload.age) : null;
+  }
+  if (payload.training_level !== undefined) {
+    horse.training_level = payload.training_level || null;
+  }
+  if (payload.temperament !== undefined) {
+    horse.temperament = payload.temperament || null;
+  }
+  if (payload.max_daily_sessions !== undefined) {
+    horse.max_daily_sessions = Number(payload.max_daily_sessions) || 3;
+  }
+  if (payload.min_rest_hours !== undefined) {
+    horse.min_rest_hours = Number(payload.min_rest_hours) || 4;
+  }
+  if (payload.max_weekly_sessions !== undefined) {
+    horse.max_weekly_sessions = Number(payload.max_weekly_sessions) || 15;
+  }
   await horse.save();
 
   if (payload.profile_picture_url && previousPictureUrl && previousPictureUrl !== payload.profile_picture_url) {

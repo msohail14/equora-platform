@@ -40,6 +40,8 @@ import magicLinkRoutes from './routes/magic-link.routes.js';
 import invitationRoutes from './routes/invitation.routes.js';
 import onboardingRoutes from './routes/onboarding.routes.js';
 import riderHorseRoutes from './routes/riderHorse.routes.js';
+import moduleRoutes from './routes/module.routes.js';
+import horseMaintenanceRoutes from './routes/horse-maintenance.routes.js';
 import initializeFirebase from './config/firebase.js';
 
 dotenv.config();
@@ -147,6 +149,8 @@ app.use('/api/v1/auth/magic-link', magicLinkRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/rider-horses', riderHorseRoutes);
 app.use('/api/v1/onboarding', onboardingRoutes);
+app.use('/api/v1/modules', moduleRoutes);
+app.use('/api/v1/horse-maintenance', horseMaintenanceRoutes);
 
 app.get('/', (req, res) => {
   res.send('Equestrian Backend API is running.');

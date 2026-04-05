@@ -1050,6 +1050,10 @@ export const applySchemaUpdates = async () => {
 
   // Phase S: Performance indexes on frequently-queried columns
   await ensurePerformanceIndexes();
+
+  // Phase T: Stable modules + horse maintenance tables
+  await ensureStableModulesTable();
+  await ensureHorseMaintenanceTable();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1403,6 +1407,80 @@ async function ensureBookingRiderIdNullable() {
     console.log('[schema] Made lesson_bookings.rider_id nullable for rider deletion.');
   } catch (e) {
     console.warn('[schema] ensureBookingRiderIdNullable:', e.message);
+  }
+}
+
+async function ensureStableModulesTable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'stable_modules'
+    `);
+    if (Number(results?.[0]?.count || 0) > 0) return;
+
+    await sequelize.query(`
+      CREATE TABLE \`stable_modules\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`stable_id\` INT NOT NULL,
+        \`module_key\` VARCHAR(50) NOT NULL,
+        \`enabled\` TINYINT(1) NOT NULL DEFAULT 0,
+        \`enabled_by\` INT DEFAULT NULL,
+        \`enabled_at\` DATETIME DEFAULT NULL,
+        \`config\` JSON DEFAULT NULL,
+        \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        UNIQUE KEY \`uq_stable_module\` (\`stable_id\`, \`module_key\`),
+        KEY \`idx_sm_stable\` (\`stable_id\`),
+        CONSTRAINT \`fk_sm_stable\` FOREIGN KEY (\`stable_id\`) REFERENCES \`stables\` (\`id\`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('[schema] Created stable_modules table.');
+  } catch (e) {
+    console.warn('[schema] ensureStableModulesTable:', e.message);
+  }
+}
+
+async function ensureHorseMaintenanceTable() {
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'horse_maintenance_logs'
+    `);
+    if (Number(results?.[0]?.count || 0) > 0) return;
+
+    await sequelize.query(`
+      CREATE TABLE \`horse_maintenance_logs\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`horse_id\` INT NOT NULL,
+        \`stable_id\` INT NOT NULL,
+        \`type\` ENUM('vet_visit', 'farrier', 'vaccination', 'deworming', 'dental', 'injury', 'general') NOT NULL,
+        \`title\` VARCHAR(200) NOT NULL,
+        \`description\` TEXT DEFAULT NULL,
+        \`provider_name\` VARCHAR(100) DEFAULT NULL,
+        \`cost\` DECIMAL(10,2) DEFAULT NULL,
+        \`date_performed\` DATE NOT NULL,
+        \`next_due_date\` DATE DEFAULT NULL,
+        \`attachments\` JSON DEFAULT NULL,
+        \`created_by\` INT DEFAULT NULL,
+        \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_hm_horse\` (\`horse_id\`),
+        KEY \`idx_hm_stable\` (\`stable_id\`),
+        KEY \`idx_hm_next_due\` (\`next_due_date\`),
+        KEY \`idx_hm_type_horse\` (\`type\`, \`horse_id\`),
+        CONSTRAINT \`fk_hm_horse\` FOREIGN KEY (\`horse_id\`) REFERENCES \`horses\` (\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`fk_hm_stable\` FOREIGN KEY (\`stable_id\`) REFERENCES \`stables\` (\`id\`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('[schema] Created horse_maintenance_logs table.');
+  } catch (e) {
+    console.warn('[schema] ensureHorseMaintenanceTable:', e.message);
   }
 }
 

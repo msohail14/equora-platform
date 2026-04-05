@@ -27,7 +27,9 @@ import Stable from './stable.model.js';
 import StableRegistration from './stableRegistration.model.js';
 import Subscription from './subscription.model.js';
 import CoachFavouriteRider from './coachFavouriteRider.model.js';
+import HorseMaintenance from './horseMaintenance.model.js';
 import RiderHorse from './riderHorse.model.js';
+import StableModule from './stableModule.model.js';
 import User from './user.model.js';
 
 Admin.hasMany(Stable, { foreignKey: 'admin_id', as: 'stables' });
@@ -203,10 +205,20 @@ RiderHorse.belongsTo(Horse, { foreignKey: 'horse_id', as: 'horse' });
 Stable.hasMany(RiderHorse, { foreignKey: 'stable_id', as: 'riderHorseLinks' });
 RiderHorse.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
 
+// Horse Maintenance relationships
+Horse.hasMany(HorseMaintenance, { foreignKey: 'horse_id', as: 'maintenanceLogs', onDelete: 'CASCADE' });
+HorseMaintenance.belongsTo(Horse, { foreignKey: 'horse_id', as: 'horse' });
+Stable.hasMany(HorseMaintenance, { foreignKey: 'stable_id', as: 'maintenanceLogs' });
+HorseMaintenance.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
+
+// Stable Module relationships
+Stable.hasMany(StableModule, { foreignKey: 'stable_id', as: 'modules', onDelete: 'CASCADE' });
+StableModule.belongsTo(Stable, { foreignKey: 'stable_id', as: 'stable' });
+
 export {
   Admin, Arena, CoachAvailabilityException, CoachFavouriteRider, CoachPayout, CoachReview, CoachStable,
   CoachStableSchedule, CoachWeeklyAvailability, Course, CourseEnrollment, CourseSession,
-  CourseTemplate, Discipline, Horse, HorseAvailability, Invitation, LessonBooking, LessonPackage,
-  MagicLinkToken, Notification, ObstacleType, Payment, PlatformSetting, RiderHorse, RiderPackageBalance,
-  SessionFeedback, Stable, StableRegistration, Subscription, User,
+  CourseTemplate, Discipline, Horse, HorseAvailability, HorseMaintenance, Invitation, LessonBooking,
+  LessonPackage, MagicLinkToken, Notification, ObstacleType, Payment, PlatformSetting, RiderHorse,
+  RiderPackageBalance, SessionFeedback, Stable, StableModule, StableRegistration, Subscription, User,
 };
