@@ -55,6 +55,12 @@ const LessonBooking = sequelize.define(
       allowNull: false,
       defaultValue: 'stable_assigns',
     },
+    payment_method: {
+      type: DataTypes.ENUM('online', 'pay_at_stable'),
+      allowNull: true,
+      defaultValue: 'online',
+      comment: 'How rider intends to pay: online (card) or pay_at_stable (cash)',
+    },
     horse_id: {
       type: DataTypes.INTEGER,
       allowNull: true,

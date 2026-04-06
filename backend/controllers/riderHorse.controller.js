@@ -1,4 +1,4 @@
-import { getRiderHorses, upsertRiderHorse, removeRiderHorse } from '../services/riderHorse.service.js';
+import { getRiderHorses, getRiderOwnedHorses, upsertRiderHorse, removeRiderHorse, isMyHorsesEnabled } from '../services/riderHorse.service.js';
 
 const handleError = (res, error) => {
   console.error('[rider-horse]', error.message || error);
@@ -9,8 +9,14 @@ export const getRiderHorsesController = async (req, res) => {
   try {
     const riderId = req.user?.id;
     if (!riderId) return res.status(401).json({ error: 'Not authenticated' });
-    const data = await getRiderHorses(riderId);
-    return res.status(200).json({ data });
+
+    const enabled = await isMyHorsesEnabled();
+    if (!enabled) {
+      return res.status(200).json({ enabled: false, data: [] });
+    }
+
+    const data = await getRiderOwnedHorses(riderId);
+    return res.status(200).json({ enabled: true, data });
   } catch (error) {
     return handleError(res, error);
   }

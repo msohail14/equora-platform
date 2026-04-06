@@ -1054,6 +1054,9 @@ export const applySchemaUpdates = async () => {
   // Phase T: Stable modules + horse maintenance tables
   await ensureStableModulesTable();
   await ensureHorseMaintenanceTable();
+
+  // Phase U: Coach stable choice + booking payment method + My Horses feature flag
+  await ensurePhaseUColumns();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
@@ -1518,5 +1521,55 @@ async function ensurePerformanceIndexes() {
         console.warn(`[schema] Index ${idx.name}:`, e.message);
       }
     }
+  }
+}
+
+async function ensurePhaseUColumns() {
+  // 1. Add allow_rider_stable_choice to user table
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'user'
+        AND COLUMN_NAME = 'allow_rider_stable_choice'
+    `);
+    if (Number(results?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE \`user\` ADD COLUMN \`allow_rider_stable_choice\` TINYINT(1) DEFAULT 0`);
+      console.log('[schema] Added allow_rider_stable_choice to user table.');
+    }
+  } catch (e) {
+    console.warn('[schema] ensurePhaseU allow_rider_stable_choice:', e.message);
+  }
+
+  // 2. Add payment_method to lesson_bookings table
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'lesson_bookings'
+        AND COLUMN_NAME = 'payment_method'
+    `);
+    if (Number(results?.[0]?.count || 0) === 0) {
+      await sequelize.query(`ALTER TABLE \`lesson_bookings\` ADD COLUMN \`payment_method\` ENUM('online','pay_at_stable') DEFAULT 'online'`);
+      console.log('[schema] Added payment_method to lesson_bookings table.');
+    }
+  } catch (e) {
+    console.warn('[schema] ensurePhaseU payment_method:', e.message);
+  }
+
+  // 3. Seed rider_my_horses_enabled platform setting (default: false)
+  try {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count FROM \`platform_settings\`
+      WHERE \`key\` = 'rider_my_horses_enabled'
+    `);
+    if (Number(results?.[0]?.count || 0) === 0) {
+      await sequelize.query(`INSERT INTO \`platform_settings\` (\`key\`, \`value\`, \`updated_at\`) VALUES ('rider_my_horses_enabled', 'false', NOW())`);
+      console.log('[schema] Seeded rider_my_horses_enabled platform setting.');
+    }
+  } catch (e) {
+    console.warn('[schema] ensurePhaseU rider_my_horses_enabled seed:', e.message);
   }
 }

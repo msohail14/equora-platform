@@ -23,6 +23,7 @@ import {
   coachModifyBooking,
   createSeriesBooking,
   getHorseWorkloadReport,
+  markBookingPayAtStable,
 } from '../services/booking.service.js';
 
 const handleError = (res, error) => {
@@ -351,6 +352,17 @@ export const createSeriesBookingController = async (req, res) => {
   try {
     const data = await createSeriesBooking({ riderId: req.user.id, ...req.body });
     return res.status(201).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const payAtStableController = async (req, res) => {
+  try {
+    const riderId = req.user?.id;
+    if (!riderId) return res.status(401).json({ error: 'Not authenticated' });
+    const data = await markBookingPayAtStable(Number(req.params.id), riderId);
+    return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
   }

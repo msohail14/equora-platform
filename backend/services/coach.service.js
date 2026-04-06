@@ -34,6 +34,7 @@ const publicCoachFields = [
   'is_verified',
   'is_email_verified',
   'is_active',
+  'allow_rider_stable_choice',
   'created_at',
 ];
 

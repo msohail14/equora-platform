@@ -1,6 +1,23 @@
 import { Op } from 'sequelize';
 import RiderHorse from '../models/riderHorse.model.js';
 import { Horse, Stable, Discipline } from '../models/index.js';
+import PlatformSetting from '../models/platformSetting.model.js';
+
+/**
+ * Check if "My Horses" feature is enabled globally
+ */
+export const isMyHorsesEnabled = async () => {
+  try {
+    const setting = await PlatformSetting.findOne({ where: { key: 'rider_my_horses_enabled' } });
+    if (!setting) return false;
+    const val = setting.value;
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'string') return val === 'true';
+    return Boolean(val);
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Get all horses linked to a rider, ordered by relationship type then name
@@ -19,6 +36,35 @@ export const getRiderHorses = async (riderId) => {
       },
     ],
     order: [['relationship_type', 'ASC'], ['created_at', 'DESC']],
+  });
+
+  return links.map((link) => {
+    const plain = link.get({ plain: true });
+    return {
+      ...plain.horse,
+      relationship_type: plain.relationship_type,
+      rider_horse_id: plain.id,
+    };
+  });
+};
+
+/**
+ * Get rider's OWNED horses only (for "My Horses" feature)
+ */
+export const getRiderOwnedHorses = async (riderId) => {
+  const links = await RiderHorse.findAll({
+    where: { rider_id: riderId, relationship_type: 'owner' },
+    include: [
+      {
+        model: Horse,
+        as: 'horse',
+        include: [
+          { model: Stable, as: 'stable', attributes: ['id', 'name'] },
+          { model: Discipline, as: 'discipline', attributes: ['id', 'name'] },
+        ],
+      },
+    ],
+    order: [['created_at', 'DESC']],
   });
 
   return links.map((link) => {

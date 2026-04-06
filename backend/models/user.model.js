@@ -147,6 +147,12 @@ const User = sequelize.define(
       defaultValue: [30, 45, 60],
       comment: 'Coach-only: array of allowed duration options in minutes',
     },
+    allow_rider_stable_choice: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+      comment: 'Coach-only: let riders pick which stable to book at when coach works at multiple stables',
+    },
     email_verification_otp: {
       type: DataTypes.STRING(10),
       allowNull: true,

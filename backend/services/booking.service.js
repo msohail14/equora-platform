@@ -1695,3 +1695,18 @@ export const getHorseWorkloadReport = async (horseId, startDate, endDate) => {
     level: utilizationPercent > 80 ? 'high' : utilizationPercent > 50 ? 'medium' : 'low',
   };
 };
+
+/**
+ * Mark a booking as "pay at stable" (cash/offline payment intent).
+ * Booking stays pending_review — coach/admin confirms after receiving payment.
+ */
+export const markBookingPayAtStable = async (bookingId, riderId) => {
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw Object.assign(new Error('Booking not found'), { status: 404 });
+  if (booking.rider_id !== riderId) throw Object.assign(new Error('Not your booking'), { status: 403 });
+
+  booking.payment_method = 'pay_at_stable';
+  await booking.save();
+
+  return { message: 'Payment method set to pay at stable', data: booking };
+};
