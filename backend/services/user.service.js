@@ -54,6 +54,7 @@ const getJwtToken = (user) =>
       id: user.id,
       email: user.email,
       role: user.role,
+      must_change_password: user.must_change_password || false,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d', issuer: 'equora-api', audience: 'equora-mobile' }
@@ -357,6 +358,12 @@ export const resetPassword = async ({ token, new_password }) => {
   return { message: 'Password reset successfully.' };
 };
 
+const persistNewPassword = async (user, newPassword) => {
+  user.password_hash = await bcrypt.hash(newPassword, 10);
+  user.must_change_password = false;
+  await user.save();
+};
+
 export const changePassword = async ({ userId, current_password, new_password }) => {
   if (!current_password || !new_password) {
     throw new Error('current_password and new_password are required.');
@@ -374,9 +381,7 @@ export const changePassword = async ({ userId, current_password, new_password })
     throw new Error('Current password is incorrect.');
   }
 
-  user.password_hash = await bcrypt.hash(new_password, 10);
-  user.must_change_password = false;
-  await user.save();
+  await persistNewPassword(user, new_password);
 
   return { message: 'Password changed successfully.' };
 };
@@ -396,9 +401,7 @@ export const forceChangePassword = async ({ userId, new_password }) => {
     throw new Error('Password change is not required for this account.');
   }
 
-  user.password_hash = await bcrypt.hash(new_password, 10);
-  user.must_change_password = false;
-  await user.save();
+  await persistNewPassword(user, new_password);
 
   return { message: 'Password changed successfully.' };
 };

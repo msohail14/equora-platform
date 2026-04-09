@@ -241,6 +241,8 @@ const AdminRiderDetailsPage = () => {
   }, [rider, fetchRiderDetails]);
 
   const [showResetPasswordChoice, setShowResetPasswordChoice] = useState(false);
+  const [showManualPasswordModal, setShowManualPasswordModal] = useState(false);
+  const [manualPasswordValue, setManualPasswordValue] = useState('');
   const [resetPasswordResult, setResetPasswordResult] = useState(null);
   const [resettingPassword, setResettingPassword] = useState(false);
 
@@ -260,17 +262,19 @@ const AdminRiderDetailsPage = () => {
     }
   }, [rider]);
 
-  const onResetPasswordManual = useCallback(async () => {
-    if (!rider) return;
-    const customPassword = window.prompt(
-      `Enter a custom password for ${rider.email}, or leave blank to auto-generate:`
-    );
-    if (customPassword === null) return; // admin cancelled the prompt
+  const onResetPasswordManual = useCallback(() => {
     setShowResetPasswordChoice(false);
+    setManualPasswordValue('');
+    setShowManualPasswordModal(true);
+  }, []);
+
+  const onConfirmManualPassword = useCallback(async () => {
+    if (!rider) return;
+    setShowManualPasswordModal(false);
     setResettingPassword(true);
     setResetPasswordResult(null);
     try {
-      const password = customPassword.trim() || undefined;
+      const password = manualPasswordValue.trim() || undefined;
       const response = await resetRiderPasswordApi(rider.id, "manual", password);
       toast.success(response?.message || "Done.");
       setResetPasswordResult(response);
@@ -279,7 +283,7 @@ const AdminRiderDetailsPage = () => {
     } finally {
       setResettingPassword(false);
     }
-  }, [rider]);
+  }, [rider, manualPasswordValue]);
 
   const onSubmitCreateSession = useCallback(
     async (event) => {
@@ -1020,6 +1024,35 @@ const AdminRiderDetailsPage = () => {
               Set temporary password
             </AppButton>
             <AppButton type="button" variant="secondary" onClick={() => setShowResetPasswordChoice(false)}>
+              Cancel
+            </AppButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reset password: manual password input */}
+      <Modal
+        isOpen={showManualPasswordModal}
+        title="Set temporary password"
+        onClose={() => setShowManualPasswordModal(false)}
+      >
+        <div className="grid gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Enter a custom password for {rider?.email}, or leave blank to auto-generate.
+          </p>
+          <FormInput
+            type="password"
+            label="Password"
+            placeholder="Leave blank to auto-generate"
+            value={manualPasswordValue}
+            onChange={(e) => setManualPasswordValue(e.target.value)}
+            autoFocus
+          />
+          <div className="flex flex-wrap gap-2">
+            <AppButton type="button" onClick={onConfirmManualPassword} disabled={resettingPassword}>
+              Confirm
+            </AppButton>
+            <AppButton type="button" variant="secondary" onClick={() => setShowManualPasswordModal(false)}>
               Cancel
             </AppButton>
           </div>

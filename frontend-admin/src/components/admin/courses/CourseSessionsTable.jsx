@@ -128,7 +128,7 @@ const CourseSessionsTable = ({
                     <td className="px-5 py-3.5">
                       <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                         <Clock3 size={13} className="text-gray-400" />
-                        {formatTime12h(item.start_time)} to {formatTime12h(item.end_time)}
+                        {item.start_time ? formatTime12h(item.start_time) : '-'} to {item.end_time ? formatTime12h(item.end_time) : '-'}
                       </span>
                     </td>
                     {showCourse ? (
@@ -230,7 +230,7 @@ const CourseSessionsTable = ({
                   <StatusBadge status={item.status} />
                 </div>
                 <p className="mb-0.5 flex items-center gap-1.5 text-xs text-gray-500">
-                  <Clock3 size={12} /> {formatTime12h(item.start_time)} to {formatTime12h(item.end_time)}
+                  <Clock3 size={12} /> {item.start_time ? formatTime12h(item.start_time) : '-'} to {item.end_time ? formatTime12h(item.end_time) : '-'}
                 </p>
                 {showCourse ? (
                   <p className="mb-1 text-xs text-gray-400">
@@ -327,8 +327,8 @@ const CourseSessionsTable = ({
             Session
           </p>
           <p className="text-sm text-gray-700 dark:text-gray-200">
-            {reasonModal.session?.session_date || '-'} | {formatTime12h(reasonModal.session?.start_time)} to{' '}
-            {formatTime12h(reasonModal.session?.end_time)}
+            {reasonModal.session?.session_date || '-'} | {reasonModal.session?.start_time ? formatTime12h(reasonModal.session.start_time) : '-'} to{' '}
+            {reasonModal.session?.end_time ? formatTime12h(reasonModal.session.end_time) : '-'}
           </p>
           <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Reason

@@ -1468,6 +1468,47 @@ export const riderModifyBooking = async ({ bookingId, riderId, bookingDate, star
     throw new Error('This booking can no longer be modified.');
   }
 
+  // Reject no-op reschedules
+  if (bookingDate === undefined && startTime === undefined && endTime === undefined) {
+    throw new Error('At least one of booking_date, start_time, or end_time is required.');
+  }
+
+  // Validate time range
+  const nextStartTime = startTime ?? booking.start_time;
+  const nextEndTime = endTime ?? booking.end_time;
+  if (nextStartTime >= nextEndTime) {
+    throw new Error('start_time must be before end_time.');
+  }
+
+  const nextBookingDate = bookingDate ?? booking.booking_date;
+
+  // Check for overlapping bookings (rider, coach, arena, horse)
+  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+  const overlapWhere = (extra) => ({
+    ...extra,
+    id: { [Op.ne]: booking.id },
+    booking_date: nextBookingDate,
+    status: { [Op.in]: activeStatuses },
+    start_time: { [Op.lt]: nextEndTime },
+    end_time: { [Op.gt]: nextStartTime },
+  });
+
+  const riderConflict = await LessonBooking.findOne({ where: overlapWhere({ rider_id: booking.rider_id }) });
+  if (riderConflict) throw new Error('You already have a booking during the selected time slot.');
+
+  if (booking.coach_id) {
+    const coachConflict = await LessonBooking.findOne({ where: overlapWhere({ coach_id: booking.coach_id }) });
+    if (coachConflict) throw new Error('This coach is already booked for the selected time slot.');
+  }
+  if (booking.arena_id) {
+    const arenaConflict = await LessonBooking.findOne({ where: overlapWhere({ arena_id: booking.arena_id }) });
+    if (arenaConflict) throw new Error('This arena is already booked for the selected time slot.');
+  }
+  if (booking.horse_id) {
+    const horseConflict = await LessonBooking.findOne({ where: overlapWhere({ horse_id: booking.horse_id }) });
+    if (horseConflict) throw new Error('This horse is already booked for the selected time slot.');
+  }
+
   if (bookingDate !== undefined) booking.booking_date = bookingDate;
   if (startTime !== undefined) booking.start_time = startTime;
   if (endTime !== undefined) booking.end_time = endTime;

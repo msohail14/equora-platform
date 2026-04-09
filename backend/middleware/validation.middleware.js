@@ -191,6 +191,18 @@ export const bookingIdParamValidation = [
     .isInt({ min: 1 }).withMessage('Booking id must be a positive integer'),
 ];
 
+export const riderModifyBookingValidation = [
+  body('booking_date')
+    .optional()
+    .isISO8601().withMessage('booking_date must be a valid ISO 8601 date'),
+  body('start_time')
+    .optional()
+    .matches(timePattern).withMessage('start_time must be in HH:MM or HH:MM:SS format'),
+  body('end_time')
+    .optional()
+    .matches(timePattern).withMessage('end_time must be in HH:MM or HH:MM:SS format'),
+];
+
 export const stableIdParamValidation = [
   param('id')
     .toInt()

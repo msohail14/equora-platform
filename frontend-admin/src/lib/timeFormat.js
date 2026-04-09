@@ -8,7 +8,9 @@ export const formatTime12h = (time24) => {
     const parts = String(time24).split(':');
     let hour = parseInt(parts[0], 10);
     const min = parts.length > 1 ? parseInt(parts[1], 10) : 0;
-    if (isNaN(hour)) return String(time24);
+    if (Number.isNaN(hour) || Number.isNaN(min) || hour < 0 || hour > 23 || min < 0 || min > 59) {
+      return String(time24);
+    }
     const ampm = hour >= 12 ? 'PM' : 'AM';
     if (hour === 0) hour = 12;
     if (hour > 12) hour -= 12;
