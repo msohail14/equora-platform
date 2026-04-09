@@ -21,6 +21,7 @@ import {
   coachConfirmBooking,
   getReturningRiderDefaults,
   coachModifyBooking,
+  riderModifyBooking,
   createSeriesBooking,
   getHorseWorkloadReport,
   markBookingPayAtStable,
@@ -342,6 +343,21 @@ export const getReturningRiderDefaultsController = async (req, res) => {
 export const coachModifyBookingController = async (req, res) => {
   try {
     const data = await coachModifyBooking(req.params.id, req.user.id, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const riderModifyBookingController = async (req, res) => {
+  try {
+    const data = await riderModifyBooking({
+      bookingId: req.params.id,
+      riderId: req.user.id,
+      bookingDate: req.body.booking_date,
+      startTime: req.body.start_time,
+      endTime: req.body.end_time,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

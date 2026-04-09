@@ -4,6 +4,7 @@ import {
   CalendarDays, Clock3, UserRound, Users, Timer, Layers, Tag, MapPin, TrendingUp,
 } from 'lucide-react';
 import { API_BASE_URL } from '../../../lib/axiosInstance';
+import { formatTime12h } from '../../../lib/timeFormat';
 
 const uploadBaseUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
 
@@ -32,8 +33,8 @@ const CourseOverviewCard = ({ course }) => {
   const coachName = course.coach
     ? `${course.coach.first_name ?? ''} ${course.coach.last_name ?? ''}`.trim()
     : null;
-  const startTime = course.start_time ? String(course.start_time).slice(0, 5) : null;
-  const endTime   = course.end_time   ? String(course.end_time).slice(0, 5)   : null;
+  const startTime = course.start_time ? formatTime12h(course.start_time) : null;
+  const endTime   = course.end_time   ? formatTime12h(course.end_time)   : null;
   const bannerSrc = toBannerSrc(course.thumbnail_url);
   const statusStyle = STATUS_STYLES[course.status?.toLowerCase()] ?? 'bg-gray-500/15 text-gray-500';
 

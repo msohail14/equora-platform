@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Users,
 } from 'lucide-react';
+import { formatTime12h } from '../../lib/timeFormat';
 import { HorseIcon } from '../../components/ui/HorseIcon';
 import {
   Area,
@@ -446,7 +447,7 @@ const AdminDashboardPage = () => {
                                                 {b.horse?.name || '-'}
                                             </td>
                                             <td className="py-3 pr-4 text-equestrian-stone-600 dark:text-equestrian-stone-300">
-                                                {b.start_time ? String(b.start_time).slice(0, 5) : '-'}
+                                                {b.start_time ? formatTime12h(b.start_time) : '-'}
                                             </td>
                                             <td className="py-3 pr-4 text-equestrian-stone-600 dark:text-equestrian-stone-300 capitalize">
                                                 {b.lesson_type || '-'}
@@ -539,7 +540,7 @@ const AdminDashboardPage = () => {
                                             {`${b.rider?.first_name || ''} ${b.rider?.last_name || ''}`.trim() || '-'}
                                         </p>
                                         <p className="truncate text-xs text-equestrian-stone-500 dark:text-equestrian-stone-400">
-                                            {b.booking_date} · {b.start_time ? String(b.start_time).slice(0, 5) : '-'} · {b.lesson_type || '-'}
+                                            {b.booking_date} · {b.start_time ? formatTime12h(b.start_time) : '-'} · {b.lesson_type || '-'}
                                         </p>
                                     </div>
                                     <span className={`ml-2 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(b.status)}`}>

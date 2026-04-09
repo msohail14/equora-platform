@@ -7,6 +7,7 @@ import {
   createBookingValidation,
   createSeriesBookingValidation,
   bookingIdParamValidation,
+  riderModifyBookingValidation,
   stableIdParamValidation,
   stableCoachesQueryValidation,
 } from '../middleware/validation.middleware.js';
@@ -33,6 +34,7 @@ import {
   cancelBookingController,
   getReturningRiderDefaultsController,
   coachModifyBookingController,
+  riderModifyBookingController,
   createSeriesBookingController,
   getHorseWorkloadController,
   payAtStableController,
@@ -65,6 +67,7 @@ router.get('/returning-rider-defaults', authMiddleware, getReturningRiderDefault
 router.post('/series', authMiddleware, createSeriesBookingValidation, validate, createSeriesBookingController);
 router.get('/my', authMiddleware, getMyBookingsController);
 router.patch('/:id/modify', coachAuthMiddleware, bookingIdParamValidation, validate, coachModifyBookingController);
+router.patch('/:id/rider-modify', authMiddleware, bookingIdParamValidation, riderModifyBookingValidation, validate, riderModifyBookingController);
 router.post('/:id/pay-at-stable', authMiddleware, bookingIdParamValidation, validate, payAtStableController);
 router.patch('/:id/cancel', authMiddleware, bookingIdParamValidation, validate, cancelBookingController);
 router.get('/horses/:id/workload', authMiddleware, getHorseWorkloadController);

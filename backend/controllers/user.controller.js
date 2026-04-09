@@ -2,6 +2,7 @@ import {
   changePassword,
   changeProfile,
   deleteAccount,
+  forceChangePassword,
   forgotPassword,
   getMyProfile,
   loginUser,
@@ -99,6 +100,18 @@ export const changePasswordController = async (req, res) => {
     const data = await changePassword({
       userId: req.user.id,
       ...req.body,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const forceChangePasswordController = async (req, res) => {
+  try {
+    const data = await forceChangePassword({
+      userId: req.user.id,
+      new_password: req.body.new_password,
     });
     return res.status(200).json(data);
   } catch (error) {

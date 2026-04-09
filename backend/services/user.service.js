@@ -54,6 +54,7 @@ const getJwtToken = (user) =>
       id: user.id,
       email: user.email,
       role: user.role,
+      must_change_password: user.must_change_password || false,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d', issuer: 'equora-api', audience: 'equora-mobile' }
@@ -213,7 +214,7 @@ export const loginUser = async ({ email, password }) => {
   const token = getJwtToken(user);
   const safeUser = await User.findByPk(user.id, { attributes: publicUserFields });
 
-  return { user: safeUser, token };
+  return { user: safeUser, token, must_change_password: user.must_change_password || false };
 };
 
 export const verifyEmailOtp = async ({ email, otp }) => {
@@ -357,6 +358,12 @@ export const resetPassword = async ({ token, new_password }) => {
   return { message: 'Password reset successfully.' };
 };
 
+const persistNewPassword = async (user, newPassword) => {
+  user.password_hash = await bcrypt.hash(newPassword, 10);
+  user.must_change_password = false;
+  await user.save();
+};
+
 export const changePassword = async ({ userId, current_password, new_password }) => {
   if (!current_password || !new_password) {
     throw new Error('current_password and new_password are required.');
@@ -374,10 +381,31 @@ export const changePassword = async ({ userId, current_password, new_password })
     throw new Error('Current password is incorrect.');
   }
 
-  user.password_hash = await bcrypt.hash(new_password, 10);
-  await user.save();
+  await persistNewPassword(user, new_password);
 
-  return { message: 'Password changed successfully.' };
+  const token = getJwtToken(user);
+  return { message: 'Password changed successfully.', token };
+};
+
+export const forceChangePassword = async ({ userId, new_password }) => {
+  if (!new_password) {
+    throw new Error('new_password is required.');
+  }
+
+  validatePasswordStrength(new_password);
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error('User not found.');
+  }
+  if (!user.must_change_password) {
+    throw new Error('Password change is not required for this account.');
+  }
+
+  await persistNewPassword(user, new_password);
+
+  const token = getJwtToken(user);
+  return { message: 'Password changed successfully.', token };
 };
 
 export const changeProfile = async ({
