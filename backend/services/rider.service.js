@@ -31,6 +31,7 @@ export const adminResetUserPassword = async (userId, options = {}) => {
     user.password_hash = password_hash;
     user.reset_password_token = null;
     user.reset_password_expires = null;
+    user.must_change_password = true;
     await user.save();
     return {
       message: 'Temporary password set. Share it with the rider; they should change it after first login.',

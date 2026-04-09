@@ -12,6 +12,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
+import { formatTime12h } from '../../lib/timeFormat';
 import Modal from '../ui/Modal';
 import {
   createCoachWeeklyAvailabilityByAdminApi,
@@ -265,7 +266,7 @@ const CoachWeeklyScheduleCalendar = ({ coachId }) => {
                       >
                         <p className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
                           <Clock3 size={12} />
-                          {toInputTime(slot.start_time)} to {toInputTime(slot.end_time)}
+                          {formatTime12h(slot.start_time)} to {formatTime12h(slot.end_time)}
                         </p>
                         <p className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                           <Timer size={12} />

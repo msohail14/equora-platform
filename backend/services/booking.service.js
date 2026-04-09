@@ -1455,6 +1455,42 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
   return booking;
 };
 
+/**
+ * Rider can reschedule a pending booking (change date/time).
+ */
+export const riderModifyBooking = async ({ bookingId, riderId, bookingDate, startTime, endTime }) => {
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.rider_id !== riderId) throw new Error('Only the booking rider can modify this booking.');
+
+  const modifiableStatuses = ['pending_review', 'pending_payment', 'pending_horse_approval'];
+  if (!modifiableStatuses.includes(booking.status)) {
+    throw new Error('This booking can no longer be modified.');
+  }
+
+  if (bookingDate !== undefined) booking.booking_date = bookingDate;
+  if (startTime !== undefined) booking.start_time = startTime;
+  if (endTime !== undefined) booking.end_time = endTime;
+
+  // Reset to pending_review so the coach re-approves the new schedule
+  booking.status = 'pending_review';
+
+  await booking.save();
+
+  // Notify coach about the reschedule
+  if (booking.coach_id) {
+    await createNotification({
+      userId: booking.coach_id,
+      type: 'general',
+      title: 'Booking Rescheduled',
+      body: 'A rider has rescheduled their booking. Please review the changes.',
+      data: { booking_id: booking.id },
+    });
+  }
+
+  return { message: 'Booking rescheduled successfully', data: booking };
+};
+
 // ──────────────────────────────────────────────────
 // Part B: Waitlist
 // ──────────────────────────────────────────────────

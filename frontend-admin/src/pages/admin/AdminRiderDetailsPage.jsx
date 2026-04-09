@@ -262,12 +262,16 @@ const AdminRiderDetailsPage = () => {
 
   const onResetPasswordManual = useCallback(async () => {
     if (!rider) return;
-    if (!window.confirm(`Set a new temporary password for ${rider.email}? They will need to use it to sign in.`)) return;
+    const customPassword = window.prompt(
+      `Enter a custom password for ${rider.email}, or leave blank to auto-generate:`
+    );
+    if (customPassword === null) return; // admin cancelled the prompt
     setShowResetPasswordChoice(false);
     setResettingPassword(true);
     setResetPasswordResult(null);
     try {
-      const response = await resetRiderPasswordApi(rider.id, "manual");
+      const password = customPassword.trim() || undefined;
+      const response = await resetRiderPasswordApi(rider.id, "manual", password);
       toast.success(response?.message || "Done.");
       setResetPasswordResult(response);
     } catch (error) {

@@ -129,6 +129,11 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    must_change_password: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     approval_mode: {
       type: DataTypes.ENUM('auto', 'manual'),
       allowNull: true,

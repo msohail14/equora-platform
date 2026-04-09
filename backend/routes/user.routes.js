@@ -17,6 +17,7 @@ import {
   changePasswordController,
   changeProfileController,
   deleteAccountController,
+  forceChangePasswordController,
   forgotPasswordController,
   getMyProfileController,
   login,
@@ -40,6 +41,7 @@ router.post('/resend-reset-token', authRateLimiter, forgotPasswordValidation, va
 router.post('/reset-password', authRateLimiter, resetPasswordValidation, validate, resetPasswordController);
 router.get('/me', authMiddleware, getMyProfileController);
 router.post('/change-password', authMiddleware, changePasswordValidation, validate, changePasswordController);
+router.post('/force-change-password', authMiddleware, forceChangePasswordController);
 router.put('/change-profile', authMiddleware, uploadUserProfileImage, changeProfileController);
 router.patch('/me/fcm-token', authMiddleware, updateFcmTokenValidation, validate, updateFcmTokenController);
 router.delete('/account', authMiddleware, deleteAccountController);

@@ -949,6 +949,22 @@ const ensureUserMobileNumberUniqueIndex = async () => {
   }
 };
 
+const ensureUserMustChangePasswordColumn = async () => {
+  const [results] = await sequelize.query(`
+    SELECT COUNT(*) AS count
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'user'
+      AND COLUMN_NAME = 'must_change_password'
+  `);
+  if (Number(results?.[0]?.count || 0) > 0) return;
+  await sequelize.query(`
+    ALTER TABLE \`user\`
+    ADD COLUMN \`must_change_password\` BOOLEAN NOT NULL DEFAULT FALSE AFTER \`is_active\`
+  `);
+  console.log('[schema] Added must_change_password column to user table');
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -1057,6 +1073,9 @@ export const applySchemaUpdates = async () => {
 
   // Phase U: Coach stable choice + booking payment method + My Horses feature flag
   await ensurePhaseUColumns();
+
+  // Phase V: Forced password change after admin reset
+  await ensureUserMustChangePasswordColumn();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {

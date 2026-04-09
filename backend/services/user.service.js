@@ -213,7 +213,7 @@ export const loginUser = async ({ email, password }) => {
   const token = getJwtToken(user);
   const safeUser = await User.findByPk(user.id, { attributes: publicUserFields });
 
-  return { user: safeUser, token };
+  return { user: safeUser, token, must_change_password: user.must_change_password || false };
 };
 
 export const verifyEmailOtp = async ({ email, otp }) => {
@@ -375,6 +375,29 @@ export const changePassword = async ({ userId, current_password, new_password })
   }
 
   user.password_hash = await bcrypt.hash(new_password, 10);
+  user.must_change_password = false;
+  await user.save();
+
+  return { message: 'Password changed successfully.' };
+};
+
+export const forceChangePassword = async ({ userId, new_password }) => {
+  if (!new_password) {
+    throw new Error('new_password is required.');
+  }
+
+  validatePasswordStrength(new_password);
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error('User not found.');
+  }
+  if (!user.must_change_password) {
+    throw new Error('Password change is not required for this account.');
+  }
+
+  user.password_hash = await bcrypt.hash(new_password, 10);
+  user.must_change_password = false;
   await user.save();
 
   return { message: 'Password changed successfully.' };

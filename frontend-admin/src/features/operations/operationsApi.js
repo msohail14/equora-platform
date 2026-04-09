@@ -163,8 +163,8 @@ export const updateRiderApi = ({ riderId, payload }) => axiosInstance.put(`/ride
 export const deleteRiderApi = (riderId) => axiosInstance.delete(`/riders/${riderId}`);
 export const updateRiderStatusApi = ({ riderId, is_active }) =>
   axiosInstance.put(`/riders/${riderId}/status`, { is_active });
-export const resetRiderPasswordApi = (riderId, method = 'email') =>
-  axiosInstance.post(`/riders/${riderId}/reset-password`, { method });
+export const resetRiderPasswordApi = (riderId, method = 'email', password) =>
+  axiosInstance.post(`/riders/${riderId}/reset-password`, { method, ...(password ? { password } : {}) });
 
 export const resetCoachPasswordApi = (coachId, password) =>
   axiosInstance.post(`/coaches/${coachId}/reset-password`, password ? { password } : {});
