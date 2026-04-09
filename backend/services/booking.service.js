@@ -879,7 +879,21 @@ export const getMyBookings = async ({ userId, role, status, page, limit }) => {
 
   const where = {};
   if (role === 'coach') {
-    where.coach_id = userId;
+    // Coach sees bookings assigned to them OR unassigned bookings at their linked stables
+    const coachLinks = await CoachStable.findAll({
+      where: { coach_id: userId, status: 'approved', is_active: true },
+      attributes: ['stable_id'],
+    });
+    const stableIds = coachLinks.map(l => l.stable_id);
+
+    if (stableIds.length > 0) {
+      where[Op.or] = [
+        { coach_id: userId },
+        { coach_id: null, stable_id: { [Op.in]: stableIds } },
+      ];
+    } else {
+      where.coach_id = userId;
+    }
   } else {
     where.rider_id = userId;
   }
