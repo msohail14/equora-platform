@@ -252,7 +252,7 @@ const AdminBookingsPage = () => {
             {bookings.map((b) => (
               <tr key={b.id} className="border-t border-gray-200 dark:border-gray-800">
                 <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
-                  {`${b.rider_first_name || b.rider?.first_name || ''} ${b.rider_last_name || b.rider?.last_name || ''}`.trim() || b.rider?.email || '-'}
+                  {`${b.rider_first_name || b.rider?.first_name || ''} ${b.rider_last_name || b.rider?.last_name || ''}`.trim() || b.rider?.mobile_number || b.rider?.email || '-'}
                 </td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
                   {`${b.coach_first_name || b.coach?.first_name || ''} ${b.coach_last_name || b.coach?.last_name || ''}`.trim() || '-'}

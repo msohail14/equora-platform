@@ -774,8 +774,8 @@ export const getAdminBookings = async ({ status, page, limit, date }) => {
   const { count, rows } = await LessonBooking.findAndCountAll({
     where,
     include: [
-      { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'email'] },
-      { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name', 'email'] },
+      { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number'] },
+      { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number'] },
       { model: Stable, as: 'stable', attributes: ['id', 'name'] },
       { model: Horse, as: 'horse', attributes: ['id', 'name'] },
     ],
