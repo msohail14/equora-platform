@@ -383,7 +383,8 @@ export const changePassword = async ({ userId, current_password, new_password })
 
   await persistNewPassword(user, new_password);
 
-  return { message: 'Password changed successfully.' };
+  const token = getJwtToken(user);
+  return { message: 'Password changed successfully.', token };
 };
 
 export const forceChangePassword = async ({ userId, new_password }) => {
@@ -403,7 +404,8 @@ export const forceChangePassword = async ({ userId, new_password }) => {
 
   await persistNewPassword(user, new_password);
 
-  return { message: 'Password changed successfully.' };
+  const token = getJwtToken(user);
+  return { message: 'Password changed successfully.', token };
 };
 
 export const changeProfile = async ({

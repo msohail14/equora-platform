@@ -270,7 +270,6 @@ const AdminRiderDetailsPage = () => {
 
   const onConfirmManualPassword = useCallback(async () => {
     if (!rider) return;
-    setShowManualPasswordModal(false);
     setResettingPassword(true);
     setResetPasswordResult(null);
     try {
@@ -278,6 +277,8 @@ const AdminRiderDetailsPage = () => {
       const response = await resetRiderPasswordApi(rider.id, "manual", password);
       toast.success(response?.message || "Done.");
       setResetPasswordResult(response);
+      setShowManualPasswordModal(false);
+      setManualPasswordValue('');
     } catch (error) {
       toast.error(error.message || "Failed.");
     } finally {
@@ -1034,7 +1035,7 @@ const AdminRiderDetailsPage = () => {
       <Modal
         isOpen={showManualPasswordModal}
         title="Set temporary password"
-        onClose={() => setShowManualPasswordModal(false)}
+        onClose={() => { setShowManualPasswordModal(false); setManualPasswordValue(''); }}
       >
         <div className="grid gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1050,9 +1051,9 @@ const AdminRiderDetailsPage = () => {
           />
           <div className="flex flex-wrap gap-2">
             <AppButton type="button" onClick={onConfirmManualPassword} disabled={resettingPassword}>
-              Confirm
+              {resettingPassword ? 'Resetting...' : 'Confirm'}
             </AppButton>
-            <AppButton type="button" variant="secondary" onClick={() => setShowManualPasswordModal(false)}>
+            <AppButton type="button" variant="secondary" onClick={() => { setShowManualPasswordModal(false); setManualPasswordValue(''); }}>
               Cancel
             </AppButton>
           </div>

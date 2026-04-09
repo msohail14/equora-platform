@@ -1458,79 +1458,93 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
 /**
  * Rider can reschedule a pending booking (change date/time).
  */
-export const riderModifyBooking = async ({ bookingId, riderId, bookingDate, startTime, endTime }) => {
-  const booking = await LessonBooking.findByPk(bookingId);
-  if (!booking) throw new Error('Booking not found.');
-  if (booking.rider_id !== riderId) throw new Error('Only the booking rider can modify this booking.');
+export const riderModifyBooking = async ({ bookingId, riderId, bookingDate, startTime, endTime }) =>
+  sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
+    async (t) => {
+      const lockOpts = { transaction: t, lock: t.LOCK.UPDATE };
+      const booking = await LessonBooking.findByPk(bookingId, lockOpts);
+      if (!booking) throw new Error('Booking not found.');
+      if (booking.rider_id !== riderId) throw new Error('Only the booking rider can modify this booking.');
 
-  const modifiableStatuses = ['pending_review', 'pending_payment', 'pending_horse_approval'];
-  if (!modifiableStatuses.includes(booking.status)) {
-    throw new Error('This booking can no longer be modified.');
-  }
+      const modifiableStatuses = ['pending_review', 'pending_payment', 'pending_horse_approval'];
+      if (!modifiableStatuses.includes(booking.status)) {
+        throw new Error('This booking can no longer be modified.');
+      }
 
-  // Reject no-op reschedules
-  if (bookingDate === undefined && startTime === undefined && endTime === undefined) {
-    throw new Error('At least one of booking_date, start_time, or end_time is required.');
-  }
+      // Reject no-op reschedules (no fields provided)
+      if (bookingDate === undefined && startTime === undefined && endTime === undefined) {
+        throw new Error('At least one of booking_date, start_time, or end_time is required.');
+      }
 
-  // Validate time range
-  const nextStartTime = startTime ?? booking.start_time;
-  const nextEndTime = endTime ?? booking.end_time;
-  if (nextStartTime >= nextEndTime) {
-    throw new Error('start_time must be before end_time.');
-  }
+      // Compute effective values
+      const nextStartTime = startTime ?? booking.start_time;
+      const nextEndTime = endTime ?? booking.end_time;
+      const nextBookingDate = bookingDate ?? booking.booking_date;
 
-  const nextBookingDate = bookingDate ?? booking.booking_date;
+      // Validate time range
+      if (nextStartTime >= nextEndTime) {
+        throw new Error('start_time must be before end_time.');
+      }
 
-  // Check for overlapping bookings (rider, coach, arena, horse)
-  const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
-  const overlapWhere = (extra) => ({
-    ...extra,
-    id: { [Op.ne]: booking.id },
-    booking_date: nextBookingDate,
-    status: { [Op.in]: activeStatuses },
-    start_time: { [Op.lt]: nextEndTime },
-    end_time: { [Op.gt]: nextStartTime },
-  });
+      // Skip if the requested schedule matches the current booking
+      const hasActualChange =
+        nextBookingDate !== booking.booking_date ||
+        nextStartTime !== booking.start_time ||
+        nextEndTime !== booking.end_time;
 
-  const riderConflict = await LessonBooking.findOne({ where: overlapWhere({ rider_id: booking.rider_id }) });
-  if (riderConflict) throw new Error('You already have a booking during the selected time slot.');
+      if (!hasActualChange) {
+        throw new Error('The requested schedule matches the current booking.');
+      }
 
-  if (booking.coach_id) {
-    const coachConflict = await LessonBooking.findOne({ where: overlapWhere({ coach_id: booking.coach_id }) });
-    if (coachConflict) throw new Error('This coach is already booked for the selected time slot.');
-  }
-  if (booking.arena_id) {
-    const arenaConflict = await LessonBooking.findOne({ where: overlapWhere({ arena_id: booking.arena_id }) });
-    if (arenaConflict) throw new Error('This arena is already booked for the selected time slot.');
-  }
-  if (booking.horse_id) {
-    const horseConflict = await LessonBooking.findOne({ where: overlapWhere({ horse_id: booking.horse_id }) });
-    if (horseConflict) throw new Error('This horse is already booked for the selected time slot.');
-  }
+      // Check for overlapping bookings (rider, coach, arena, horse)
+      const activeStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed', 'in_progress'];
+      const overlapWhere = (extra) => ({
+        ...extra,
+        id: { [Op.ne]: booking.id },
+        booking_date: nextBookingDate,
+        status: { [Op.in]: activeStatuses },
+        start_time: { [Op.lt]: nextEndTime },
+        end_time: { [Op.gt]: nextStartTime },
+      });
 
-  if (bookingDate !== undefined) booking.booking_date = bookingDate;
-  if (startTime !== undefined) booking.start_time = startTime;
-  if (endTime !== undefined) booking.end_time = endTime;
+      const riderConflict = await LessonBooking.findOne({ where: overlapWhere({ rider_id: booking.rider_id }), ...lockOpts });
+      if (riderConflict) throw new Error('You already have a booking during the selected time slot.');
 
-  // Reset to pending_review so the coach re-approves the new schedule
-  booking.status = 'pending_review';
+      if (booking.coach_id) {
+        const coachConflict = await LessonBooking.findOne({ where: overlapWhere({ coach_id: booking.coach_id }), ...lockOpts });
+        if (coachConflict) throw new Error('This coach is already booked for the selected time slot.');
+      }
+      if (booking.arena_id) {
+        const arenaConflict = await LessonBooking.findOne({ where: overlapWhere({ arena_id: booking.arena_id }), ...lockOpts });
+        if (arenaConflict) throw new Error('This arena is already booked for the selected time slot.');
+      }
+      if (booking.horse_id) {
+        const horseConflict = await LessonBooking.findOne({ where: overlapWhere({ horse_id: booking.horse_id }), ...lockOpts });
+        if (horseConflict) throw new Error('This horse is already booked for the selected time slot.');
+      }
 
-  await booking.save();
+      booking.booking_date = nextBookingDate;
+      booking.start_time = nextStartTime;
+      booking.end_time = nextEndTime;
+      booking.status = 'pending_review';
 
-  // Notify coach about the reschedule
-  if (booking.coach_id) {
-    await createNotification({
-      userId: booking.coach_id,
-      type: 'general',
-      title: 'Booking Rescheduled',
-      body: 'A rider has rescheduled their booking. Please review the changes.',
-      data: { booking_id: booking.id },
-    });
-  }
+      await booking.save({ transaction: t });
 
-  return { message: 'Booking rescheduled successfully', data: booking };
-};
+      // Notify coach about the reschedule
+      if (booking.coach_id) {
+        await createNotification({
+          userId: booking.coach_id,
+          type: 'general',
+          title: 'Booking Rescheduled',
+          body: 'A rider has rescheduled their booking. Please review the changes.',
+          data: { booking_id: booking.id },
+        });
+      }
+
+      return { message: 'Booking rescheduled successfully', data: booking };
+    }
+  );
 
 // ──────────────────────────────────────────────────
 // Part B: Waitlist
