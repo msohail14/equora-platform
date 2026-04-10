@@ -3,6 +3,7 @@ import { AlertCircle, CalendarDays, CheckCircle2, Clock3, Loader2, XCircle } fro
 import Modal from '../../ui/Modal';
 import AppButton from '../../ui/AppButton';
 import FormInput from '../../ui/FormInput';
+import { formatTime12h } from '../../../lib/timeFormat';
 
 const selectCls =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
@@ -17,15 +18,7 @@ const formatDateShort = (dateValue) => {
   return date.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
 };
 
-const formatTimeLabel = (timeValue) => {
-  const [hRaw, mRaw] = String(timeValue || '').split(':');
-  const hour = Number(hRaw);
-  const minute = Number(mRaw);
-  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return String(timeValue || '');
-  const suffix = hour >= 12 ? 'PM' : 'AM';
-  const twelve = hour % 12 || 12;
-  return `${twelve}:${String(minute).padStart(2, '0')} ${suffix}`;
-};
+const formatTimeLabel = formatTime12h;
 
 const CourseSessionFormModal = ({
   isOpen,

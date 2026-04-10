@@ -45,6 +45,21 @@ const BOOKING_DETAIL_INCLUDES = [
 ];
 
 /**
+ * Format a 24h time string (e.g. "20:00:00") to 12h AM/PM (e.g. "8:00 PM").
+ */
+const formatTime12h = (time24) => {
+  if (!time24) return '';
+  const parts = String(time24).split(':');
+  let hour = parseInt(parts[0], 10);
+  const min = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  if (isNaN(hour) || isNaN(min)) return String(time24);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  if (hour === 0) hour = 12;
+  if (hour > 12) hour -= 12;
+  return `${hour}:${String(min).padStart(2, '0')} ${ampm}`;
+};
+
+/**
  * Convert a date string to ISO day-of-week (1=Monday ... 7=Sunday).
  * Uses T12:00:00 to avoid UTC midnight timezone shift issues.
  */
@@ -1680,7 +1695,7 @@ export const delayBookings = async ({ bookingId, coachId, delayMinutes, delayAll
         userId: u.rider_id,
         type: 'general',
         title: 'Session Time Updated',
-        body: `Your session has been pushed by ${delayMinutes} minutes. New time: ${u.newStart.slice(0, 5)}.${reason ? ` Reason: ${reason}` : ''}`,
+        body: `Your session has been pushed by ${delayMinutes} minutes. New time: ${formatTime12h(u.newStart)}.${reason ? ` Reason: ${reason}` : ''}`,
         data: { booking_id: u.id },
       });
     }
@@ -1731,7 +1746,7 @@ export const sendUpcomingReminders = async () => {
     });
 
     for (const b of bookings24h) {
-      const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      const timeDisplay = b.start_time ? formatTime12h(b.start_time) : '';
       // Mark as sent first to prevent duplicates on partial failure
       b.reminder_24h_sent = true;
       await b.save();
@@ -1775,7 +1790,7 @@ export const sendUpcomingReminders = async () => {
     });
 
     for (const b of bookings1h) {
-      const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      const timeDisplay = b.start_time ? formatTime12h(b.start_time) : '';
       // Mark as sent first to prevent duplicates on partial failure
       b.reminder_1h_sent = true;
       await b.save();
