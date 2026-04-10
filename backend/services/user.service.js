@@ -445,6 +445,8 @@ export const changeProfile = async ({
   }
   user.profile_picture_url = profile_picture_url ?? user.profile_picture_url;
   if (email !== undefined && email && email !== user.email) {
+    const existing = await User.findOne({ where: { email, id: { [Op.ne]: user.id } } });
+    if (existing) throw new Error('This email is already in use by another account.');
     user.email = email;
     user.is_email_verified = false;
   }

@@ -3,7 +3,10 @@ import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
 export const getCoachDashboard = async ({ coachId }) => {
-  const today = new Date().toISOString().split('T')[0];
+  // Use Asia/Riyadh (UTC+3) to match booking_date storage
+  const now = new Date();
+  const localNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const today = localNow.toISOString().split('T')[0];
 
   let todaySessions = [];
   let todayBookings = [];
