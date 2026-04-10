@@ -147,7 +147,7 @@ const AdminBookingsPage = () => {
       setCoaches(Array.isArray(c?.data) ? c.data : Array.isArray(c) ? c : []);
       setArenas(Array.isArray(a?.data) ? a.data : Array.isArray(a) ? a : []);
       setHorses(Array.isArray(h?.data) ? h.data : Array.isArray(h) ? h : []);
-    } catch (_) {}
+    } catch { /* dropdown load failed — non-blocking */ }
   };
 
   const handleAssignSubmit = async () => {
