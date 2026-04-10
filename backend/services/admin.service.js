@@ -800,8 +800,11 @@ export const adminModifyBooking = async ({ bookingId, coachId, arenaId, horseId,
   if (notes !== undefined) booking.notes = notes;
 
   if (durationMinutes !== undefined && durationMinutes > 0) {
+    if (!booking.start_time) throw new Error('Cannot set duration: booking has no start time.');
     booking.duration_minutes = durationMinutes;
-    const [h, m] = booking.start_time.split(':').map(Number);
+    const parts = booking.start_time.split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
     const endMins = h * 60 + m + durationMinutes;
     if (endMins >= 1440) throw new Error('Session cannot extend past midnight.');
     booking.end_time = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}:00`;

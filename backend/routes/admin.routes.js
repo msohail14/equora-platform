@@ -71,7 +71,7 @@ router.patch('/coaches/:id/verify', superAdminOnly, adminIdParamValidation, vali
 router.get('/settings', superAdminOnly, getAdminSettingsController);
 router.put('/settings', superAdminOnly, updateAdminSettingsController);
 router.get('/bookings', adminAuthMiddleware, getAdminBookingsController);
-router.patch('/bookings/:id/assign', adminAuthMiddleware, adminModifyBookingController);
+router.patch('/bookings/:id/assign', adminAuthMiddleware, adminIdParamValidation, validate, adminModifyBookingController);
 router.patch('/payments/:id/manual', adminAuthMiddleware, adminIdParamValidation, validate, markManualPaymentController);
 router.patch('/payments/:id/refund', adminAuthMiddleware, adminIdParamValidation, validate, refundPaymentController);
 router.post('/stables/:id/invite-owner', superAdminOnly, adminIdParamValidation, validate, inviteStableOwnerController);
