@@ -13,11 +13,10 @@ import {
   completeBookingApi,
   adminAssignBookingApi,
   getCoachesApi,
-  getArenasAllApi,
-  getHorsesAllApi,
+  getAllArenasApi,
+  getAllHorsesApi,
 } from '../../features/operations/operationsApi';
 import { formatTime12h } from '../../lib/timeFormat';
-import FormInput from '../../components/ui/FormInput';
 
 const STATUS_OPTIONS = [
   'all',
@@ -141,8 +140,8 @@ const AdminBookingsPage = () => {
     try {
       const [c, a, h] = await Promise.all([
         getCoachesApi({ limit: 100 }),
-        getArenasAllApi({ limit: 100 }),
-        getHorsesAllApi({ limit: 100 }),
+        getAllArenasApi({ limit: 100 }),
+        getAllHorsesApi({ limit: 100 }),
       ]);
       setCoaches(Array.isArray(c?.data) ? c.data : Array.isArray(c) ? c : []);
       setArenas(Array.isArray(a?.data) ? a.data : Array.isArray(a) ? a : []);
