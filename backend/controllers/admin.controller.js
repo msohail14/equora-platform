@@ -6,6 +6,7 @@ import {
   forgotAdminPassword,
   getAdminAnalytics,
   getAdminBookings,
+  adminModifyBooking,
   getAdminDashboardData,
   getAdminPayments,
   getAdminPayouts,
@@ -179,6 +180,22 @@ export const updateAdminSettingsController = async (req, res) => {
 export const getAdminBookingsController = async (req, res) => {
   try {
     const data = await getAdminBookings(req.query);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const adminModifyBookingController = async (req, res) => {
+  try {
+    const data = await adminModifyBooking({
+      bookingId: Number(req.params.id),
+      coachId: req.body.coach_id,
+      arenaId: req.body.arena_id,
+      horseId: req.body.horse_id,
+      durationMinutes: req.body.duration_minutes ? Number(req.body.duration_minutes) : undefined,
+      notes: req.body.notes,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

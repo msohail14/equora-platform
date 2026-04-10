@@ -11,8 +11,13 @@ import {
   declineBookingApi,
   startBookingApi,
   completeBookingApi,
+  adminAssignBookingApi,
+  getCoachesApi,
+  getArenasAllApi,
+  getHorsesAllApi,
 } from '../../features/operations/operationsApi';
 import { formatTime12h } from '../../lib/timeFormat';
+import FormInput from '../../components/ui/FormInput';
 
 const STATUS_OPTIONS = [
   'all',
@@ -53,6 +58,17 @@ const AdminBookingsPage = () => {
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [declineTarget, setDeclineTarget] = useState(null);
   const [declineReason, setDeclineReason] = useState('');
+
+  // Assignment modal state
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null);
+  const [assignCoachId, setAssignCoachId] = useState('');
+  const [assignArenaId, setAssignArenaId] = useState('');
+  const [assignHorseId, setAssignHorseId] = useState('');
+  const [coaches, setCoaches] = useState([]);
+  const [arenas, setArenas] = useState([]);
+  const [horses, setHorses] = useState([]);
+  const [assignSaving, setAssignSaving] = useState(false);
 
   const fetchBookings = useCallback(async (targetPage = page, targetStatus = status) => {
     setLoading(true);
@@ -115,6 +131,50 @@ const AdminBookingsPage = () => {
     }
   };
 
+  const openAssignModal = async (booking) => {
+    setAssignTarget(booking);
+    setAssignCoachId(booking.coach_id || '');
+    setAssignArenaId(booking.arena_id || '');
+    setAssignHorseId(booking.horse_id || '');
+    setAssignModalOpen(true);
+    // Load dropdown options
+    try {
+      const [c, a, h] = await Promise.all([
+        getCoachesApi({ limit: 100 }),
+        getArenasAllApi({ limit: 100 }),
+        getHorsesAllApi({ limit: 100 }),
+      ]);
+      setCoaches(Array.isArray(c?.data) ? c.data : Array.isArray(c) ? c : []);
+      setArenas(Array.isArray(a?.data) ? a.data : Array.isArray(a) ? a : []);
+      setHorses(Array.isArray(h?.data) ? h.data : Array.isArray(h) ? h : []);
+    } catch (_) {}
+  };
+
+  const handleAssignSubmit = async () => {
+    if (!assignTarget) return;
+    setAssignSaving(true);
+    try {
+      const payload = {};
+      if (assignCoachId !== (assignTarget.coach_id || '')) payload.coach_id = assignCoachId || null;
+      if (assignArenaId !== (assignTarget.arena_id || '')) payload.arena_id = assignArenaId || null;
+      if (assignHorseId !== (assignTarget.horse_id || '')) payload.horse_id = assignHorseId || null;
+      if (Object.keys(payload).length === 0) {
+        toast('No changes to save.');
+        setAssignModalOpen(false);
+        return;
+      }
+      await adminAssignBookingApi(assignTarget.id, payload);
+      toast.success('Booking assignments updated.');
+      setAssignModalOpen(false);
+      setAssignTarget(null);
+      await fetchBookings(page, status);
+    } catch (err) {
+      toast.error(err.message || 'Failed to update assignments.');
+    } finally {
+      setAssignSaving(false);
+    }
+  };
+
   const renderActions = (b) => {
     const isLoading = actionLoading === b.id;
     const btnBase = 'rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50';
@@ -122,7 +182,7 @@ const AdminBookingsPage = () => {
     switch (b.status) {
       case 'pending_review':
         return (
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <button
               className={`${btnBase} bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300`}
               disabled={isLoading}
@@ -139,6 +199,13 @@ const AdminBookingsPage = () => {
               onClick={() => openDeclineModal(b)}
             >
               Decline
+            </button>
+            <button
+              className={`${btnBase} bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300`}
+              disabled={isLoading}
+              onClick={() => openAssignModal(b)}
+            >
+              Assign
             </button>
           </div>
         );
@@ -353,6 +420,75 @@ const AdminBookingsPage = () => {
               className="bg-red-500 hover:bg-red-600"
             >
               Decline Booking
+            </AppButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Assignment Modal */}
+      <Modal isOpen={assignModalOpen} title="Assign Booking Details" onClose={() => setAssignModalOpen(false)}>
+        <div className="space-y-4">
+          {assignTarget && (
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Assign coach, arena, and horse for{' '}
+              <span className="font-medium">
+                {`${assignTarget.rider?.first_name || ''} ${assignTarget.rider?.last_name || ''}`.trim() || assignTarget.rider?.mobile_number || 'Rider'}
+              </span>
+              {' '}on {assignTarget.booking_date} at {formatTime12h(assignTarget.start_time)}
+            </p>
+          )}
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Coach</label>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              value={assignCoachId}
+              onChange={(e) => setAssignCoachId(e.target.value)}
+            >
+              <option value="">— No coach assigned —</option>
+              {coaches.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {`${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email}
+                  {c.max_concurrent_riders > 1 ? ` (max ${c.max_concurrent_riders} riders)` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Arena</label>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              value={assignArenaId}
+              onChange={(e) => setAssignArenaId(e.target.value)}
+            >
+              <option value="">— No arena assigned —</option>
+              {arenas.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Horse</label>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              value={assignHorseId}
+              onChange={(e) => setAssignHorseId(e.target.value)}
+            >
+              <option value="">— No horse assigned —</option>
+              {horses.map((h) => (
+                <option key={h.id} value={h.id}>{h.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <AppButton variant="secondary" onClick={() => setAssignModalOpen(false)}>
+              Cancel
+            </AppButton>
+            <AppButton onClick={handleAssignSubmit} disabled={assignSaving}>
+              {assignSaving ? 'Saving...' : 'Save Assignments'}
             </AppButton>
           </div>
         </div>
