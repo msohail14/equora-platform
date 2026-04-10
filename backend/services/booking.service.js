@@ -39,7 +39,7 @@ const BOOKING_DETAIL_INCLUDES = [
   {
     model: Course,
     as: 'course',
-    attributes: ['id', 'name', 'difficulty_level'],
+    attributes: ['id', 'title', 'difficulty_level'],
     required: false,
   },
 ];

@@ -25,7 +25,7 @@ export const getCoachDashboard = async ({ coachId }) => {
       },
       include: [
         { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'profile_picture_url'] },
-        { model: Course, as: 'course', attributes: ['id', 'name'] },
+        { model: Course, as: 'course', attributes: ['id', 'title'] },
         { model: Horse, as: 'horse', attributes: ['id', 'name'] },
       ],
       order: [['start_time', 'ASC']],
