@@ -38,6 +38,8 @@ import {
   createSeriesBookingController,
   getHorseWorkloadController,
   payAtStableController,
+  delayBookingsController,
+  sendRemindersController,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
@@ -71,5 +73,7 @@ router.patch('/:id/rider-modify', authMiddleware, bookingIdParamValidation, ride
 router.post('/:id/pay-at-stable', authMiddleware, bookingIdParamValidation, validate, payAtStableController);
 router.patch('/:id/cancel', authMiddleware, bookingIdParamValidation, validate, cancelBookingController);
 router.get('/horses/:id/workload', authMiddleware, getHorseWorkloadController);
+router.patch('/:id/delay', coachAuthMiddleware, bookingIdParamValidation, validate, delayBookingsController);
+router.post('/reminders/send', adminAuthMiddleware, sendRemindersController);
 
 export default router;

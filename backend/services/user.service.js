@@ -413,6 +413,7 @@ export const changeProfile = async ({
   first_name,
   last_name,
   mobile_number,
+  email,
   city,
   state,
   country,
@@ -420,6 +421,7 @@ export const changeProfile = async ({
   date_of_birth,
   gender,
   profile_picture_url,
+  max_concurrent_riders,
 }) => {
   const user = await User.findByPk(userId);
   if (!user) {
@@ -440,6 +442,10 @@ export const changeProfile = async ({
     user.gender = normalizeGender(gender);
   }
   user.profile_picture_url = profile_picture_url ?? user.profile_picture_url;
+  if (email !== undefined && email) user.email = email;
+  if (max_concurrent_riders !== undefined && user.role === 'coach') {
+    user.max_concurrent_riders = Math.max(1, Math.min(10, Number(max_concurrent_riders) || 1));
+  }
   await user.save();
 
   if (profile_picture_url && previousProfilePictureUrl && previousProfilePictureUrl !== profile_picture_url) {
