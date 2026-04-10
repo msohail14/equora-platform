@@ -1479,6 +1479,9 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
     const [h, m] = booking.start_time.split(':').map(Number);
     const startMins = h * 60 + m;
     const endMins = startMins + durationMinutes;
+    if (endMins >= 1440) {
+      throw new Error('Session cannot extend past midnight.');
+    }
     const endH = Math.floor(endMins / 60).toString().padStart(2, '0');
     const endM = (endMins % 60).toString().padStart(2, '0');
     booking.end_time = `${endH}:${endM}:00`;
@@ -1641,35 +1644,44 @@ export const delayBookings = async ({ bookingId, coachId, delayMinutes, delayAll
   const shiftTime = (timeStr, minutes) => {
     const [h, m, s] = timeStr.split(':').map(Number);
     const totalMins = h * 60 + m + minutes;
+    if (totalMins >= 1440) {
+      throw new Error('Delayed session would extend past midnight.');
+    }
     const newH = Math.floor(totalMins / 60).toString().padStart(2, '0');
     const newM = (totalMins % 60).toString().padStart(2, '0');
     return `${newH}:${newM}:${(s || 0).toString().padStart(2, '0')}`;
   };
 
-  const updated = [];
-  for (const b of affectedBookings) {
-    const oldStart = b.start_time;
-    b.start_time = shiftTime(b.start_time, delayMinutes);
-    b.end_time = shiftTime(b.end_time, delayMinutes);
-    if (reason) b.delay_reason = reason;
-    await b.save();
+  // Wrap all updates in a transaction for atomicity
+  const updated = await sequelize.transaction(async (t) => {
+    const result = [];
+    for (const b of affectedBookings) {
+      const oldStart = b.start_time;
+      b.start_time = shiftTime(b.start_time, delayMinutes);
+      b.end_time = shiftTime(b.end_time, delayMinutes);
+      if (reason) b.delay_reason = reason;
+      await b.save({ transaction: t });
 
-    updated.push({
-      id: b.id,
-      rider: b.rider ? `${b.rider.first_name || ''} ${b.rider.last_name || ''}`.trim() : null,
-      rider_id: b.rider_id,
-      oldStart,
-      newStart: b.start_time,
-    });
+      result.push({
+        id: b.id,
+        rider: b.rider ? `${b.rider.first_name || ''} ${b.rider.last_name || ''}`.trim() : null,
+        rider_id: b.rider_id,
+        oldStart,
+        newStart: b.start_time,
+      });
+    }
+    return result;
+  });
 
-    // Notify each affected rider
-    if (b.rider_id && b.id !== bookingId) {
+  // Send notifications outside transaction (after commit)
+  for (const u of updated) {
+    if (u.rider_id && u.id !== bookingId) {
       await createNotification({
-        userId: b.rider_id,
+        userId: u.rider_id,
         type: 'general',
         title: 'Session Time Updated',
-        body: `Your session has been pushed by ${delayMinutes} minutes. New time: ${b.start_time.slice(0, 5)}.${reason ? ` Reason: ${reason}` : ''}`,
-        data: { booking_id: b.id },
+        body: `Your session has been pushed by ${delayMinutes} minutes. New time: ${u.newStart.slice(0, 5)}.${reason ? ` Reason: ${reason}` : ''}`,
+        data: { booking_id: u.id },
       });
     }
   }
@@ -1685,15 +1697,21 @@ export const delayBookings = async ({ bookingId, coachId, delayMinutes, delayAll
  * Send upcoming booking reminders. Call from a cron job every 30 minutes.
  */
 export const sendUpcomingReminders = async () => {
+  // Use Asia/Riyadh timezone (UTC+3) to match booking_date storage
+  const OFFSET_HOURS = 3; // Saudi Arabia (AST) is UTC+3
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const localNow = new Date(now.getTime() + OFFSET_HOURS * 60 * 60 * 1000);
+  const today = localNow.toISOString().split('T')[0];
+  const tomorrowDate = new Date(localNow.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrow = tomorrowDate.toISOString().split('T')[0];
 
-  // Current time in HH:MM format for 1h-ahead check
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  const oneHourAheadMins = nowMins + 90; // 90 min window to catch within cron interval
+  // Current local time in HH:MM format for 1h-ahead check
+  const localHours = localNow.getUTCHours();
+  const localMinutes = localNow.getUTCMinutes();
+  const nowMins = localHours * 60 + localMinutes;
+  const oneHourAheadMins = Math.min(nowMins + 90, 1439); // Clamp to 23:59
   const oneHourAheadTime = `${Math.floor(oneHourAheadMins / 60).toString().padStart(2, '0')}:${(oneHourAheadMins % 60).toString().padStart(2, '0')}:00`;
-  const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
+  const nowTime = `${localHours.toString().padStart(2, '0')}:${localMinutes.toString().padStart(2, '0')}:00`;
 
   let sent24h = 0;
   let sent1h = 0;
@@ -1714,6 +1732,9 @@ export const sendUpcomingReminders = async () => {
 
     for (const b of bookings24h) {
       const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      // Mark as sent first to prevent duplicates on partial failure
+      b.reminder_24h_sent = true;
+      await b.save();
       if (b.rider_id) {
         await createNotification({
           userId: b.rider_id,
@@ -1732,8 +1753,6 @@ export const sendUpcomingReminders = async () => {
           data: { booking_id: b.id },
         });
       }
-      b.reminder_24h_sent = true;
-      await b.save();
       sent24h++;
     }
   } catch (e) {
@@ -1757,6 +1776,9 @@ export const sendUpcomingReminders = async () => {
 
     for (const b of bookings1h) {
       const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      // Mark as sent first to prevent duplicates on partial failure
+      b.reminder_1h_sent = true;
+      await b.save();
       if (b.rider_id) {
         await createNotification({
           userId: b.rider_id,
@@ -1775,8 +1797,6 @@ export const sendUpcomingReminders = async () => {
           data: { booking_id: b.id },
         });
       }
-      b.reminder_1h_sent = true;
-      await b.save();
       sent1h++;
     }
   } catch (e) {

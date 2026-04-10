@@ -28,6 +28,8 @@ const publicUserFields = [
   'profile_picture_url',
   'is_email_verified',
   'is_active',
+  'max_concurrent_riders',
+  'coach_type',
   'created_at',
 ];
 
@@ -442,9 +444,16 @@ export const changeProfile = async ({
     user.gender = normalizeGender(gender);
   }
   user.profile_picture_url = profile_picture_url ?? user.profile_picture_url;
-  if (email !== undefined && email) user.email = email;
+  if (email !== undefined && email && email !== user.email) {
+    user.email = email;
+    user.is_email_verified = false;
+  }
   if (max_concurrent_riders !== undefined && user.role === 'coach') {
-    user.max_concurrent_riders = Math.max(1, Math.min(10, Number(max_concurrent_riders) || 1));
+    const parsed = Number(max_concurrent_riders);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10) {
+      throw new Error('max_concurrent_riders must be an integer between 1 and 10.');
+    }
+    user.max_concurrent_riders = parsed;
   }
   await user.save();
 

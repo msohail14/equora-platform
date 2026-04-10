@@ -203,6 +203,20 @@ export const riderModifyBookingValidation = [
     .matches(timePattern).withMessage('end_time must be in HH:MM or HH:MM:SS format'),
 ];
 
+export const delayBookingValidation = [
+  body('delay_minutes')
+    .toInt()
+    .isIn([5, 10, 15, 20]).withMessage('delay_minutes must be one of 5, 10, 15, 20'),
+  body('delay_all')
+    .optional()
+    .isBoolean().withMessage('delay_all must be boolean')
+    .toBoolean(),
+  body('reason')
+    .optional()
+    .isString()
+    .isLength({ max: 500 }).withMessage('reason must be at most 500 characters'),
+];
+
 export const stableIdParamValidation = [
   param('id')
     .toInt()

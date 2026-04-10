@@ -69,7 +69,7 @@ export const getCoachDashboard = async ({ coachId }) => {
       where: {
         coach_id: coachId,
         status: { [Op.in]: ['confirmed', 'pending_review', 'pending_payment'] },
-        booking_date: { [Op.gte]: today },
+        booking_date: { [Op.gt]: today },
       },
     });
   } catch (e) {
