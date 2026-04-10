@@ -786,3 +786,43 @@ export const getAdminBookings = async ({ status, page, limit, date }) => {
 
   return { data: rows, pagination: buildPaginationMeta({ totalItems: count, page: p, limit: l }) };
 };
+
+/**
+ * Admin assigns coach, arena, horse, or duration to a booking.
+ */
+export const adminModifyBooking = async ({ bookingId, coachId, arenaId, horseId, durationMinutes, notes }) => {
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw new Error('Booking not found.');
+
+  if (coachId !== undefined) booking.coach_id = coachId || null;
+  if (arenaId !== undefined) booking.arena_id = arenaId || null;
+  if (horseId !== undefined) booking.horse_id = horseId || null;
+  if (notes !== undefined) booking.notes = notes;
+
+  if (durationMinutes !== undefined && durationMinutes > 0) {
+    if (!booking.start_time) throw new Error('Cannot set duration: booking has no start time.');
+    booking.duration_minutes = durationMinutes;
+    const parts = booking.start_time.split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
+    const endMins = h * 60 + m + durationMinutes;
+    if (endMins >= 1440) throw new Error('Session cannot extend past midnight.');
+    booking.end_time = `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}:00`;
+  }
+
+  await booking.save();
+
+  // Notify rider about the assignment
+  if (booking.rider_id) {
+    const { createNotification } = await import('./notification.service.js');
+    await createNotification({
+      userId: booking.rider_id,
+      type: 'general',
+      title: 'Booking Updated',
+      body: 'Your booking has been updated with new assignment details.',
+      data: { booking_id: booking.id },
+    });
+  }
+
+  return booking;
+};
