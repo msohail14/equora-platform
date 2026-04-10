@@ -3,13 +3,19 @@ import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
 export const getCoachDashboard = async ({ coachId }) => {
-  const today = new Date().toISOString().split('T')[0];
+  // Use Asia/Riyadh (UTC+3) to match booking_date storage
+  const now = new Date();
+  const localNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const today = localNow.toISOString().split('T')[0];
 
   let todaySessions = [];
+  let todayBookings = [];
   let upcomingSessionsCount = 0;
+  let upcomingBookingsCount = 0;
   let totalEarnings = 0;
   let pendingPayouts = 0;
   let totalRiders = 0;
+  let pendingBookingsCount = 0;
 
   try {
     todaySessions = await CourseSession.findAll({
@@ -28,6 +34,27 @@ export const getCoachDashboard = async ({ coachId }) => {
     console.error('Coach dashboard - todaySessions error:', e.message);
   }
 
+  // Include today's lesson bookings (confirmed + in_progress)
+  try {
+    const { Stable } = await import('../models/index.js');
+    todayBookings = await LessonBooking.findAll({
+      where: {
+        coach_id: coachId,
+        booking_date: today,
+        status: { [Op.in]: ['confirmed', 'in_progress', 'pending_review', 'pending_payment'] },
+      },
+      include: [
+        { model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'profile_picture_url'] },
+        { model: User, as: 'coach', attributes: ['id', 'first_name', 'last_name'] },
+        { model: Stable, as: 'stable', attributes: ['id', 'name'] },
+        { model: Horse, as: 'horse', attributes: ['id', 'name'] },
+      ],
+      order: [['start_time', 'ASC']],
+    });
+  } catch (e) {
+    console.error('Coach dashboard - todayBookings error:', e.message);
+  }
+
   try {
     upcomingSessionsCount = await CourseSession.count({
       where: {
@@ -38,6 +65,29 @@ export const getCoachDashboard = async ({ coachId }) => {
     });
   } catch (e) {
     console.error('Coach dashboard - upcomingCount error:', e.message);
+  }
+
+  try {
+    upcomingBookingsCount = await LessonBooking.count({
+      where: {
+        coach_id: coachId,
+        status: { [Op.in]: ['confirmed', 'pending_review', 'pending_payment'] },
+        booking_date: { [Op.gt]: today },
+      },
+    });
+  } catch (e) {
+    console.error('Coach dashboard - upcomingBookingsCount error:', e.message);
+  }
+
+  try {
+    pendingBookingsCount = await LessonBooking.count({
+      where: {
+        coach_id: coachId,
+        status: 'pending_review',
+      },
+    });
+  } catch (e) {
+    console.error('Coach dashboard - pendingBookingsCount error:', e.message);
   }
 
   try {
@@ -74,7 +124,9 @@ export const getCoachDashboard = async ({ coachId }) => {
 
   return {
     todaySessions,
-    upcomingSessionsCount,
+    todayBookings,
+    upcomingSessionsCount: upcomingSessionsCount + upcomingBookingsCount,
+    pendingBookingsCount,
     totalEarnings,
     pendingPayouts,
     totalRiders,

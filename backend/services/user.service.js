@@ -28,6 +28,8 @@ const publicUserFields = [
   'profile_picture_url',
   'is_email_verified',
   'is_active',
+  'max_concurrent_riders',
+  'coach_type',
   'created_at',
 ];
 
@@ -413,6 +415,7 @@ export const changeProfile = async ({
   first_name,
   last_name,
   mobile_number,
+  email,
   city,
   state,
   country,
@@ -420,6 +423,7 @@ export const changeProfile = async ({
   date_of_birth,
   gender,
   profile_picture_url,
+  max_concurrent_riders,
 }) => {
   const user = await User.findByPk(userId);
   if (!user) {
@@ -440,6 +444,19 @@ export const changeProfile = async ({
     user.gender = normalizeGender(gender);
   }
   user.profile_picture_url = profile_picture_url ?? user.profile_picture_url;
+  if (email !== undefined && email && email !== user.email) {
+    const existing = await User.findOne({ where: { email, id: { [Op.ne]: user.id } } });
+    if (existing) throw new Error('This email is already in use by another account.');
+    user.email = email;
+    user.is_email_verified = false;
+  }
+  if (max_concurrent_riders !== undefined && user.role === 'coach') {
+    const parsed = Number(max_concurrent_riders);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10) {
+      throw new Error('max_concurrent_riders must be an integer between 1 and 10.');
+    }
+    user.max_concurrent_riders = parsed;
+  }
   await user.save();
 
   if (profile_picture_url && previousProfilePictureUrl && previousProfilePictureUrl !== profile_picture_url) {

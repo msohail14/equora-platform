@@ -140,6 +140,9 @@ LessonBooking.belongsTo(CourseSession, { foreignKey: 'session_id', as: 'session'
 Payment.hasOne(LessonBooking, { foreignKey: 'payment_id', as: 'booking' });
 LessonBooking.belongsTo(Payment, { foreignKey: 'payment_id', as: 'payment' });
 
+Course.hasMany(LessonBooking, { foreignKey: 'course_id', as: 'bookings' });
+LessonBooking.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+
 Horse.hasMany(HorseAvailability, { foreignKey: 'horse_id', as: 'availability', onDelete: 'CASCADE' });
 HorseAvailability.belongsTo(Horse, { foreignKey: 'horse_id', as: 'horse' });
 

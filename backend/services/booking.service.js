@@ -36,6 +36,12 @@ const BOOKING_DETAIL_INCLUDES = [
     as: 'arena',
     attributes: ['id', 'name'],
   },
+  {
+    model: Course,
+    as: 'course',
+    attributes: ['id', 'name', 'difficulty_level'],
+    required: false,
+  },
 ];
 
 /**
@@ -646,14 +652,17 @@ export const createBooking = async ({
         ],
       });
 
-      // Coach double-booking prevention (with row lock)
+      // Coach capacity check (respects max_concurrent_riders setting)
       if (coachId) {
-        const coachConflict = await LessonBooking.findOne({
+        const maxConcurrent = coachRecord?.max_concurrent_riders || 1;
+        const coachConflictCount = await LessonBooking.count({
           where: overlapWhere({ coach_id: coachId }),
           ...lockOpts,
         });
-        if (coachConflict) {
-          throw new Error('This coach is already booked for the selected time slot.');
+        if (coachConflictCount >= maxConcurrent) {
+          throw new Error(maxConcurrent === 1
+            ? 'This coach is already booked for the selected time slot.'
+            : `This coach has reached maximum capacity (${maxConcurrent} riders) for the selected time slot.`);
         }
       }
 
@@ -1425,7 +1434,7 @@ export const getReturningRiderDefaults = async (riderId) => {
 /**
  * Coach can modify a pending booking (change horse, stable, or time).
  */
-export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId: newStableId, startTime: newStartTime, endTime: newEndTime, notes: newNotes }) => {
+export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId: newStableId, startTime: newStartTime, endTime: newEndTime, notes: newNotes, courseId, durationMinutes }) => {
   const booking = await LessonBooking.findByPk(bookingId, {
     include: [{ model: Stable, as: 'stable' }],
   });
@@ -1455,16 +1464,48 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
   if (newEndTime !== undefined) booking.end_time = newEndTime;
   if (newNotes !== undefined) booking.notes = newNotes;
 
+  // Coach can assign a course to the booking
+  if (courseId !== undefined) {
+    if (courseId) {
+      const course = await Course.findByPk(courseId);
+      if (!course) throw new Error('Course not found.');
+    }
+    booking.course_id = courseId || null;
+  }
+
+  // Coach can set duration — auto-calculate end_time from start_time + duration
+  if (durationMinutes !== undefined && durationMinutes > 0) {
+    booking.duration_minutes = durationMinutes;
+    const [h, m] = booking.start_time.split(':').map(Number);
+    const startMins = h * 60 + m;
+    const endMins = startMins + durationMinutes;
+    if (endMins >= 1440) {
+      throw new Error('Session cannot extend past midnight.');
+    }
+    const endH = Math.floor(endMins / 60).toString().padStart(2, '0');
+    const endM = (endMins % 60).toString().padStart(2, '0');
+    booking.end_time = `${endH}:${endM}:00`;
+  }
+
   await booking.save();
 
+  // Build notification body with details
+  const details = [];
+  if (courseId !== undefined) details.push('course assigned');
+  if (durationMinutes !== undefined) details.push(`duration: ${durationMinutes} min`);
+  if (horseId !== undefined) details.push('horse updated');
+  const detailText = details.length > 0 ? ` Updates: ${details.join(', ')}.` : '';
+
   // Notify rider about the modification
-  await createNotification({
-    userId: booking.rider_id,
-    type: 'general',
-    title: 'Booking Modified',
-    body: 'Your coach has modified your upcoming booking. Please review the changes.',
-    data: { booking_id: booking.id },
-  });
+  if (booking.rider_id) {
+    await createNotification({
+      userId: booking.rider_id,
+      type: 'general',
+      title: 'Booking Updated',
+      body: `Your coach has updated your booking.${detailText} Please review the changes.`,
+      data: { booking_id: booking.id },
+    });
+  }
 
   return booking;
 };
@@ -1559,6 +1600,212 @@ export const riderModifyBooking = async ({ bookingId, riderId, bookingDate, star
       return { message: 'Booking rescheduled successfully', data: booking };
     }
   );
+
+// ──────────────────────────────────────────────────
+// ──────────────────────────────────────────────────
+// Delay Management
+// ──────────────────────────────────────────────────
+
+/**
+ * Coach delays bookings — shifts start/end times for remaining sessions.
+ */
+export const delayBookings = async ({ bookingId, coachId, delayMinutes, delayAll = true, reason }) => {
+  if (!delayMinutes || delayMinutes <= 0 || delayMinutes > 60) {
+    throw new Error('delayMinutes must be between 1 and 60.');
+  }
+
+  const booking = await LessonBooking.findByPk(bookingId);
+  if (!booking) throw new Error('Booking not found.');
+  if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can delay bookings.');
+
+  const activeStatuses = ['confirmed', 'in_progress', 'pending_review', 'pending_payment'];
+
+  // Find bookings to delay
+  const where = {
+    coach_id: coachId,
+    booking_date: booking.booking_date,
+    status: { [Op.in]: activeStatuses },
+  };
+
+  if (delayAll) {
+    // Delay current booking + all subsequent on same day
+    where.start_time = { [Op.gte]: booking.start_time };
+  } else {
+    // Only delay the next session after current
+    where.start_time = { [Op.gt]: booking.end_time };
+  }
+
+  const affectedBookings = await LessonBooking.findAll({
+    where,
+    order: [['start_time', 'ASC']],
+    include: [{ model: User, as: 'rider', attributes: ['id', 'first_name', 'last_name'] }],
+  });
+
+  const shiftTime = (timeStr, minutes) => {
+    const [h, m, s] = timeStr.split(':').map(Number);
+    const totalMins = h * 60 + m + minutes;
+    if (totalMins >= 1440) {
+      throw new Error('Delayed session would extend past midnight.');
+    }
+    const newH = Math.floor(totalMins / 60).toString().padStart(2, '0');
+    const newM = (totalMins % 60).toString().padStart(2, '0');
+    return `${newH}:${newM}:${(s || 0).toString().padStart(2, '0')}`;
+  };
+
+  // Wrap all updates in a transaction for atomicity
+  const updated = await sequelize.transaction(async (t) => {
+    const result = [];
+    for (const b of affectedBookings) {
+      const oldStart = b.start_time;
+      b.start_time = shiftTime(b.start_time, delayMinutes);
+      b.end_time = shiftTime(b.end_time, delayMinutes);
+      if (reason) b.delay_reason = reason;
+      await b.save({ transaction: t });
+
+      result.push({
+        id: b.id,
+        rider: b.rider ? `${b.rider.first_name || ''} ${b.rider.last_name || ''}`.trim() : null,
+        rider_id: b.rider_id,
+        oldStart,
+        newStart: b.start_time,
+      });
+    }
+    return result;
+  });
+
+  // Send notifications outside transaction (after commit)
+  for (const u of updated) {
+    if (u.rider_id && u.id !== bookingId) {
+      await createNotification({
+        userId: u.rider_id,
+        type: 'general',
+        title: 'Session Time Updated',
+        body: `Your session has been pushed by ${delayMinutes} minutes. New time: ${u.newStart.slice(0, 5)}.${reason ? ` Reason: ${reason}` : ''}`,
+        data: { booking_id: u.id },
+      });
+    }
+  }
+
+  return { message: `${updated.length} session(s) delayed by ${delayMinutes} minutes.`, affected: updated };
+};
+
+// ──────────────────────────────────────────────────
+// Booking Reminders
+// ──────────────────────────────────────────────────
+
+/**
+ * Send upcoming booking reminders. Call from a cron job every 30 minutes.
+ */
+export const sendUpcomingReminders = async () => {
+  // Use Asia/Riyadh timezone (UTC+3) to match booking_date storage
+  const OFFSET_HOURS = 3; // Saudi Arabia (AST) is UTC+3
+  const now = new Date();
+  const localNow = new Date(now.getTime() + OFFSET_HOURS * 60 * 60 * 1000);
+  const today = localNow.toISOString().split('T')[0];
+  const tomorrowDate = new Date(localNow.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrow = tomorrowDate.toISOString().split('T')[0];
+
+  // Current local time in HH:MM format for 1h-ahead check
+  const localHours = localNow.getUTCHours();
+  const localMinutes = localNow.getUTCMinutes();
+  const nowMins = localHours * 60 + localMinutes;
+  const oneHourAheadMins = Math.min(nowMins + 90, 1439); // Clamp to 23:59
+  const oneHourAheadTime = `${Math.floor(oneHourAheadMins / 60).toString().padStart(2, '0')}:${(oneHourAheadMins % 60).toString().padStart(2, '0')}:00`;
+  const nowTime = `${localHours.toString().padStart(2, '0')}:${localMinutes.toString().padStart(2, '0')}:00`;
+
+  let sent24h = 0;
+  let sent1h = 0;
+
+  // 24h reminders — bookings tomorrow that haven't been reminded
+  try {
+    const bookings24h = await LessonBooking.findAll({
+      where: {
+        booking_date: tomorrow,
+        status: 'confirmed',
+        reminder_24h_sent: false,
+      },
+      include: [
+        { model: User, as: 'rider', attributes: ['id', 'first_name'] },
+        { model: User, as: 'coach', attributes: ['id', 'first_name'] },
+      ],
+    });
+
+    for (const b of bookings24h) {
+      const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      // Mark as sent first to prevent duplicates on partial failure
+      b.reminder_24h_sent = true;
+      await b.save();
+      if (b.rider_id) {
+        await createNotification({
+          userId: b.rider_id,
+          type: 'general',
+          title: 'Session Tomorrow',
+          body: `Reminder: You have a session tomorrow at ${timeDisplay}.`,
+          data: { booking_id: b.id },
+        });
+      }
+      if (b.coach_id) {
+        await createNotification({
+          userId: b.coach_id,
+          type: 'general',
+          title: 'Session Tomorrow',
+          body: `Reminder: You have a session with ${b.rider?.first_name || 'a rider'} tomorrow at ${timeDisplay}.`,
+          data: { booking_id: b.id },
+        });
+      }
+      sent24h++;
+    }
+  } catch (e) {
+    console.error('[reminders] 24h reminder error:', e.message);
+  }
+
+  // 1h reminders — bookings today starting within next 90 minutes
+  try {
+    const bookings1h = await LessonBooking.findAll({
+      where: {
+        booking_date: today,
+        status: 'confirmed',
+        reminder_1h_sent: false,
+        start_time: { [Op.between]: [nowTime, oneHourAheadTime] },
+      },
+      include: [
+        { model: User, as: 'rider', attributes: ['id', 'first_name'] },
+        { model: User, as: 'coach', attributes: ['id', 'first_name'] },
+      ],
+    });
+
+    for (const b of bookings1h) {
+      const timeDisplay = b.start_time ? b.start_time.slice(0, 5) : '';
+      // Mark as sent first to prevent duplicates on partial failure
+      b.reminder_1h_sent = true;
+      await b.save();
+      if (b.rider_id) {
+        await createNotification({
+          userId: b.rider_id,
+          type: 'general',
+          title: 'Session Starting Soon',
+          body: `Your session starts at ${timeDisplay} — see you soon!`,
+          data: { booking_id: b.id },
+        });
+      }
+      if (b.coach_id) {
+        await createNotification({
+          userId: b.coach_id,
+          type: 'general',
+          title: 'Session Starting Soon',
+          body: `Session with ${b.rider?.first_name || 'a rider'} at ${timeDisplay} is starting soon.`,
+          data: { booking_id: b.id },
+        });
+      }
+      sent1h++;
+    }
+  } catch (e) {
+    console.error('[reminders] 1h reminder error:', e.message);
+  }
+
+  console.log(`[reminders] Sent ${sent24h} 24h reminders and ${sent1h} 1h reminders.`);
+  return { sent24h, sent1h };
+};
 
 // ──────────────────────────────────────────────────
 // Part B: Waitlist

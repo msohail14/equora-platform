@@ -25,6 +25,8 @@ import {
   createSeriesBooking,
   getHorseWorkloadReport,
   markBookingPayAtStable,
+  delayBookings,
+  sendUpcomingReminders,
 } from '../services/booking.service.js';
 
 const handleError = (res, error) => {
@@ -389,6 +391,33 @@ export const getHorseWorkloadController = async (req, res) => {
     const startDate = req.query.start_date || new Date().toISOString().slice(0, 10);
     const endDate = req.query.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const data = await getHorseWorkloadReport(req.params.id, startDate, endDate);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const delayBookingsController = async (req, res) => {
+  try {
+    const coachId = req.user?.id;
+    if (!coachId) return res.status(401).json({ error: 'Not authenticated' });
+    const { delay_minutes, delay_all, reason } = req.body;
+    const data = await delayBookings({
+      bookingId: Number(req.params.id),
+      coachId,
+      delayMinutes: Number(delay_minutes),
+      delayAll: delay_all !== false,
+      reason,
+    });
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const sendRemindersController = async (_req, res) => {
+  try {
+    const data = await sendUpcomingReminders();
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

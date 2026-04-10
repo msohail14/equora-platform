@@ -134,6 +134,11 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    max_concurrent_riders: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
     approval_mode: {
       type: DataTypes.ENUM('auto', 'manual'),
       allowNull: true,

@@ -138,6 +138,28 @@ const LessonBooking = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    course_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'courses',
+        key: 'id',
+      },
+    },
+    reminder_24h_sent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    reminder_1h_sent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    delay_reason: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

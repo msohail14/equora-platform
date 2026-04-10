@@ -965,6 +965,26 @@ const ensureUserMustChangePasswordColumn = async () => {
   console.log('[schema] Added must_change_password column to user table');
 };
 
+const ensureBuild20Columns = async () => {
+  const ensureCol = async (table, column, definition) => {
+    const [results] = await sequelize.query(`
+      SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND COLUMN_NAME = '${column}'
+    `);
+    if (Number(results?.[0]?.count || 0) > 0) return;
+    await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`);
+    console.log(`[schema] Added ${column} column to ${table}`);
+  };
+
+  // User: max concurrent riders for coaches
+  await ensureCol('user', 'max_concurrent_riders', '`max_concurrent_riders` INT NOT NULL DEFAULT 1');
+  // Booking: course assignment + reminders + delay
+  await ensureCol('lesson_bookings', 'course_id', '`course_id` INT NULL REFERENCES `courses`(`id`)');
+  await ensureCol('lesson_bookings', 'reminder_24h_sent', '`reminder_24h_sent` BOOLEAN NOT NULL DEFAULT FALSE');
+  await ensureCol('lesson_bookings', 'reminder_1h_sent', '`reminder_1h_sent` BOOLEAN NOT NULL DEFAULT FALSE');
+  await ensureCol('lesson_bookings', 'delay_reason', '`delay_reason` VARCHAR(500) NULL');
+};
+
 export const applySchemaUpdates = async () => {
   await ensureUserIsActiveColumn();
   await ensureUserMobileNumberColumn();
@@ -1076,6 +1096,9 @@ export const applySchemaUpdates = async () => {
 
   // Phase V: Forced password change after admin reset
   await ensureUserMustChangePasswordColumn();
+
+  // Phase W: Build 20 — booking management, capacity, reminders
+  await ensureBuild20Columns();
 };
 
 const ensureCourseObstaclesLayoutColumn = async () => {
