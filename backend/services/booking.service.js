@@ -1449,16 +1449,16 @@ export const getReturningRiderDefaults = async (riderId) => {
 /**
  * Coach can modify a pending booking (change horse, stable, or time).
  */
-export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId: newStableId, startTime: newStartTime, endTime: newEndTime, notes: newNotes, courseId, durationMinutes }) => {
+export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId: newStableId, startTime: newStartTime, endTime: newEndTime, notes: newNotes, courseId, durationMinutes, bookingDate }) => {
   const booking = await LessonBooking.findByPk(bookingId, {
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
   if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can modify this booking.');
 
-  const modifiableStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment'];
+  const modifiableStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed'];
   if (!modifiableStatuses.includes(booking.status)) {
-    throw new Error('This booking can no longer be modified.');
+    throw new Error('This booking cannot be modified.');
   }
 
   if (horseId !== undefined) {
@@ -1488,9 +1488,13 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
     booking.course_id = courseId || null;
   }
 
+  // Coach can update booking date
+  if (bookingDate !== undefined) booking.booking_date = bookingDate;
+
   // Coach can set duration — auto-calculate end_time from start_time + duration
   if (durationMinutes !== undefined && durationMinutes > 0) {
     booking.duration_minutes = durationMinutes;
+    if (!booking.start_time) throw new Error('Cannot calculate end time: start time is not set.');
     const [h, m] = booking.start_time.split(':').map(Number);
     const startMins = h * 60 + m;
     const endMins = startMins + durationMinutes;

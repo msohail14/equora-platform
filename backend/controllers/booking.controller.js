@@ -344,8 +344,18 @@ export const getReturningRiderDefaultsController = async (req, res) => {
 
 export const coachModifyBookingController = async (req, res) => {
   try {
-    const data = await coachModifyBooking(req.params.id, req.user.id, req.body);
-    return res.status(200).json(data);
+    const b = req.body;
+    const data = await coachModifyBooking(req.params.id, req.user.id, {
+      horseId: b.horse_id ?? b.horseId,
+      stableId: b.stable_id ?? b.stableId,
+      startTime: b.start_time ?? b.startTime,
+      endTime: b.end_time ?? b.endTime,
+      notes: b.notes,
+      courseId: b.course_id ?? b.courseId,
+      durationMinutes: b.duration_minutes ?? b.durationMinutes,
+      bookingDate: b.booking_date ?? b.bookingDate,
+    });
+    return res.status(200).json({ booking: data });
   } catch (error) {
     return handleError(res, error);
   }
