@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { CoachFavouriteRider, Course, User, Discipline, Stable } from '../models/index.js';
+import { CoachFavouriteRider, CoachStable, Course, User, Discipline, Stable } from '../models/index.js';
 import { deleteFileIfExists, toAbsolutePathFromPublic } from '../utils/file.util.js';
 
 const normalizePagination = ({ page, limit }) => {
@@ -47,16 +47,26 @@ const ensureStableExists = async (stableId) => {
 };
 
 export const createCourse = async (coachId, payload) => {
-  const { title, discipline_id, stable_id } = payload;
-  
+  const { title, discipline_id } = payload;
+  let { stable_id } = payload;
+
   if (!title) {
     throw new Error('Course title is required.');
   }
   if (!discipline_id) {
     throw new Error('discipline_id is required.');
   }
+  // Auto-resolve stable_id from coach's primary (or only) stable
   if (!stable_id) {
-    throw new Error('stable_id is required.');
+    const link = await CoachStable.findOne({
+      where: { coach_id: coachId, is_active: true },
+      order: [['is_primary', 'DESC']],
+    });
+    if (link) {
+      stable_id = link.stable_id;
+    } else {
+      throw new Error('No stable found for this coach. Please join a stable first.');
+    }
   }
   validateCoursePayload(payload);
 
