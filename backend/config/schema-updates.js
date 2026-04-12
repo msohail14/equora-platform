@@ -1190,6 +1190,7 @@ async function seedObstacleTypes() {
     { name: 'Bounce', icon_key: 'bounce', category: 'combination', default_height_range: '0.9m - 1.2m' },
     { name: 'Double Combination', icon_key: 'double_combination', category: 'combination', default_height_range: '0.9m - 1.3m' },
     { name: 'Triple Combination', icon_key: 'triple_combination', category: 'combination', default_height_range: '0.9m - 1.2m' },
+    { name: 'Cross-Rails', icon_key: 'cross_rails', category: 'jump', default_height_range: '0.5m - 0.8m' },
   ];
 
   try {
