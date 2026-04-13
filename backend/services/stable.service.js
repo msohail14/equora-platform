@@ -123,7 +123,7 @@ export const getAllStables = async ({ adminId, role, include_inactive, search, p
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
   const where = {};
-  if (role !== 'super_admin') {
+  if (role === 'stable_owner') {
     where.admin_id = adminId;
   }
   if (!include_inactive) {
@@ -223,7 +223,7 @@ export const getPublicStableById = async (stableId) => {
 
 export const getStableById = async ({ adminId, role, stableId }) => {
   const where = { id: stableId };
-  if (role !== 'super_admin') {
+  if (role === 'stable_owner') {
     where.admin_id = adminId;
   }
   const stable = await Stable.findOne({ where });
@@ -248,7 +248,7 @@ export const getStableById = async ({ adminId, role, stableId }) => {
 
 export const updateStable = async ({ adminId, role, stableId, payload }) => {
   const where = { id: stableId };
-  if (role !== 'super_admin') {
+  if (role === 'stable_owner') {
     where.admin_id = adminId;
   }
   const stable = await Stable.findOne({ where });
@@ -298,7 +298,7 @@ export const updateStable = async ({ adminId, role, stableId, payload }) => {
 
 export const deleteStable = async ({ adminId, role, stableId }) => {
   const where = { id: stableId };
-  if (role !== 'super_admin') {
+  if (role === 'stable_owner') {
     where.admin_id = adminId;
   }
   const stable = await Stable.findOne({ where });
