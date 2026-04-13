@@ -349,3 +349,19 @@ export const updateStableOwnerProfileApi = (adminId, data) =>
   axiosInstance.put(`/admin/accounts/${adminId}`, data);
 export const deleteStableOwnerApi = (adminId) =>
   axiosInstance.delete(`/admin/accounts/${adminId}`);
+
+// Horse Maintenance
+export const getMaintenanceOverviewApi = (stableId) =>
+  axiosInstance.get(`/horses/stables/${stableId}/maintenance-overview`);
+export const getHorseMaintenanceLogsApi = (horseId, params = {}) => {
+  const query = buildListQuery(params);
+  return axiosInstance.get(`/horses/${horseId}/maintenance?${query}`);
+};
+export const getHorseUpcomingMaintenanceApi = (horseId) =>
+  axiosInstance.get(`/horses/${horseId}/maintenance/upcoming`);
+export const createMaintenanceLogApi = (horseId, data) =>
+  axiosInstance.post(`/horses/${horseId}/maintenance`, data);
+export const updateMaintenanceLogApi = (horseId, logId, data) =>
+  axiosInstance.put(`/horses/${horseId}/maintenance/${logId}`, data);
+export const deleteMaintenanceLogApi = (horseId, logId) =>
+  axiosInstance.delete(`/horses/${horseId}/maintenance/${logId}`);

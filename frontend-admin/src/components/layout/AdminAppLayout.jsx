@@ -23,6 +23,7 @@ import {
   LogOut,
   ChevronRight,
   PlusCircle,
+  Stethoscope,
 } from 'lucide-react';
 import ThemeToggle from '../theme/ThemeToggle';
 import { HorseIcon } from '../ui/HorseIcon';
@@ -46,6 +47,7 @@ const navSections = [
       { label: 'Onboarding', to: '/admin/onboarding', icon: PlusCircle, roles: ['super_admin'] },
       { label: 'Arenas', to: '/admin/arenas', icon: LayoutGrid, roles: ALL_ROLES },
       { label: 'Horses', to: '/admin/horses', icon: HorseIcon, roles: ALL_ROLES },
+      { label: 'Maintenance', to: '/admin/maintenance', icon: Stethoscope, roles: ['stable_owner'] },
       { label: 'Disciplines', to: '/admin/disciplines', icon: Medal, roles: ['super_admin'] },
     ],
   },
@@ -53,7 +55,7 @@ const navSections = [
     label: 'People',
     items: [
       { label: 'Coaches', to: '/admin/coaches', icon: GraduationCap, roles: ALL_ROLES },
-      { label: 'Riders', to: '/admin/riders', icon: Users, roles: ['super_admin'] },
+      { label: 'Riders', to: '/admin/riders', icon: Users, roles: ALL_ROLES },
     ],
   },
   {

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { Op, QueryTypes } from 'sequelize';
 import Admin from '../models/admin.model.js';
 import sequelize from '../config/database.js';
-import { Arena, CoachPayout, Course, CourseEnrollment, CourseSession, Discipline, Horse, LessonBooking, Payment, PlatformSetting, Stable, User } from '../models/index.js';
+import { Arena, CoachPayout, CoachStable, Course, CourseEnrollment, CourseSession, Discipline, Horse, LessonBooking, Payment, PlatformSetting, Stable, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
 import { validatePasswordStrength } from '../utils/validators.js';
 
@@ -438,6 +438,8 @@ const getStableOwnerDashboardData = async (adminId) => {
   }
 
   const stableId = stable.id;
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
   const [
     totalArenas,
@@ -447,6 +449,9 @@ const getStableOwnerDashboardData = async (adminId) => {
     activeCourses,
     totalEnrollments,
     activeEnrollments,
+    activeCoaches,
+    totalRiders,
+    revenueMtd,
   ] = await Promise.all([
     Arena.count({ where: { stable_id: stableId } }),
     Horse.count({ where: { stable_id: stableId } }),
@@ -460,6 +465,20 @@ const getStableOwnerDashboardData = async (adminId) => {
       where: { status: 'active' },
       include: [{ model: Course, as: 'course', attributes: [], required: true, where: { stable_id: stableId } }],
     }),
+    CoachStable.count({ where: { stable_id: stableId, is_active: true, status: 'approved' } }),
+    LessonBooking.count({
+      where: { stable_id: stableId },
+      attributes: [],
+      col: 'rider_id',
+      distinct: true,
+    }),
+    LessonBooking.sum('price', {
+      where: {
+        stable_id: stableId,
+        status: { [Op.in]: ['completed', 'confirmed'] },
+        booking_date: { [Op.gte]: monthStart },
+      },
+    }),
   ]);
 
   return {
@@ -472,6 +491,9 @@ const getStableOwnerDashboardData = async (adminId) => {
       active_courses: activeCourses,
       total_enrollments: totalEnrollments,
       active_enrollments: activeEnrollments,
+      active_coaches: activeCoaches,
+      total_riders: totalRiders,
+      revenue_mtd: revenueMtd || 0,
     },
   };
 };
