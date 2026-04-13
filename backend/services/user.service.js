@@ -424,6 +424,8 @@ export const changeProfile = async ({
   gender,
   profile_picture_url,
   max_concurrent_riders,
+  default_duration,
+  allowed_durations,
 }) => {
   const user = await User.findByPk(userId);
   if (!user) {
@@ -456,6 +458,19 @@ export const changeProfile = async ({
       throw new Error('max_concurrent_riders must be an integer between 1 and 10.');
     }
     user.max_concurrent_riders = parsed;
+  }
+  // Coach-only: configurable booking duration slots
+  if (default_duration !== undefined && user.role === 'coach') {
+    const parsed = Number(default_duration);
+    if (Number.isInteger(parsed) && parsed >= 15 && parsed <= 180) {
+      user.default_duration = parsed;
+    }
+  }
+  if (allowed_durations !== undefined && user.role === 'coach') {
+    const durations = Array.isArray(allowed_durations) ? allowed_durations : JSON.parse(allowed_durations);
+    if (Array.isArray(durations) && durations.every(d => Number.isInteger(Number(d)) && Number(d) >= 15 && Number(d) <= 180)) {
+      user.allowed_durations = durations.map(Number);
+    }
   }
   await user.save();
 
