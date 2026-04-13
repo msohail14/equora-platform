@@ -119,10 +119,13 @@ export const createStable = async ({ adminId, payload }) => {
   return stable;
 };
 
-export const getAllStables = async ({ adminId, include_inactive, search, page, limit }) => {
+export const getAllStables = async ({ adminId, role, include_inactive, search, page, limit }) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
-  const where = { admin_id: adminId };
+  const where = {};
+  if (role !== 'super_admin') {
+    where.admin_id = adminId;
+  }
   if (!include_inactive) {
     where.is_active = true;
   }
@@ -141,13 +144,29 @@ export const getAllStables = async ({ adminId, include_inactive, search, page, l
 
   const { rows, count } = await Stable.findAndCountAll({
     where,
+    include: [{
+      model: Admin,
+      as: 'admin',
+      attributes: ['id', 'email', 'first_name', 'last_name', 'role'],
+      required: false,
+    }],
     order: [['id', 'DESC']],
     offset,
     limit: pagination.limit,
   });
 
+  const data = rows.map((s) => {
+    const json = s.toJSON();
+    const adm = json.admin;
+    if (adm && adm.role === 'stable_owner') {
+      json.owner = adm;
+    }
+    delete json.admin;
+    return json;
+  });
+
   return {
-    data: rows,
+    data,
     pagination: buildPaginationMeta({
       currentPage: pagination.page,
       limit: pagination.limit,
@@ -202,13 +221,12 @@ export const getPublicStableById = async (stableId) => {
   return stable;
 };
 
-export const getStableById = async ({ adminId, stableId }) => {
-  const stable = await Stable.findOne({
-    where: {
-      id: stableId,
-      admin_id: adminId,
-    },
-  });
+export const getStableById = async ({ adminId, role, stableId }) => {
+  const where = { id: stableId };
+  if (role !== 'super_admin') {
+    where.admin_id = adminId;
+  }
+  const stable = await Stable.findOne({ where });
 
   if (!stable) {
     throw new Error('Stable not found.');
@@ -228,13 +246,12 @@ export const getStableById = async ({ adminId, stableId }) => {
   return result;
 };
 
-export const updateStable = async ({ adminId, stableId, payload }) => {
-  const stable = await Stable.findOne({
-    where: {
-      id: stableId,
-      admin_id: adminId,
-    },
-  });
+export const updateStable = async ({ adminId, role, stableId, payload }) => {
+  const where = { id: stableId };
+  if (role !== 'super_admin') {
+    where.admin_id = adminId;
+  }
+  const stable = await Stable.findOne({ where });
 
   if (!stable) {
     throw new Error('Stable not found.');
@@ -279,13 +296,12 @@ export const updateStable = async ({ adminId, stableId, payload }) => {
   return stable;
 };
 
-export const deleteStable = async ({ adminId, stableId }) => {
-  const stable = await Stable.findOne({
-    where: {
-      id: stableId,
-      admin_id: adminId,
-    },
-  });
+export const deleteStable = async ({ adminId, role, stableId }) => {
+  const where = { id: stableId };
+  if (role !== 'super_admin') {
+    where.admin_id = adminId;
+  }
+  const stable = await Stable.findOne({ where });
 
   if (!stable) {
     throw new Error('Stable not found.');

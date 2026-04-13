@@ -174,6 +174,7 @@ const AdminStablesPage = () => {
             <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Location</th>
+              <th className="px-3 py-2">Owner</th>
               <th className="px-3 py-2">Approval</th>
               <th className="px-3 py-2">Featured</th>
               <th className="px-3 py-2">Actions</th>
@@ -185,6 +186,11 @@ const AdminStablesPage = () => {
                 <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{stable.name}</td>
                 <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
                   {[stable.city, stable.state, stable.country, stable.pincode].filter(Boolean).join(', ') || '-'}
+                </td>
+                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
+                  {stable.owner
+                    ? `${stable.owner.first_name || ''} ${stable.owner.last_name || ''}`.trim() || stable.owner.email
+                    : <span className="text-gray-400 dark:text-gray-500">—</span>}
                 </td>
                 <td className="px-3 py-2">
                   {stable.is_approved ? (
