@@ -143,14 +143,17 @@ const AdminCoachPerformancePage = () => {
   );
 };
 
-const SummaryCard = ({ icon: Icon, label, value, color, bg }) => (
+const SummaryCard = ({ icon, label, value, color, bg }) => {
+  const IconComponent = icon;
+  return (
   <div className={`rounded-xl border border-gray-200 p-4 dark:border-gray-800 ${bg}`}>
     <div className="flex items-center gap-2">
-      <Icon size={18} className={color} />
+      <IconComponent size={18} className={color} />
       <span className={`text-2xl font-bold ${color}`}>{value}</span>
     </div>
     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{label}</p>
   </div>
-);
+  );
+};
 
 export default AdminCoachPerformancePage;
