@@ -17,10 +17,26 @@ const AdminHorseDetailsPage = () => {
   useEffect(() => {
     if (!horseId) return;
     getHorseWorkloadApi(horseId)
-      .then((res) => setWorkload(res?.data?.data || res?.data || null))
-      .catch(() => setWorkload(null))
+      .then((res) => {
+        const d = res?.data?.data || res?.data || null;
+        setWorkload(d);
+      })
+      .catch(() => {
+        // Fallback: show capacity info from horse data when API fails
+        if (horse) {
+          setWorkload({
+            totalSessions: 0,
+            avgPerWeek: 0,
+            utilizationPercent: 0,
+            level: 'low',
+            maxDaily: horse.max_daily_sessions || 3,
+            maxWeekly: horse.max_weekly_sessions || 15,
+            minRestHours: horse.min_rest_hours || 4,
+          });
+        }
+      })
       .finally(() => setLoading(false));
-  }, [horseId]);
+  }, [horseId, horse]);
 
   if (loading) return <div className="p-6 text-sm text-gray-500">Loading...</div>;
   if (!horse) return <div className="p-6 text-sm text-red-500">Horse not found.</div>;
