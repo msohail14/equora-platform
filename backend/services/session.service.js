@@ -597,7 +597,11 @@ export const getCourseSessions = async ({ user, courseId, pagination = {}, filte
       where: { course_id: courseId, rider_id: user.id, status: 'active' },
     }));
 
+  // Non-enrolled riders can view published courses but see no sessions
   if (!isAdmin && !isCoachOwner && !isEnrolledRider) {
+    if (course.status === 'published' && user.role === 'rider') {
+      return { sessions: [], pagination: buildPaginationMeta({ currentPage: page, limit, totalRecords: 0 }) };
+    }
     throw new Error('Access denied.');
   }
 
