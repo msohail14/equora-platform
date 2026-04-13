@@ -442,7 +442,7 @@ const AdminHorsesPage = () => {
             <img
               src={toImageSrc(selectedHorse.profile_picture_url)}
               alt={selectedHorse.name}
-              className="h-52 w-full rounded-xl object-cover"
+              className="h-32 w-full rounded-xl object-cover"
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
