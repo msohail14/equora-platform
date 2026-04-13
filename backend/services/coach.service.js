@@ -104,7 +104,7 @@ export const createCoach = async ({
   };
 };
 
-export const getAllCoaches = async ({ include_inactive, search, page, limit, featured } = {}) => {
+export const getAllCoaches = async ({ include_inactive, search, page, limit, featured, adminUser } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
   const where = { role: 'coach' };
@@ -114,6 +114,24 @@ export const getAllCoaches = async ({ include_inactive, search, page, limit, fea
   if (featured) {
     where.is_featured = true;
   }
+
+  if (adminUser?.role === 'stable_owner') {
+    const stables = await Stable.findAll({ attributes: ['id'], where: { admin_id: adminUser.id } });
+    const stableIds = stables.map((s) => s.id);
+    if (stableIds.length === 0) {
+      return { data: [], pagination: buildPaginationMeta({ page: 1, limit: pagination.limit, totalItems: 0 }) };
+    }
+    const links = await CoachStable.findAll({
+      attributes: ['coach_id'],
+      where: { stable_id: { [Op.in]: stableIds }, is_active: true },
+    });
+    const coachIds = links.map((l) => l.coach_id);
+    if (coachIds.length === 0) {
+      return { data: [], pagination: buildPaginationMeta({ page: 1, limit: pagination.limit, totalItems: 0 }) };
+    }
+    where.id = { [Op.in]: coachIds };
+  }
+
   const keyword = String(search || '').trim();
   if (keyword) {
     where[Op.or] = [

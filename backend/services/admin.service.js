@@ -644,11 +644,23 @@ export const getAdminAnalytics = async ({ startDate, endDate }) => {
   };
 };
 
-export const getAdminPayments = async ({ status, provider, page, limit }) => {
+export const getAdminPayments = async ({ status, provider, page, limit, adminUser }) => {
   const { page: p, limit: l, offset } = normalizePagination({ page, limit });
   const where = {};
   if (status) where.status = status;
   if (provider) where.provider = provider;
+
+  if (adminUser?.role === 'stable_owner') {
+    const stables = await Stable.findAll({ attributes: ['id'], where: { admin_id: adminUser.id } });
+    const stableIds = stables.map((s) => s.id);
+    if (stableIds.length === 0) return { data: [], pagination: buildPaginationMeta({ totalItems: 0, page: p, limit: l }) };
+    const bookingIds = await LessonBooking.findAll({
+      attributes: ['id'],
+      where: { stable_id: { [Op.in]: stableIds } },
+    }).then((rows) => rows.map((r) => r.id));
+    where.related_id = { [Op.in]: bookingIds };
+    where.payment_type = 'session';
+  }
 
   const { count, rows } = await Payment.findAndCountAll({
     where,
@@ -785,11 +797,18 @@ export const inviteStableOwner = async ({ stableId, email, firstName, lastName, 
   return { admin: safeAdmin, stable_id: stable.id, temp_password: password ? undefined : finalPassword };
 };
 
-export const getAdminBookings = async ({ status, page, limit, date }) => {
+export const getAdminBookings = async ({ status, page, limit, date, adminUser }) => {
   const { page: p, limit: l, offset } = normalizePagination({ page, limit });
   const where = {};
   if (status) where.status = status;
   if (date) where.booking_date = date;
+
+  if (adminUser?.role === 'stable_owner') {
+    const stables = await Stable.findAll({ attributes: ['id'], where: { admin_id: adminUser.id } });
+    const stableIds = stables.map((s) => s.id);
+    if (stableIds.length === 0) return { data: [], pagination: buildPaginationMeta({ totalItems: 0, page: p, limit: l }) };
+    where.stable_id = { [Op.in]: stableIds };
+  }
 
   const { count, rows } = await LessonBooking.findAndCountAll({
     where,

@@ -29,23 +29,20 @@ const DISCIPLINES = [
 ];
 
 const STABLES = [
-  { name: 'Elite Equestrian', city: 'Riyadh', country: 'Saudi Arabia' },
-  { name: 'Sawari Stables', city: 'Riyadh', country: 'Saudi Arabia' },
-  { name: 'Alma Stables', city: 'Riyadh', country: 'Saudi Arabia' },
-  { name: 'Ghazzawi Stables', city: 'Riyadh', country: 'Saudi Arabia' },
-  { name: 'Moka Academy', city: 'Riyadh', country: 'Saudi Arabia' },
-  { name: 'Trio Ranch', city: 'Riyadh', country: 'Saudi Arabia' },
+  { name: 'Elite Equestrian Club', city: 'Riyadh', country: 'Saudi Arabia' },
+  { name: 'Sawary Farms', city: 'Riyadh', country: 'Saudi Arabia' },
+  { name: 'MOKA Equestrian Academy', city: 'Riyadh', country: 'Saudi Arabia' },
 ];
 
 const HORSES_CONFIG = {
-  'Elite Equestrian': [
+  'Elite Equestrian Club': [
     { name: 'Ferrari', breed: 'Arabian', age: 7, training_level: 'advanced', temperament: 'Spirited', discipline: 'Jumping' },
     { name: 'Bahr', breed: 'Thoroughbred', age: 9, training_level: 'advanced', temperament: 'Bold', discipline: 'Jumping' },
     { name: 'Beauty', breed: 'Warmblood', age: 5, training_level: 'intermediate', temperament: 'Gentle', discipline: 'Dressage' },
     { name: 'Storm', breed: 'Arabian', age: 12, training_level: 'advanced', temperament: 'Steady', discipline: 'Dressage' },
     { name: 'Majesty', breed: 'Hanoverian', age: 6, training_level: 'intermediate', temperament: 'Calm', discipline: 'Jumping' },
   ],
-  'Moka Academy': [
+  'MOKA Equestrian Academy': [
     { name: 'Liva', breed: 'Arabian', age: 8, training_level: 'intermediate', temperament: 'Calm', discipline: 'Dressage' },
     { name: 'Sierra', breed: 'Thoroughbred', age: 6, training_level: 'intermediate', temperament: 'Energetic', discipline: 'Jumping' },
     { name: 'Zamzam', breed: 'Warmblood', age: 10, training_level: 'advanced', temperament: 'Steady', discipline: 'Dressage' },
@@ -193,7 +190,7 @@ async function seedMaintenance(logs, stableId, horseIds, adminId) {
 // ── Elite Equestrian demo data ──
 
 async function seedEliteData(stableIds, disciplineIds, horseIds, adminId) {
-  const eliteId = stableIds['Elite Equestrian'];
+  const eliteId = stableIds['Elite Equestrian Club'];
   if (!eliteId) return;
   console.log('\n── Seeding Elite Equestrian demo data ──');
 
@@ -319,7 +316,7 @@ async function seedEliteData(stableIds, disciplineIds, horseIds, adminId) {
 // ── Moka Academy demo data ──
 
 async function seedMokaData(stableIds, disciplineIds, horseIds, adminId) {
-  const mokaId = stableIds['Moka Academy'];
+  const mokaId = stableIds['MOKA Equestrian Academy'];
   if (!mokaId) return;
   console.log('\n── Seeding Moka Academy demo data ──');
 
@@ -371,7 +368,7 @@ async function seedMokaData(stableIds, disciplineIds, horseIds, adminId) {
 
 async function enableModules(stableIds, adminId) {
   console.log('\n── Enabling modules ──');
-  for (const name of ['Elite Equestrian', 'Moka Academy']) {
+  for (const name of ['Elite Equestrian Club', 'MOKA Equestrian Academy']) {
     const sId = stableIds[name];
     if (!sId) continue;
     await StableModule.findOrCreate({

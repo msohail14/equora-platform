@@ -52,6 +52,7 @@ export const getAllCoachesController = async (req, res) => {
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
+      adminUser: req.user,
     });
     return res.status(200).json(data);
   } catch (error) {

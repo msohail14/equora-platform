@@ -210,10 +210,32 @@ export const createRiderByAdmin = async (payload) => {
   };
 };
 
-export const getAllRiders = async ({ page, limit, search } = {}) => {
+export const getAllRiders = async ({ page, limit, search, adminUser } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
   const where = { role: 'rider' };
+
+  if (adminUser?.role === 'stable_owner') {
+    const { Stable } = await import('../models/index.js');
+    const stables = await Stable.findAll({ attributes: ['id'], where: { admin_id: adminUser.id } });
+    const stableIds = stables.map((s) => s.id);
+    if (stableIds.length === 0) {
+      const emptyMeta = buildPaginationMeta({ page: 1, limit: pagination.limit, totalItems: 0 });
+      return { data: [], pagination: { ...emptyMeta, totalRecords: 0, currentPage: 1, nextPage: null } };
+    }
+    const riderRows = await LessonBooking.findAll({
+      attributes: ['rider_id'],
+      where: { stable_id: { [Op.in]: stableIds }, rider_id: { [Op.not]: null } },
+      group: ['rider_id'],
+    });
+    const riderIds = riderRows.map((r) => r.rider_id);
+    if (riderIds.length === 0) {
+      const emptyMeta = buildPaginationMeta({ page: 1, limit: pagination.limit, totalItems: 0 });
+      return { data: [], pagination: { ...emptyMeta, totalRecords: 0, currentPage: 1, nextPage: null } };
+    }
+    where.id = { [Op.in]: riderIds };
+  }
+
   const keyword = String(search || '').trim();
   if (keyword) {
     where[Op.or] = [

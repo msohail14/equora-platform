@@ -28,6 +28,7 @@ export const getAllRidersController = async (req, res) => {
       page: req.query.page,
       limit: req.query.limit,
       search: req.query.search,
+      adminUser: req.user,
     });
     return res.status(200).json(data);
   } catch (error) {
