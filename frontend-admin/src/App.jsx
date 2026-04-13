@@ -33,6 +33,7 @@ const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage')
 const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage'));
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'));
 const AdminOnboardingPage = lazy(() => import('./pages/admin/AdminOnboardingPage'));
+const AdminHorseDetailsPage = lazy(() => import('./pages/admin/AdminHorseDetailsPage'));
 const AdminMaintenancePage = lazy(() => import('./pages/admin/AdminMaintenancePage'));
 import { Toaster } from 'react-hot-toast';
 
@@ -89,6 +90,7 @@ const AppRoutes = () => {
               <Route path="stable-registrations" element={<AdminStableRegistrationsPage />} />
               <Route path="arenas" element={<AdminArenasPage />} />
               <Route path="horses" element={<AdminHorsesPage />} />
+              <Route path="horses/:horseId" element={<AdminHorseDetailsPage />} />
               <Route path="disciplines" element={<AdminDisciplinesPage />} />
               <Route path="coaches" element={<AdminCoachesPage />} />
               <Route path="coaches/:coachId" element={<AdminCoachDetailsPage />} />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Eye, Pencil, Star, Trash2 } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
@@ -247,14 +248,13 @@ const AdminHorsesPage = () => {
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
+                    <Link
+                      to={`/admin/horses/${horse.id}`}
                       className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                      onClick={() => onViewHorse(horse)}
                     >
                       <Eye size={14} />
                       View
-                    </button>
+                    </Link>
                     <button
                       type="button"
                       className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
