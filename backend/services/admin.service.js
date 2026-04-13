@@ -465,20 +465,18 @@ const getStableOwnerDashboardData = async (adminId) => {
       where: { status: 'active' },
       include: [{ model: Course, as: 'course', attributes: [], required: true, where: { stable_id: stableId } }],
     }),
-    CoachStable.count({ where: { stable_id: stableId, is_active: true, status: 'approved' } }),
-    LessonBooking.count({
-      where: { stable_id: stableId },
-      attributes: [],
-      col: 'rider_id',
-      distinct: true,
-    }),
+    CoachStable.count({ where: { stable_id: stableId, is_active: true } }),
+    sequelize.query(
+      'SELECT COUNT(DISTINCT rider_id) AS cnt FROM lesson_bookings WHERE stable_id = :sid',
+      { replacements: { sid: stableId }, type: QueryTypes.SELECT },
+    ).then((r) => Number(r?.[0]?.cnt) || 0),
     LessonBooking.sum('price', {
       where: {
         stable_id: stableId,
         status: { [Op.in]: ['completed', 'confirmed'] },
         booking_date: { [Op.gte]: monthStart },
       },
-    }),
+    }).then((v) => v || 0),
   ]);
 
   return {

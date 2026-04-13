@@ -125,7 +125,7 @@ async function seedCoach({ email, firstName, lastName, mobile, uid, stableId }) 
   if (created) console.log(`  Created coach: ${firstName} ${lastName}`);
   await CoachStable.findOrCreate({
     where: { coach_id: coach.id, stable_id: stableId },
-    defaults: { coach_id: coach.id, stable_id: stableId, is_active: true },
+    defaults: { coach_id: coach.id, stable_id: stableId, is_active: true, status: 'approved' },
   });
   return coach;
 }
