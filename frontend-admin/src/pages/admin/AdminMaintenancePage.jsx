@@ -7,7 +7,6 @@ import FormInput from '../../components/ui/FormInput';
 import Modal from '../../components/ui/Modal';
 import {
   getMaintenanceOverviewApi,
-  getHorseMaintenanceLogsApi,
   createMaintenanceLogApi,
   getAllHorsesApi,
 } from '../../features/operations/operationsApi';
