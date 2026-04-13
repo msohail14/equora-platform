@@ -16,30 +16,15 @@ const AdminHorseDetailsPage = () => {
 
   useEffect(() => {
     if (!horseId) return;
-    const fallback = () => {
-      const maxW = horse?.max_weekly_sessions || 15;
-      const maxD = horse?.max_daily_sessions || 3;
-      const rest = horse?.min_rest_hours || 4;
-      // Generate realistic stats based on horse name hash
-      const nameHash = (horse?.name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-      const sessions = 2 + (nameHash % 5);
-      const avg = Math.round((sessions / 4.3) * 10) / 10;
-      const util = Math.round((avg / maxW) * 100);
-      setWorkload({
-        totalSessions: sessions, avgPerWeek: avg, utilizationPercent: util,
-        level: util > 80 ? 'high' : util > 50 ? 'medium' : 'low',
-        maxDaily: maxD, maxWeekly: maxW, minRestHours: rest,
-      });
-    };
     getHorseWorkloadApi(horseId)
       .then((res) => {
         const d = res?.data?.data || res?.data || null;
         if (d && d.totalSessions != null) setWorkload(d);
-        else fallback();
+        else setWorkload(null);
       })
-      .catch(() => fallback())
+      .catch(() => setWorkload(null))
       .finally(() => setLoading(false));
-  }, [horseId, horse]);
+  }, [horseId]);
 
   if (loading) return <div className="p-6 text-sm text-gray-500">Loading...</div>;
   if (!horse) return <div className="p-6 text-sm text-red-500">Horse not found.</div>;

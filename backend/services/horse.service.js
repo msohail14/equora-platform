@@ -91,12 +91,12 @@ export const createHorse = async ({ adminId, payload }) => {
   return horse;
 };
 
-export const getAllHorses = async ({ adminId, stableId, search, page, limit, featured } = {}) => {
+export const getAllHorses = async ({ adminId, adminRole, stableId, search, page, limit, featured } = {}) => {
   const pagination = normalizePagination({ page, limit });
   const offset = (pagination.page - 1) * pagination.limit;
 
   let stableIds = null;
-  if (adminId) {
+  if (adminId && adminRole === 'stable_owner') {
     stableIds = await getAdminStableIds(adminId);
     if (stableIds.length === 0) {
       return {
@@ -159,25 +159,27 @@ export const getAllHorses = async ({ adminId, stableId, search, page, limit, fea
   };
 };
 
-export const getHorseById = async ({ adminId, horseId }) => {
+export const getHorseById = async ({ adminId, adminRole, horseId }) => {
   const horse = await Horse.findByPk(horseId, { include: horseInclude });
   if (!horse) {
     throw new Error('Horse not found.');
   }
 
-  if (adminId) {
+  if (adminId && adminRole === 'stable_owner') {
     await ensureStableOwnedByAdmin(adminId, horse.stable_id);
   }
   return horse;
 };
 
-export const updateHorse = async ({ adminId, horseId, payload }) => {
+export const updateHorse = async ({ adminId, adminRole, horseId, payload }) => {
   const horse = await Horse.findByPk(horseId);
   if (!horse) {
     throw new Error('Horse not found.');
   }
 
-  await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  if (adminRole === 'stable_owner') {
+    await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  }
   const previousPictureUrl = horse.profile_picture_url;
 
   if (payload.stable_id !== undefined) {
@@ -240,13 +242,15 @@ export const updateHorse = async ({ adminId, horseId, payload }) => {
   return horse;
 };
 
-export const deleteHorse = async ({ adminId, horseId }) => {
+export const deleteHorse = async ({ adminId, adminRole, horseId }) => {
   const horse = await Horse.findByPk(horseId);
   if (!horse) {
     throw new Error('Horse not found.');
   }
 
-  await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  if (adminRole === 'stable_owner') {
+    await ensureStableOwnedByAdmin(adminId, horse.stable_id);
+  }
   const previousPictureUrl = horse.profile_picture_url;
 
   await horse.destroy();

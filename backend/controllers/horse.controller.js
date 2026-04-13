@@ -42,6 +42,7 @@ export const getAllHorsesController = async (req, res) => {
   try {
     const data = await getAllHorses({
       adminId: req.user.id,
+      adminRole: req.user.role,
       stableId: req.query.stable_id,
       search: req.query.search,
       page: req.query.page,
@@ -58,6 +59,7 @@ export const getAllHorsesGlobalController = async (req, res) => {
     const featured = String(req.query.featured || 'false').toLowerCase() === 'true';
     const data = await getAllHorses({
       adminId: req.user?.id ?? null,
+      adminRole: req.user?.role,
       search: req.query.search,
       page: req.query.page,
       limit: req.query.limit,
@@ -73,6 +75,7 @@ export const getHorseByIdController = async (req, res) => {
   try {
     const data = await getHorseById({
       adminId: req.user?.id ?? null,
+      adminRole: req.user?.role,
       horseId: req.params.id,
     });
     return res.status(200).json(data);
@@ -86,6 +89,7 @@ export const updateHorseController = async (req, res) => {
     const profile_picture_url = req.file ? toPublicUploadPath(req.file.path) : undefined;
     const data = await updateHorse({
       adminId: req.user.id,
+      adminRole: req.user.role,
       horseId: req.params.id,
       payload: {
         ...req.body,
@@ -105,6 +109,7 @@ export const deleteHorseController = async (req, res) => {
   try {
     const data = await deleteHorse({
       adminId: req.user.id,
+      adminRole: req.user.role,
       horseId: req.params.id,
     });
     return res.status(200).json(data);

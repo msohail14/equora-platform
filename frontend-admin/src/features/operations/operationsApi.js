@@ -350,6 +350,10 @@ export const updateStableOwnerProfileApi = (adminId, data) =>
 export const deleteStableOwnerApi = (adminId) =>
   axiosInstance.delete(`/admin/accounts/${adminId}`);
 
+// Coach Performance
+export const getCoachPerformanceApi = ({ page = 1, limit = 20 } = {}) =>
+  axiosInstance.get(`/admin/coach-performance?page=${page}&limit=${limit}`);
+
 // Horse Maintenance
 export const getMaintenanceOverviewApi = (stableId) =>
   axiosInstance.get(`/horse-maintenance/stables/${stableId}/maintenance-overview`);

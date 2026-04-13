@@ -55,6 +55,7 @@ const navSections = [
     label: 'People',
     items: [
       { label: 'Coaches', to: '/admin/coaches', icon: GraduationCap, roles: ALL_ROLES },
+      { label: 'Coach Performance', to: '/admin/coach-performance', icon: BarChart3, roles: ['stable_owner'] },
       { label: 'Riders', to: '/admin/riders', icon: Users, roles: ALL_ROLES },
     ],
   },

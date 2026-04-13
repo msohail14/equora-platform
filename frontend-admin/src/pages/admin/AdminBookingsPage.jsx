@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import { CalendarDays } from 'lucide-react';
 import AppButton from '../../components/ui/AppButton';
@@ -15,6 +16,7 @@ import {
   getCoachesApi,
   getAllArenasApi,
   getAllHorsesApi,
+  getStablesApi,
 } from '../../features/operations/operationsApi';
 import { formatTime12h } from '../../lib/timeFormat';
 
@@ -47,12 +49,25 @@ const statusBadge = (status) => {
 };
 
 const AdminBookingsPage = () => {
+  const admin = useSelector((state) => state.auth.admin);
+  const isSuperAdmin = admin?.role === 'super_admin';
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [stableFilter, setStableFilter] = useState('');
+  const [stablesList, setStablesList] = useState([]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      getStablesApi({ include_inactive: true, limit: 100 }).then((res) => {
+        const list = res?.data?.data || res?.data || [];
+        setStablesList(Array.isArray(list) ? list : []);
+      }).catch(() => {});
+    }
+  }, [isSuperAdmin]);
 
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [declineTarget, setDeclineTarget] = useState(null);
@@ -76,6 +91,7 @@ const AdminBookingsPage = () => {
         status: targetStatus === 'all' ? undefined : targetStatus,
         page: targetPage,
         limit: 10,
+        ...(stableFilter ? { stable_id: stableFilter } : {}),
       });
       setBookings(Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []);
       setPagination(response?.pagination || null);
@@ -88,11 +104,11 @@ const AdminBookingsPage = () => {
 
   useEffect(() => {
     fetchBookings(page, status);
-  }, [page, status]);
+  }, [page, status, stableFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [status]);
+  }, [status, stableFilter]);
 
   const handleAction = async (actionFn, id, successMsg) => {
     setActionLoading(id);
@@ -282,18 +298,33 @@ const AdminBookingsPage = () => {
           <CalendarDays size={20} className="text-emerald-500" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Bookings</h2>
         </div>
-        <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
-          <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s === 'all' ? 'All Statuses' : s.replace(/_/g, ' ')}</option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-wrap gap-3">
+          {isSuperAdmin && stablesList.length > 0 && (
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Stable</span>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                value={stableFilter}
+                onChange={(e) => setStableFilter(e.target.value)}
+              >
+                <option value="">All Stables</option>
+                {stablesList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </label>
+          )}
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</span>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s === 'all' ? 'All Statuses' : s.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading bookings...</p>}

@@ -31,6 +31,7 @@ import {
   updateStableOwnerProfileController,
   deleteStableOwnerController,
   verifyCoachController,
+  getCoachPerformanceController,
 } from '../controllers/admin.controller.js';
 import {
   submitRegistrationController,
@@ -84,6 +85,8 @@ router.delete('/accounts/:id', superAdminOnly, adminIdParamValidation, validate,
 router.get('/stables/:id/coaches', adminAuthMiddleware, adminIdParamValidation, validate, getStableCoachesAdminController);
 router.post('/stables/:id/coaches', adminAuthMiddleware, adminIdParamValidation, validate, linkStableCoachAdminController);
 router.delete('/stables/:id/coaches/:coachId', adminAuthMiddleware, adminCoachIdParamValidation, validate, unlinkStableCoachAdminController);
+
+router.get('/coach-performance', adminAuthMiddleware, getCoachPerformanceController);
 
 router.post('/stable-registrations', submitRegistrationController);
 router.get('/stable-registrations', superAdminOnly, getRegistrationsController);

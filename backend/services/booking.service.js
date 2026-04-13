@@ -2038,9 +2038,15 @@ export const checkHorseWorkload = async (horseId, bookingDate, startTime) => {
   return { available: true };
 };
 
-export const getHorseWorkloadReport = async (horseId, startDate, endDate) => {
-  const horse = await Horse.findByPk(horseId);
+export const getHorseWorkloadReport = async (horseId, startDate, endDate, { adminId, adminRole } = {}) => {
+  const horse = await Horse.findByPk(horseId, {
+    include: [{ model: Stable, as: 'stable', attributes: ['id', 'admin_id'] }],
+  });
   if (!horse) throw new Error('Horse not found.');
+
+  if (adminId && adminRole === 'stable_owner' && Number(horse.stable?.admin_id) !== Number(adminId)) {
+    throw new Error('Access denied.');
+  }
 
   const bookings = await LessonBooking.count({
     where: {

@@ -8,7 +8,7 @@ import Modal from '../../components/ui/Modal';
 import {
   getMaintenanceOverviewApi,
   createMaintenanceLogApi,
-  getAllHorsesApi,
+  getHorsesByStableApi,
 } from '../../features/operations/operationsApi';
 
 const TYPE_OPTIONS = [
@@ -55,7 +55,7 @@ const AdminMaintenancePage = () => {
     try {
       const [ovRes, horsesRes] = await Promise.all([
         stableId ? getMaintenanceOverviewApi(stableId) : Promise.resolve({ data: { data: {} } }),
-        getAllHorsesApi({ page: 1, limit: 100 }),
+        stableId ? getHorsesByStableApi(stableId, { page: 1, limit: 100 }) : Promise.resolve({ data: { data: [] } }),
       ]);
       setOverview(ovRes?.data?.data || ovRes?.data || {});
       const horseList = horsesRes?.data?.data || horsesRes?.data?.horses || [];

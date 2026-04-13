@@ -7,6 +7,7 @@ import sequelize from '../config/database.js';
 import { Arena, CoachPayout, CoachStable, Course, CourseEnrollment, CourseSession, Discipline, Horse, LessonBooking, Payment, PlatformSetting, Stable, User } from '../models/index.js';
 import { sendResetPasswordLinkEmail, sendResetTokenEmail } from './mail.service.js';
 import { validatePasswordStrength } from '../utils/validators.js';
+import { getCoachReviewSummaryMap } from './coach-review.service.js';
 
 const publicAdminFields = ['id', 'email', 'first_name', 'last_name', 'role', 'created_at'];
 
@@ -797,7 +798,7 @@ export const inviteStableOwner = async ({ stableId, email, firstName, lastName, 
   return { admin: safeAdmin, stable_id: stable.id, temp_password: password ? undefined : finalPassword };
 };
 
-export const getAdminBookings = async ({ status, page, limit, date, adminUser }) => {
+export const getAdminBookings = async ({ status, page, limit, date, adminUser, stable_id: filterStableId }) => {
   const { page: p, limit: l, offset } = normalizePagination({ page, limit });
   const where = {};
   if (status) where.status = status;
@@ -808,6 +809,8 @@ export const getAdminBookings = async ({ status, page, limit, date, adminUser })
     const stableIds = stables.map((s) => s.id);
     if (stableIds.length === 0) return { data: [], pagination: buildPaginationMeta({ totalItems: 0, page: p, limit: l }) };
     where.stable_id = { [Op.in]: stableIds };
+  } else if (filterStableId) {
+    where.stable_id = Number(filterStableId);
   }
 
   const { count, rows } = await LessonBooking.findAndCountAll({
@@ -864,4 +867,91 @@ export const adminModifyBooking = async ({ bookingId, coachId, arenaId, horseId,
   }
 
   return booking;
+};
+
+export const getCoachPerformance = async ({ adminId, adminRole, page, limit }) => {
+  const { page: p, limit: l, offset } = normalizePagination({ page, limit });
+
+  // Get stableIds for this admin
+  let stableIds = null;
+  if (adminRole === 'stable_owner') {
+    const stables = await Stable.findAll({ attributes: ['id'], where: { admin_id: adminId } });
+    stableIds = stables.map((s) => s.id);
+    if (stableIds.length === 0) return { data: [], pagination: buildPaginationMeta({ totalItems: 0, page: p, limit: l }) };
+  }
+
+  // Get coach IDs linked to these stables
+  const linkWhere = { is_active: true };
+  if (stableIds) linkWhere.stable_id = { [Op.in]: stableIds };
+  const links = await CoachStable.findAll({ attributes: ['coach_id'], where: linkWhere, group: ['coach_id'] });
+  const coachIds = links.map((l) => l.coach_id);
+  if (coachIds.length === 0) return { data: [], pagination: buildPaginationMeta({ totalItems: 0, page: p, limit: l }) };
+
+  // Get coaches (paginated)
+  const { rows: coaches, count } = await User.findAndCountAll({
+    where: { id: { [Op.in]: coachIds }, role: 'coach' },
+    attributes: ['id', 'first_name', 'last_name', 'email', 'profile_picture_url', 'is_active'],
+    order: [['id', 'DESC']],
+    limit: l,
+    offset,
+  });
+
+  const pageCoachIds = coaches.map((c) => c.id);
+
+  // Aggregate bookings per coach
+  const bookingWhere = { coach_id: { [Op.in]: pageCoachIds } };
+  if (stableIds) bookingWhere.stable_id = { [Op.in]: stableIds };
+  const bookingStats = await LessonBooking.findAll({
+    attributes: [
+      'coach_id',
+      [sequelize.fn('COUNT', sequelize.col('id')), 'total'],
+      [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'completed' THEN 1 ELSE 0 END")), 'completed'],
+      [sequelize.fn('SUM', sequelize.literal("CASE WHEN status IN ('pending_review','pending_payment','pending_horse_approval') THEN 1 ELSE 0 END")), 'pending'],
+    ],
+    where: bookingWhere,
+    group: ['coach_id'],
+    raw: true,
+  });
+  const bookingMap = new Map(bookingStats.map((b) => [Number(b.coach_id), b]));
+
+  // Aggregate payouts per coach
+  const payoutStats = await CoachPayout.findAll({
+    attributes: [
+      'coach_id',
+      [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'paid' THEN amount ELSE 0 END")), 'total_paid'],
+      [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'pending' THEN amount ELSE 0 END")), 'pending_amount'],
+    ],
+    where: { coach_id: { [Op.in]: pageCoachIds } },
+    group: ['coach_id'],
+    raw: true,
+  });
+  const payoutMap = new Map(payoutStats.map((p) => [Number(p.coach_id), p]));
+
+  // Reviews
+  const reviewMap = await getCoachReviewSummaryMap(pageCoachIds);
+
+  const data = coaches.map((coach) => {
+    const bk = bookingMap.get(coach.id) || {};
+    const py = payoutMap.get(coach.id) || {};
+    const rv = reviewMap.get(coach.id) || {};
+    const total = Number(bk.total || 0);
+    const completed = Number(bk.completed || 0);
+    return {
+      coach_id: coach.id,
+      name: `${coach.first_name || ''} ${coach.last_name || ''}`.trim(),
+      email: coach.email,
+      profile_picture_url: coach.profile_picture_url,
+      is_active: coach.is_active,
+      total_bookings: total,
+      completed_bookings: completed,
+      completion_rate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      pending_bookings: Number(bk.pending || 0),
+      total_earnings: Number(py.total_paid || 0),
+      pending_payouts: Number(py.pending_amount || 0),
+      average_rating: rv.averageRating || 0,
+      total_reviews: rv.totalReviews || 0,
+    };
+  });
+
+  return { data, pagination: buildPaginationMeta({ totalItems: count, page: p, limit: l }) };
 };

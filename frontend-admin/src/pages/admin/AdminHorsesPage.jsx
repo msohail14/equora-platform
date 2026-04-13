@@ -13,7 +13,6 @@ import {
   getDisciplinesApi,
   getStablesApi,
   updateHorseApi,
-  getHorseWorkloadApi,
 } from '../../features/operations/operationsApi';
 import { API_BASE_URL } from '../../lib/axiosInstance';
 import useDebouncedValue from '../../hooks/useDebouncedValue';
@@ -58,15 +57,7 @@ const AdminHorsesPage = () => {
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [editingHorseId, setEditingHorseId] = useState(null);
   const [isHorseModalOpen, setIsHorseModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedHorse, setSelectedHorse] = useState(null);
-  const [workload, setWorkload] = useState(null);
   const debouncedSearch = useDebouncedValue(search, 300);
-
-  useEffect(() => {
-    if (!selectedHorse?.id) { setWorkload(null); return; }
-    getHorseWorkloadApi(selectedHorse.id).then((res) => setWorkload(res?.data?.data || res?.data || null)).catch(() => setWorkload(null));
-  }, [selectedHorse?.id]);
 
   const validateImageFile = (file, requiredOnCreate) => {
     if (!file && requiredOnCreate) return 'Horse image is required.';
@@ -132,11 +123,6 @@ const AdminHorsesPage = () => {
     });
     setImageFile(null);
     setIsHorseModalOpen(true);
-  };
-
-  const _onViewHorse = (horse) => {
-    setSelectedHorse(horse);
-    setIsViewModalOpen(true);
   };
 
   const onSubmitHorse = async (event) => {
@@ -430,78 +416,6 @@ const AdminHorsesPage = () => {
         aspectOptions={DEFAULT_CROP_ASPECT_OPTIONS}
       />
 
-      <Modal
-        isOpen={isViewModalOpen}
-        title={selectedHorse?.name ? `Horse Details - ${selectedHorse.name}` : 'Horse Details'}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setSelectedHorse(null);
-        }}
-      >
-        {selectedHorse ? (
-          <div className="grid gap-4">
-            <img
-              src={toImageSrc(selectedHorse.profile_picture_url)}
-              alt={selectedHorse.name}
-              className="h-32 w-full rounded-xl object-cover"
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Name</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedHorse.name || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Breed</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedHorse.breed || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Stable</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedHorse.stable?.name || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Discipline</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedHorse.discipline?.name || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{selectedHorse.status || '-'}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Description
-              </p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedHorse.description || '-'}</p>
-            </div>
-            {workload ? (
-              <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance &amp; Workload (30 days)</p>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg bg-white p-3 text-center dark:bg-gray-800">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{workload.totalSessions ?? 0}</p>
-                    <p className="text-xs text-gray-500">Total Sessions</p>
-                  </div>
-                  <div className="rounded-lg bg-white p-3 text-center dark:bg-gray-800">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{workload.avgPerWeek != null ? Number(workload.avgPerWeek).toFixed(1) : '0'}</p>
-                    <p className="text-xs text-gray-500">Avg / Week</p>
-                  </div>
-                  <div className="rounded-lg bg-white p-3 text-center dark:bg-gray-800">
-                    <p className={`text-2xl font-bold ${workload.level === 'high' ? 'text-red-600' : workload.level === 'medium' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {workload.utilizationPercent != null ? `${Math.round(workload.utilizationPercent)}%` : '0%'}
-                    </p>
-                    <p className="text-xs text-gray-500">Utilization</p>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs text-gray-500 dark:text-gray-400">
-                  <p>Max daily: {workload.maxDaily ?? selectedHorse.max_daily_sessions ?? 3}</p>
-                  <p>Max weekly: {workload.maxWeekly ?? selectedHorse.max_weekly_sessions ?? 15}</p>
-                  <p>Rest hours: {workload.minRestHours ?? selectedHorse.min_rest_hours ?? 4}h</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </Modal>
     </section>
   );
 };

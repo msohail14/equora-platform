@@ -21,6 +21,7 @@ import {
   updateAdminSettings,
   updateStableOwnerProfile,
   verifyCoach,
+  getCoachPerformance,
 } from '../services/admin.service.js';
 import { markPaymentAsManual, refundPayment } from '../services/payment.service.js';
 
@@ -262,6 +263,20 @@ export const deleteStableOwnerController = async (req, res) => {
 export const listAdminAccountsController = async (req, res) => {
   try {
     const data = await listAdminAccounts(req.query);
+    return res.status(200).json(data);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getCoachPerformanceController = async (req, res) => {
+  try {
+    const data = await getCoachPerformance({
+      adminId: req.user.id,
+      adminRole: req.user.role,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);

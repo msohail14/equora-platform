@@ -400,7 +400,10 @@ export const getHorseWorkloadController = async (req, res) => {
   try {
     const startDate = req.query.start_date || new Date().toISOString().slice(0, 10);
     const endDate = req.query.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const data = await getHorseWorkloadReport(req.params.id, startDate, endDate);
+    const data = await getHorseWorkloadReport(req.params.id, startDate, endDate, {
+      adminId: req.user?.id,
+      adminRole: req.user?.role,
+    });
     return res.status(200).json(data);
   } catch (error) {
     return handleError(res, error);
