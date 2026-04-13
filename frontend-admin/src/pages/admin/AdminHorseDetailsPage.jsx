@@ -31,7 +31,7 @@ const AdminHorseDetailsPage = () => {
           const d = wlRes.value?.data;
           setWorkload(d?.data || d);
         }
-      } catch (err) {
+      } catch {
         toast.error('Failed to load horse details.');
       } finally {
         setLoading(false);

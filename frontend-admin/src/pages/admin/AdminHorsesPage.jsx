@@ -134,7 +134,7 @@ const AdminHorsesPage = () => {
     setIsHorseModalOpen(true);
   };
 
-  const onViewHorse = (horse) => {
+  const _onViewHorse = (horse) => {
     setSelectedHorse(horse);
     setIsViewModalOpen(true);
   };
