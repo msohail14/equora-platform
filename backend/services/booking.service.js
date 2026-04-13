@@ -1454,7 +1454,7 @@ export const coachModifyBooking = async (bookingId, coachId, { horseId, stableId
     include: [{ model: Stable, as: 'stable' }],
   });
   if (!booking) throw new Error('Booking not found.');
-  if (booking.coach_id !== coachId) throw new Error('Only the assigned coach can modify this booking.');
+  if (Number(booking.coach_id) !== Number(coachId)) throw new Error('Only the assigned coach can modify this booking.');
 
   const modifiableStatuses = ['pending_review', 'pending_horse_approval', 'pending_payment', 'confirmed'];
   if (!modifiableStatuses.includes(booking.status)) {
