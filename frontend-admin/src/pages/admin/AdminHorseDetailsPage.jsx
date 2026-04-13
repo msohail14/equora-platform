@@ -1,43 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { getHorseWorkloadApi } from '../../features/operations/operationsApi';
 import { API_BASE_URL } from '../../lib/axiosInstance';
-import axiosInstance from '../../lib/axiosInstance';
 
 const uploadBaseUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
 const toImageSrc = (v) => (!v ? null : /^https?:\/\//i.test(v) ? v : `${uploadBaseUrl}${v}`);
 
 const AdminHorseDetailsPage = () => {
   const { horseId } = useParams();
-  const [horse, setHorse] = useState(null);
+  const location = useLocation();
+  const horse = location.state?.horse || null;
   const [workload, setWorkload] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!horse);
 
   useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      try {
-        const [horseRes, wlRes] = await Promise.allSettled([
-          axiosInstance.get(`/horses/${horseId}`),
-          getHorseWorkloadApi(horseId),
-        ]);
-        if (horseRes.status === 'fulfilled') {
-          const d = horseRes.value?.data;
-          setHorse(d?.data || d);
-        }
-        if (wlRes.status === 'fulfilled') {
-          const d = wlRes.value?.data;
-          setWorkload(d?.data || d);
-        }
-      } catch {
-        toast.error('Failed to load horse details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
+    if (!horseId) return;
+    getHorseWorkloadApi(horseId)
+      .then((res) => setWorkload(res?.data?.data || res?.data || null))
+      .catch(() => setWorkload(null))
+      .finally(() => setLoading(false));
   }, [horseId]);
 
   if (loading) return <div className="p-6 text-sm text-gray-500">Loading...</div>;

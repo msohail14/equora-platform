@@ -250,6 +250,7 @@ const AdminHorsesPage = () => {
                   <div className="flex flex-wrap gap-1.5">
                     <Link
                       to={`/admin/horses/${horse.id}`}
+                      state={{ horse }}
                       className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                       <Eye size={14} />
