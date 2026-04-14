@@ -121,8 +121,8 @@ export const getBookingStables = async ({ search, page, limit, coachId }) => {
   const { rows, count } = await Stable.findAndCountAll({
     where,
     include: [
-      { model: Arena, as: 'arenas', attributes: ['id'] },
-      { model: Horse, as: 'horses', attributes: ['id'] },
+      { model: Arena, as: 'arenas', attributes: ['id'], required: false },
+      { model: Horse, as: 'horses', attributes: ['id'], required: false },
     ],
     order: [['name', 'ASC']],
     offset,
